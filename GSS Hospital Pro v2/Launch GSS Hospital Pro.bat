@@ -127,12 +127,32 @@ powershell -NoProfile -Command ^
     "}"
 
 echo.
-echo  Launching desktop app...
-start "" "%~dp0GSS Hospital Pro.exe"
+echo  Launching GSS Hospital Pro...
 
+REM ─── Launch as standalone desktop window ────────────────
+REM Use Edge app mode (clean window, no address bar — looks like native app)
+set "EDGE_PATH="
+if exist "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" set "EDGE_PATH=C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+if exist "C:\Program Files\Microsoft\Edge\Application\msedge.exe" set "EDGE_PATH=C:\Program Files\Microsoft\Edge\Application\msedge.exe"
+
+if defined EDGE_PATH (
+    echo  [OK] Launching standalone window...
+    start "" "%EDGE_PATH%" --app=http://localhost:3001 --window-size=1400,900
+    goto :running
+)
+
+REM Fallback: default browser
+echo  [OK] Opening in default browser...
+start "" "http://localhost:3001"
+
+:running
 echo.
 echo  ========================================================
-echo   App is running! You can minimize this window.
+echo   GSS Hospital Pro is running!
+echo.
+echo   Local:  http://localhost:3001
+echo   LAN:    http://^<your-ip^>:3001  (other devices)
+echo.
 echo   Close this window or press any key to stop the server.
 echo  ========================================================
 echo.

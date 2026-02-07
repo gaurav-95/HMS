@@ -276,5 +276,32 @@ export function setupDatabase() {
     );
   `);
 
+  // ── Auto-migration: add missing columns to older databases ──
+  const addColumnIfMissing = (table: string, column: string, def: string) => {
+    const cols = sqlite.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+    if (!cols.some(c => c.name === column)) {
+      sqlite.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${def}`);
+    }
+  };
+
+  // Inventory columns added post-Phase 3
+  const invCols: [string, string][] = [
+    ["asset_type", "TEXT NOT NULL DEFAULT 'Fixed'"],
+    ["assigned_qty", "INTEGER NOT NULL DEFAULT 0"],
+    ["disposable_qty", "INTEGER NOT NULL DEFAULT 0"],
+    ["warranty_expiry", "TEXT"],
+    ["purchase_date", "TEXT"],
+    ["damage_status", "TEXT"],
+    ["disposal_status", "TEXT"],
+    ["disposal_type", "TEXT"],
+    ["disposal_date", "TEXT"],
+    ["photo_evidence", "TEXT"],
+    ["bill_reference", "TEXT"],
+    ["warranty_doc", "TEXT"],
+  ];
+  for (const [col, def] of invCols) {
+    addColumnIfMissing("inventory_items", col, def);
+  }
+
   console.log("✓ Database tables initialized");
 }

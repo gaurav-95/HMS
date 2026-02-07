@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
+import fs from "fs";
 import { setupDatabase } from "./db/index";
 
 // Route imports
@@ -56,6 +58,22 @@ app.use("/api/doctor-reviews", doctorReviewRoutes);
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
+
+// ─── Serve frontend static files (for standalone / browser mode) ────
+const DIST_DIR = path.resolve(__dirname, "..", "resources", "app", "dist");
+const DIST_DIR_ALT = path.resolve(__dirname, "..", "dist");
+const frontendDir = fs.existsSync(DIST_DIR) ? DIST_DIR
+  : fs.existsSync(DIST_DIR_ALT) ? DIST_DIR_ALT
+  : null;
+
+if (frontendDir) {
+  app.use(express.static(frontendDir));
+  // SPA fallback: serve index.html for any non-API route (Express 5 syntax)
+  app.get("/{*splat}", (_req, res) => {
+    res.sendFile(path.join(frontendDir, "index.html"));
+  });
+  console.log(`📂 Serving frontend from ${frontendDir}`);
+}
 
 // ─── Global error handler ───────────────────────────────────
 app.use((err: any, _req: any, res: any, _next: any) => {

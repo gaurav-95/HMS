@@ -1,7 +1,15 @@
 import axios from "axios";
 
+// In Tauri production builds, the frontend is served from disk (tauri://localhost),
+// so relative "/api" won't reach the Express server. Use absolute URL instead.
+const isTauri =
+  typeof window !== "undefined" &&
+  (window.location.protocol === "tauri:" ||
+    window.location.protocol === "https:" && window.location.hostname === "tauri.localhost" ||
+    "__TAURI__" in window);
+
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: isTauri ? "http://localhost:3001/api" : "/api",
   headers: { "Content-Type": "application/json" },
 });
 
