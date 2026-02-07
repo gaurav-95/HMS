@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, Plus, Download, Trash2, FileText, AlertTriangle, Loader2 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { toast } from "sonner";
 import type { DocCategory } from "@/types";
 
 export default function DocumentsPage() {
@@ -136,7 +137,7 @@ export default function DocumentsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8"><Download size={14} /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toast.info("Document download is not available — files are tracked as metadata only in standalone mode.")} title="Download document"><Download size={14} /></Button>
                         {canWrite && (
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteDocument.mutate(doc.id)}>
                             <Trash2 size={14} />

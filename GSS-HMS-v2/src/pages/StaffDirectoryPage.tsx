@@ -13,10 +13,12 @@ import { Search, Plus, Phone, Mail, Edit, Upload, Loader2 } from "lucide-react";
 import { getInitials, formatCurrency } from "@/lib/utils";
 import { DEPARTMENTS } from "@/constants";
 import { ExportButtons } from "@/components/ExportButtons";
+import { useNavigate } from "react-router-dom";
 import type { Staff, StaffRole, Department, SalaryType } from "@/types";
 
 export default function StaffDirectoryPage() {
   const { hasPermission } = useAuth();
+  const navigate = useNavigate();
   const { data: staff = [], isLoading } = useStaff();
   const createStaff = useCreateStaff();
   const updateStaff = useUpdateStaff();
@@ -134,7 +136,7 @@ export default function StaffDirectoryPage() {
                   <Button variant="outline" size="sm" onClick={() => setEditingStaff(member)} className="flex-1 gap-1">
                     <Edit size={14} /> Edit
                   </Button>
-                  <Button variant="outline" size="sm" className="gap-1">
+                  <Button variant="outline" size="sm" onClick={() => navigate("/documents")} className="gap-1">
                     <Upload size={14} /> Docs
                   </Button>
                 </div>

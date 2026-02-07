@@ -113,11 +113,11 @@ export default function InventoryPage() {
       </div>
 
       {warrantyExpiring > 0 && (
-        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 cursor-pointer hover:bg-amber-100/80 transition-colors" onClick={() => { setActiveTab("active"); setSearchQuery(""); }} role="button">
           <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
-          <div>
+          <div className="flex-1">
             <h3 className="font-semibold text-amber-800">Warranty Alert</h3>
-            <p className="text-sm text-amber-700"><span className="font-medium">{warrantyExpiring} asset(s)</span> have warranty expiring within 30 days.</p>
+            <p className="text-sm text-amber-700"><span className="font-medium">{warrantyExpiring} asset(s)</span> have warranty expiring within 30 days. Click to view active inventory.</p>
           </div>
         </div>
       )}

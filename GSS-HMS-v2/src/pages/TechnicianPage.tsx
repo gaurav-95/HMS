@@ -26,6 +26,7 @@ export default function TechnicianPage() {
   const { data: tests = [], isLoading } = useLabTests();
   const updateStatus = useUpdateLabTestStatus();
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("pending");
   const [reportMatches, setReportMatches] = useState<ReportMatch[]>([]);
   const [showMatchDialog, setShowMatchDialog] = useState(false);
   const [matchTest, setMatchTest] = useState<any>(null);
@@ -102,11 +103,11 @@ export default function TechnicianPage() {
 
       {/* Urgent Alert */}
       {urgent.filter((t: any) => t.status !== "Completed").length > 0 && (
-        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 cursor-pointer hover:bg-red-100/80 transition-colors" onClick={() => setActiveTab("pending")} role="button">
           <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 shrink-0" />
-          <div>
+          <div className="flex-1">
             <h3 className="font-semibold text-red-800">Urgent Tests Pending</h3>
-            <p className="text-sm text-red-700">{urgent.filter((t: any) => t.status !== "Completed").length} urgent/STAT test(s) require immediate processing.</p>
+            <p className="text-sm text-red-700">{urgent.filter((t: any) => t.status !== "Completed").length} urgent/STAT test(s) require immediate processing. Click to view queue.</p>
           </div>
         </div>
       )}
@@ -116,7 +117,7 @@ export default function TechnicianPage() {
         <Input placeholder="Search tests, patients, categories..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
       </div>
 
-      <Tabs defaultValue="pending" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="pending" className="gap-2"><Clock size={14} /> Queue ({pending.length})</TabsTrigger>
           <TabsTrigger value="inprogress" className="gap-2"><FlaskConical size={14} /> In Progress ({inProgress.length})</TabsTrigger>

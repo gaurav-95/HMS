@@ -3,6 +3,7 @@ import { useDashboardStats, useStaff, usePatients, usePayroll, useBilling, useAt
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, TrendingUp, Users, IndianRupee, Activity } from "lucide-react";
 import { ExportButtons } from "@/components/ExportButtons";
+import { useNavigate } from "react-router-dom";
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
@@ -12,6 +13,7 @@ import {
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16"];
 
 export default function ReportsPage() {
+  const navigate = useNavigate();
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: staffData = [], isLoading: staffLoading } = useStaff();
   const { data: patientData = [], isLoading: patLoading } = usePatients();
@@ -98,19 +100,19 @@ export default function ReportsPage() {
 
       {/* KPI summary */}
       <div className="grid gap-4 sm:grid-cols-4">
-        <Card><CardContent className="pt-4 pb-4 flex items-center gap-3">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/staff")}><CardContent className="pt-4 pb-4 flex items-center gap-3">
           <div className="p-2 rounded-lg bg-blue-100"><Users className="h-5 w-5 text-blue-600" /></div>
           <div><p className="text-sm text-muted-foreground">Total Staff</p><p className="text-2xl font-bold">{s?.totalStaff ?? allStaff.length}</p></div>
         </CardContent></Card>
-        <Card><CardContent className="pt-4 pb-4 flex items-center gap-3">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/patients")}><CardContent className="pt-4 pb-4 flex items-center gap-3">
           <div className="p-2 rounded-lg bg-green-100"><Activity className="h-5 w-5 text-green-600" /></div>
           <div><p className="text-sm text-muted-foreground">Total Patients</p><p className="text-2xl font-bold">{s?.totalPatients ?? allPatients.length}</p></div>
         </CardContent></Card>
-        <Card><CardContent className="pt-4 pb-4 flex items-center gap-3">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/billing")}><CardContent className="pt-4 pb-4 flex items-center gap-3">
           <div className="p-2 rounded-lg bg-purple-100"><TrendingUp className="h-5 w-5 text-purple-600" /></div>
           <div><p className="text-sm text-muted-foreground">Invoices</p><p className="text-2xl font-bold">{allBilling.length}</p></div>
         </CardContent></Card>
-        <Card><CardContent className="pt-4 pb-4 flex items-center gap-3">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/billing")}><CardContent className="pt-4 pb-4 flex items-center gap-3">
           <div className="p-2 rounded-lg bg-amber-100"><IndianRupee className="h-5 w-5 text-amber-600" /></div>
           <div><p className="text-sm text-muted-foreground">Revenue</p><p className="text-2xl font-bold">₹{allBilling.filter((b: any) => b.status === "Paid").reduce((s: number, b: any) => s + (b.totalAmount || 0), 0).toLocaleString("en-IN")}</p></div>
         </CardContent></Card>

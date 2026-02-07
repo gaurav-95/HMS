@@ -1,16 +1,19 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/context/AuthContext";
 import { useDashboardStats, usePatients, useLabTests, useInventory, useStaff } from "@/hooks/queries";
-import { Users, TestTubeDiagonal, AlertTriangle, ClipboardCheck, Megaphone, Clock, Loader2, TrendingUp, Package, ShieldAlert, Pill, IndianRupee } from "lucide-react";
+import { Users, TestTubeDiagonal, AlertTriangle, ClipboardCheck, Megaphone, Clock, Loader2, TrendingUp, Package, ShieldAlert, Pill, IndianRupee, ArrowRight } from "lucide-react";
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 const CHART_COLORS = ["#0d9488", "#f59e0b", "#3b82f6", "#ef4444", "#8b5cf6", "#ec4899", "#10b981", "#f97316"];
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { data: stats, isLoading } = useDashboardStats();
   const { data: patients = [] } = usePatients();
   const { data: labTests = [] } = useLabTests();
@@ -76,33 +79,35 @@ export default function DashboardPage() {
 
       {/* Compliance Alert Banner */}
       {expiringDocs > 0 && (
-        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 cursor-pointer hover:bg-amber-100/80 transition-colors" onClick={() => navigate("/documents")} role="button">
           <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
-          <div>
+          <div className="flex-1">
             <h3 className="font-semibold text-amber-800">Compliance Alert</h3>
             <p className="text-sm text-amber-700">
               <span className="font-medium">{expiringDocs} certification(s)</span> expired or expiring soon — require immediate attention.
             </p>
           </div>
+          <ArrowRight className="h-4 w-4 text-amber-600 mt-1 shrink-0" />
         </div>
       )}
 
       {/* Medicine Discrepancy Alert */}
       {discrepancyCount > 0 && (
-        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 cursor-pointer hover:bg-red-100/80 transition-colors" onClick={() => navigate("/medicine-discrepancy")} role="button">
           <Pill className="h-5 w-5 text-red-600 mt-0.5 shrink-0" />
-          <div>
+          <div className="flex-1">
             <h3 className="font-semibold text-red-800">Medicine Discrepancy Alert</h3>
             <p className="text-sm text-red-700">
               <span className="font-medium">{discrepancyCount} flagged discrepanc{discrepancyCount === 1 ? "y" : "ies"}</span> — administered medicines don't match prescriptions. Review immediately.
             </p>
           </div>
+          <ArrowRight className="h-4 w-4 text-red-600 mt-1 shrink-0" />
         </div>
       )}
 
       {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/staff")}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Staff</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -113,7 +118,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/laboratory")}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Pending Tests</CardTitle>
             <TestTubeDiagonal className="h-4 w-4 text-muted-foreground" />
@@ -124,7 +129,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/documents")}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Doc Alerts</CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
@@ -135,7 +140,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/attendance")}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Today's Attendance</CardTitle>
             <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
@@ -150,11 +155,12 @@ export default function DashboardPage() {
       {/* OPD Queue + Announcements Row */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* OPD Queue Status */}
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/opd")}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
               OPD Queue
+              <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground" />
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -171,6 +177,9 @@ export default function DashboardPage() {
             <CardTitle className="flex items-center gap-2">
               <Megaphone className="h-5 w-5" />
               Announcements
+              <Button variant="ghost" size="sm" className="ml-auto gap-1 text-xs" onClick={() => navigate("/announcements")}>
+                View All <ArrowRight size={14} />
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -178,7 +187,7 @@ export default function DashboardPage() {
               <p className="text-sm text-muted-foreground text-center py-4">No active announcements</p>
             )}
             {activeAnnouncements.slice(0, 3).map((a: any) => (
-              <div key={a.id} className="flex items-start gap-3 rounded-lg border p-3">
+              <div key={a.id} className="flex items-start gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => navigate("/announcements")}>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <h4 className="font-semibold text-sm">{a.title}</h4>
@@ -197,7 +206,12 @@ export default function DashboardPage() {
       {/* Recent Lab Tests */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Lab Tests</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Recent Lab Tests
+            <Button variant="ghost" size="sm" className="ml-auto gap-1 text-xs" onClick={() => navigate("/laboratory")}>
+              View All <ArrowRight size={14} />
+            </Button>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -205,7 +219,7 @@ export default function DashboardPage() {
               <p className="text-sm text-muted-foreground text-center py-4">No recent tests</p>
             )}
             {recentTests.map((test: any) => (
-              <div key={test.id} className="flex items-center justify-between rounded-lg border p-3">
+              <div key={test.id} className="flex items-center justify-between rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => navigate("/laboratory")}>
                 <div>
                   <p className="font-medium text-sm">{test.testName}</p>
                   <p className="text-xs text-muted-foreground">{test.patientName} — {test.category}</p>
@@ -229,6 +243,9 @@ export default function DashboardPage() {
             <CardTitle className="flex items-center gap-2">
               <ShieldAlert className="h-5 w-5 text-amber-600" />
               License / Certification Alerts
+              <Button variant="ghost" size="sm" className="ml-auto gap-1 text-xs" onClick={() => navigate("/documents")}>
+                View All <ArrowRight size={14} />
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -269,6 +286,9 @@ export default function DashboardPage() {
             <CardTitle className="flex items-center gap-2">
               <IndianRupee className="h-5 w-5 text-red-600" />
               Absence Penalty Summary (This Month)
+              <Button variant="ghost" size="sm" className="ml-auto gap-1 text-xs" onClick={() => navigate("/payroll")}>
+                View All <ArrowRight size={14} />
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -315,9 +335,9 @@ export default function DashboardPage() {
       {/* ─── Analytics Charts ──────────────────────────────── */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Staff by Department Bar Chart */}
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/staff")}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5" /> Staff by Department</CardTitle>
+            <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5" /> Staff by Department <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground" /></CardTitle>
           </CardHeader>
           <CardContent>
             {deptChartData.length === 0 ? (
@@ -337,9 +357,9 @@ export default function DashboardPage() {
         </Card>
 
         {/* Patient Registration Trend Line Chart */}
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/patients")}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5" /> Patient Registrations (7 Months)</CardTitle>
+            <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5" /> Patient Registrations (7 Months) <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground" /></CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={280}>
@@ -355,9 +375,9 @@ export default function DashboardPage() {
         </Card>
 
         {/* Lab Test Status Pie Chart */}
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/laboratory")}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><TestTubeDiagonal className="h-5 w-5" /> Lab Test Status</CardTitle>
+            <CardTitle className="flex items-center gap-2"><TestTubeDiagonal className="h-5 w-5" /> Lab Test Status <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground" /></CardTitle>
           </CardHeader>
           <CardContent>
             {testPieData.length === 0 ? (
@@ -377,9 +397,9 @@ export default function DashboardPage() {
         </Card>
 
         {/* Inventory by Category Pie Chart */}
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/inventory")}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Package className="h-5 w-5" /> Inventory by Category</CardTitle>
+            <CardTitle className="flex items-center gap-2"><Package className="h-5 w-5" /> Inventory by Category <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground" /></CardTitle>
           </CardHeader>
           <CardContent>
             {invPieData.length === 0 ? (

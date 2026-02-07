@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CalendarClock, Loader2 } from "lucide-react";
 import { getInitials } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const SHIFTS: Record<string, { label: string; color: string }> = {
@@ -24,6 +25,7 @@ function getShift(startTime: string): string {
 }
 
 export default function RosterPage() {
+  const navigate = useNavigate();
   const { data: allStaff = [], isLoading: ls } = useStaff();
   const { data: schedules = [], isLoading: lsc } = useSchedules();
   const [deptFilter, setDeptFilter] = useState("All");
@@ -140,7 +142,7 @@ export default function RosterPage() {
                   </TableRow>
                 );
               })}
-              {filteredSchedules.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No schedules found. Add shifts from the Schedules page.</TableCell></TableRow>}
+              {filteredSchedules.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No schedules found. Add shifts from the <button className="text-primary underline hover:text-primary/80" onClick={() => navigate("/schedules")}>Schedules page</button>.</TableCell></TableRow>}
             </TableBody>
           </Table>
         </CardContent>

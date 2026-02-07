@@ -9,10 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { BriefcaseMedical, Search, Loader2, Users, CalendarClock } from "lucide-react";
 import { getInitials } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 const NURSE_CLASSIFICATIONS = ["BSc Nursing", "GNM", "ANM", "BNF", "Nursing Assistant"];
 
 export default function NurseManagementPage() {
+  const navigate = useNavigate();
   const { data: allStaff = [], isLoading: loadingStaff } = useStaff();
   const { data: schedules = [], isLoading: loadingSchedules } = useSchedules();
   const [searchQuery, setSearchQuery] = useState("");
@@ -99,7 +101,7 @@ export default function NurseManagementPage() {
                       <TableCell><Badge variant={n.isActive ? "success" : "secondary"}>{n.isActive ? "Active" : "Inactive"}</Badge></TableCell>
                     </TableRow>
                   ))}
-                  {filtered.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No nursing staff found. Add staff with nursing roles in Staff Directory.</TableCell></TableRow>}
+                  {filtered.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No nursing staff found. Add staff with nursing roles in <button className="text-primary underline hover:text-primary/80" onClick={() => navigate("/staff")}>Staff Directory</button>.</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </CardContent>
@@ -132,7 +134,7 @@ export default function NurseManagementPage() {
                       <TableCell><Badge variant={s.isActive ? "success" : "secondary"}>{s.isActive ? "Active" : "Inactive"}</Badge></TableCell>
                     </TableRow>
                   ))}
-                  {nurseSchedules.length === 0 && <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No nurse schedules found. Create schedules from the Schedules page.</TableCell></TableRow>}
+                  {nurseSchedules.length === 0 && <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No nurse schedules found. Create schedules from the <button className="text-primary underline hover:text-primary/80" onClick={() => navigate("/schedules")}>Schedules page</button>.</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </CardContent>
