@@ -56177,6 +56177,7 @@ var import_express19 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
 var import_path2 = __toESM(require("path"), 1);
 var import_fs2 = __toESM(require("fs"), 1);
+var import_url2 = require("url");
 
 // src-server/db/index.ts
 var import_better_sqlite32 = __toESM(require("better-sqlite3"), 1);
@@ -61814,7 +61815,11 @@ var billingRecords = sqliteTable("billing_records", {
 // src-server/db/index.ts
 var import_path = __toESM(require("path"), 1);
 var import_fs = __toESM(require("fs"), 1);
-var DATA_DIR = import_path.default.resolve(__dirname, "..", "data");
+var import_url = require("url");
+var import_meta = {};
+var __filename_esm = typeof __filename !== "undefined" ? __filename : (0, import_url.fileURLToPath)(import_meta.url);
+var __dirname_esm = typeof __dirname !== "undefined" ? __dirname : import_path.default.dirname(__filename_esm);
+var DATA_DIR = import_path.default.resolve(__dirname_esm, "..", "data");
 var DB_PATH = import_path.default.join(DATA_DIR, "gss-hms.db");
 if (!import_fs.default.existsSync(DATA_DIR)) {
   import_fs.default.mkdirSync(DATA_DIR, { recursive: true });
@@ -63093,6 +63098,9 @@ router18.delete("/:id", requireAuth, requirePermission("reports:read"), (req, re
 var doctor_reviews_default = router18;
 
 // src-server/index.ts
+var import_meta2 = {};
+var __filename_esm2 = typeof __filename !== "undefined" ? __filename : (0, import_url2.fileURLToPath)(import_meta2.url);
+var __dirname_esm2 = typeof __dirname !== "undefined" ? __dirname : import_path2.default.dirname(__filename_esm2);
 var app = (0, import_express19.default)();
 var PORT = Number(process.env.PORT) || 3001;
 app.use((0, import_cors.default)());
@@ -63119,9 +63127,9 @@ app.use("/api/doctor-reviews", doctor_reviews_default);
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: (/* @__PURE__ */ new Date()).toISOString() });
 });
-var DIST_DIR = import_path2.default.resolve(__dirname, "..", "resources", "app", "dist");
-var DIST_DIR_ALT = import_path2.default.resolve(__dirname, "..", "dist");
-var DIST_DIR_RES = import_path2.default.resolve(__dirname, "..", "resources", "dist");
+var DIST_DIR = import_path2.default.resolve(__dirname_esm2, "..", "resources", "app", "dist");
+var DIST_DIR_ALT = import_path2.default.resolve(__dirname_esm2, "..", "dist");
+var DIST_DIR_RES = import_path2.default.resolve(__dirname_esm2, "..", "resources", "dist");
 var frontendDir = import_fs2.default.existsSync(DIST_DIR) ? DIST_DIR : import_fs2.default.existsSync(DIST_DIR_RES) ? DIST_DIR_RES : import_fs2.default.existsSync(DIST_DIR_ALT) ? DIST_DIR_ALT : null;
 if (frontendDir) {
   app.use(import_express19.default.static(frontendDir));

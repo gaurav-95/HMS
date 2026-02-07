@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "server:build": "npx esbuild src-server/index.ts --bundle --platform=node --outfile=dist-server/index.cjs --external:better-sqlite3 --format=cjs",
+    "server:build": "npx esbuild src-server/index.ts --bundle --platform=node --outfile=dist-server/index.cjs --external:better-sqlite3 --external:bcryptjs --format=cjs",
     "build:all": "npm run build && npm run server:build",
     "preview": "vite preview",
     "server:dev": "tsx watch src-server/index.ts",

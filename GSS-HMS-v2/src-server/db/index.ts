@@ -3,11 +3,14 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import * as schema from "./schema";
 import path from "path";
 import fs from "fs";
+import { fileURLToPath } from "url";
 
 // Use __dirname to resolve data directory relative to the bundle location
 // In dev: src-server/db/ → ../../data
 // In prod (esbuild bundle dist-server/index.cjs): dist-server/ → ../data
-const DATA_DIR = path.resolve(__dirname, "..", "data");
+const __filename_esm = typeof __filename !== "undefined" ? __filename : fileURLToPath(import.meta.url);
+const __dirname_esm = typeof __dirname !== "undefined" ? __dirname : path.dirname(__filename_esm);
+const DATA_DIR = path.resolve(__dirname_esm, "..", "data");
 const DB_PATH = path.join(DATA_DIR, "gss-hms.db");
 
 // Ensure data directory exists

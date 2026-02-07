@@ -7,9 +7,15 @@ dist/
 dist-server/
 dist-ssr/
 
+# Distribution (standalone app build)
+GSS Hospital Pro v2/
+
 # Build artifacts
 *.exe
 *.msi
+
+# Data
+data/
 
 # Environment variables
 .env

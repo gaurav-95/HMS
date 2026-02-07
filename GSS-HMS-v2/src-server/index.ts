@@ -2,7 +2,12 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import fs from "fs";
+import { fileURLToPath } from "url";
 import { setupDatabase } from "./db/index";
+
+// ESM / CJS compat — __dirname is defined in CJS (esbuild bundle) but not in ESM (tsx dev)
+const __filename_esm = typeof __filename !== "undefined" ? __filename : fileURLToPath(import.meta.url);
+const __dirname_esm = typeof __dirname !== "undefined" ? __dirname : path.dirname(__filename_esm);
 
 // Route imports
 import authRoutes from "./routes/auth";
@@ -60,9 +65,9 @@ app.get("/api/health", (_req, res) => {
 });
 
 // ─── Serve frontend static files (for standalone / browser mode) ────
-const DIST_DIR = path.resolve(__dirname, "..", "resources", "app", "dist");
-const DIST_DIR_ALT = path.resolve(__dirname, "..", "dist");
-const DIST_DIR_RES = path.resolve(__dirname, "..", "resources", "dist");
+const DIST_DIR = path.resolve(__dirname_esm, "..", "resources", "app", "dist");
+const DIST_DIR_ALT = path.resolve(__dirname_esm, "..", "dist");
+const DIST_DIR_RES = path.resolve(__dirname_esm, "..", "resources", "dist");
 const frontendDir = fs.existsSync(DIST_DIR) ? DIST_DIR
   : fs.existsSync(DIST_DIR_RES) ? DIST_DIR_RES
   : fs.existsSync(DIST_DIR_ALT) ? DIST_DIR_ALT
