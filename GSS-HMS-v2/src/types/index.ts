@@ -231,28 +231,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   ],
 };
 
-// ─── Navigation / View Types ─────────────────────────────
 
-export type ViewType =
-  | "dashboard"
-  | "directory"
-  | "patients"
-  | "opd"
-  | "laboratory"
-  | "payroll"
-  | "documents"
-  | "performance"
-  | "roster"
-  | "user-management"
-  | "announcements"
-  | "attendance"
-  | "leave"
-  | "insurance"
-  | "inventory"
-  | "nurse-management"
-  | "technician"
-  | "self-service"
-  | "schedules";
 
 // ─── Data Interfaces ─────────────────────────────────────
 
@@ -382,17 +361,6 @@ export interface Token {
   tokenNumber: number;
   date: string;
   status: TokenStatus;
-}
-
-export interface DoctorSchedule {
-  id: string;
-  doctorId: string;
-  doctorName: string;
-  department: Department;
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
-  isActive: boolean;
 }
 
 export interface LeaveRequest {

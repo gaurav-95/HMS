@@ -30,7 +30,4 @@ export function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-export function generateId(prefix: string, existing: number[]): string {
-  const max = existing.length > 0 ? Math.max(...existing) : 100;
-  return `${prefix}-${max + 1}`;
-}
+

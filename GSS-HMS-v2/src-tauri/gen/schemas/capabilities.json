@@ -1,1 +1,0 @@
-{"default":{"identifier":"default","description":"Default permissions for the GSS Hospital app","local":true,"windows":["main"],"permissions":["core:default","opener:default","shell:allow-open"]}}

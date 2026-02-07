@@ -62,7 +62,9 @@ app.get("/api/health", (_req, res) => {
 // ─── Serve frontend static files (for standalone / browser mode) ────
 const DIST_DIR = path.resolve(__dirname, "..", "resources", "app", "dist");
 const DIST_DIR_ALT = path.resolve(__dirname, "..", "dist");
+const DIST_DIR_RES = path.resolve(__dirname, "..", "resources", "dist");
 const frontendDir = fs.existsSync(DIST_DIR) ? DIST_DIR
+  : fs.existsSync(DIST_DIR_RES) ? DIST_DIR_RES
   : fs.existsSync(DIST_DIR_ALT) ? DIST_DIR_ALT
   : null;
 

@@ -7,8 +7,9 @@ dist/
 dist-server/
 dist-ssr/
 
-# Tauri
-src-tauri/target/
+# Build artifacts
+*.exe
+*.msi
 
 # Environment variables
 .env
