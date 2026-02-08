@@ -52,6 +52,7 @@ export const staffApi = {
   create: (data: Record<string, unknown>) => api.post("/staff", data),
   update: (id: string, data: Record<string, unknown>) => api.put(`/staff/${id}`, data),
   delete: (id: string) => api.delete(`/staff/${id}`),
+  permanentDelete: (id: string) => api.delete(`/staff/${id}?permanent=true`),
 };
 
 export const patientsApi = {
@@ -60,6 +61,7 @@ export const patientsApi = {
   create: (data: Record<string, unknown>) => api.post("/patients", data),
   update: (id: string, data: Record<string, unknown>) => api.put(`/patients/${id}`, data),
   delete: (id: string) => api.delete(`/patients/${id}`),
+  permanentDelete: (id: string) => api.delete(`/patients/${id}?permanent=true`),
 };
 
 export const labApi = {
@@ -69,6 +71,7 @@ export const labApi = {
   update: (id: string, data: Record<string, unknown>) => api.put(`/lab-tests/${id}`, data),
   updateStatus: (id: string, data: Record<string, unknown>) => api.patch(`/lab-tests/${id}/status`, data),
   delete: (id: string) => api.delete(`/lab-tests/${id}`),
+  permanentDelete: (id: string) => api.delete(`/lab-tests/${id}?permanent=true`),
 };
 
 export const tokensApi = {
@@ -81,6 +84,7 @@ export const documentsApi = {
   list: () => api.get("/documents"),
   create: (data: Record<string, unknown>) => api.post("/documents", data),
   delete: (id: string) => api.delete(`/documents/${id}`),
+  permanentDelete: (id: string) => api.delete(`/documents/${id}?permanent=true`),
 };
 
 export const announcementsApi = {
@@ -88,6 +92,7 @@ export const announcementsApi = {
   create: (data: Record<string, unknown>) => api.post("/announcements", data),
   update: (id: string, data: Record<string, unknown>) => api.put(`/announcements/${id}`, data),
   delete: (id: string) => api.delete(`/announcements/${id}`),
+  permanentDelete: (id: string) => api.delete(`/announcements/${id}?permanent=true`),
 };
 
 export const attendanceApi = {
@@ -121,6 +126,7 @@ export const usersApi = {
   create: (data: Record<string, unknown>) => api.post("/users", data),
   update: (id: string, data: Record<string, unknown>) => api.put(`/users/${id}`, data),
   delete: (id: string) => api.delete(`/users/${id}`),
+  permanentDelete: (id: string) => api.delete(`/users/${id}?permanent=true`),
 };
 
 export const schedulesApi = {
@@ -128,6 +134,7 @@ export const schedulesApi = {
   create: (data: Record<string, unknown>) => api.post("/schedules", data),
   update: (id: string, data: Record<string, unknown>) => api.put(`/schedules/${id}`, data),
   delete: (id: string) => api.delete(`/schedules/${id}`),
+  permanentDelete: (id: string) => api.delete(`/schedules/${id}?permanent=true`),
 };
 
 export const dashboardApi = {
@@ -150,6 +157,7 @@ export const billingApi = {
   update: (id: string, data: Record<string, unknown>) => api.put(`/billing/${id}`, data),
   pay: (id: string, data: Record<string, unknown>) => api.patch(`/billing/${id}/pay`, data),
   delete: (id: string) => api.delete(`/billing/${id}`),
+  permanentDelete: (id: string) => api.delete(`/billing/${id}?permanent=true`),
 };
 
 export const medicineAdminApi = {

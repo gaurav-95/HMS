@@ -84,6 +84,7 @@ export type UserRole =
   | "RECEPTIONIST"
   | "TECHNICIAN"
   | "ACCOUNTANT"
+  | "PHARMACIST"
   | "STAFF";
 
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
@@ -98,6 +99,7 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
   SR_NURSE: 3,
   JR_NURSE: 3,
   TECHNICIAN: 3,
+  PHARMACIST: 3,
   STAFF: 4,
 };
 
@@ -113,6 +115,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   RECEPTIONIST: "Receptionist",
   TECHNICIAN: "Technician",
   ACCOUNTANT: "Accountant",
+  PHARMACIST: "Pharmacist",
   STAFF: "Staff",
 };
 
@@ -122,35 +125,47 @@ export type Permission =
   | "dashboard:view"
   | "staff:read"
   | "staff:write"
+  | "staff:delete"
   | "patient:read"
   | "patient:write"
   | "patient:register"
+  | "patient:delete"
   | "lab:read"
   | "lab:write"
+  | "lab:delete"
+  | "billing:read"
+  | "billing:write"
+  | "billing:delete"
   | "payroll:read"
-  | "payroll:process"
+  | "payroll:write"
+  | "payroll:approve"
   | "documents:read"
   | "documents:write"
+  | "documents:delete"
   | "performance:read"
   | "performance:write"
   | "roster:read"
   | "roster:write"
   | "users:read"
   | "users:write"
+  | "users:delete"
   | "announcements:read"
   | "announcements:write"
+  | "announcements:delete"
   | "tokens:read"
   | "tokens:write"
   | "schedule:read"
   | "schedule:write"
+  | "schedule:delete"
   | "leave:apply"
   | "leave:approve"
   | "attendance:read"
-  | "attendance:mark"
+  | "attendance:write"
   | "insurance:read"
   | "insurance:write"
   | "inventory:read"
   | "inventory:write"
+  | "inventory:delete"
   | "medicine:administer"
   | "medicine:prescribe"
   | "reports:read"
@@ -160,74 +175,118 @@ export type Permission =
 
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   SUPER_ADMIN: [
-    "dashboard:view", "staff:read", "staff:write", "patient:read", "patient:write",
-    "patient:register", "lab:read", "lab:write", "payroll:read", "payroll:process",
-    "documents:read", "documents:write", "performance:read", "performance:write",
-    "roster:read", "roster:write", "users:read", "users:write",
-    "announcements:read", "announcements:write", "tokens:read", "tokens:write",
-    "schedule:read", "schedule:write", "leave:apply", "leave:approve",
-    "attendance:read", "attendance:mark", "insurance:read", "insurance:write",
-    "inventory:read", "inventory:write", "medicine:prescribe", "medicine:administer",
-    "reports:read", "reports:match", "settings:read", "settings:write",
+    "dashboard:view", "staff:read", "staff:write", "staff:delete",
+    "patient:read", "patient:write", "patient:register", "patient:delete",
+    "lab:read", "lab:write", "lab:delete",
+    "billing:read", "billing:write", "billing:delete",
+    "payroll:read", "payroll:write", "payroll:approve",
+    "documents:read", "documents:write", "documents:delete",
+    "performance:read", "performance:write",
+    "roster:read", "roster:write",
+    "users:read", "users:write", "users:delete",
+    "announcements:read", "announcements:write", "announcements:delete",
+    "tokens:read", "tokens:write",
+    "schedule:read", "schedule:write", "schedule:delete",
+    "leave:apply", "leave:approve",
+    "attendance:read", "attendance:write",
+    "insurance:read", "insurance:write",
+    "inventory:read", "inventory:write", "inventory:delete",
+    "medicine:prescribe", "medicine:administer",
+    "reports:read", "reports:match",
+    "settings:read", "settings:write",
   ],
   CEO: [
-    "dashboard:view", "staff:read", "staff:write", "patient:read", "payroll:read",
-    "payroll:process", "documents:read", "documents:write", "performance:read",
-    "performance:write", "roster:read", "users:read", "users:write",
-    "announcements:read", "announcements:write", "tokens:read", "schedule:read",
-    "schedule:write", "leave:approve", "attendance:read", "insurance:read",
-    "inventory:read", "inventory:write", "reports:read", "settings:read", "settings:write",
+    "dashboard:view", "staff:read", "staff:write", "patient:read",
+    "billing:read", "billing:write",
+    "payroll:read", "payroll:write", "payroll:approve",
+    "documents:read", "documents:write",
+    "performance:read", "performance:write", "roster:read",
+    "users:read", "users:write",
+    "announcements:read", "announcements:write",
+    "tokens:read", "schedule:read", "schedule:write",
+    "leave:approve", "attendance:read",
+    "insurance:read", "inventory:read", "inventory:write",
+    "reports:read", "settings:read", "settings:write",
   ],
   CMO: [
     "dashboard:view", "staff:read", "staff:write", "patient:read", "patient:write",
-    "lab:read", "lab:write", "documents:read", "documents:write", "performance:read",
-    "performance:write", "roster:read", "roster:write", "schedule:read",
-    "schedule:write", "leave:approve", "attendance:read", "medicine:prescribe",
-    "reports:read", "reports:match",
+    "lab:read", "lab:write",
+    "documents:read", "documents:write",
+    "performance:read", "performance:write",
+    "roster:read", "roster:write",
+    "schedule:read", "schedule:write",
+    "leave:approve", "attendance:read",
+    "medicine:prescribe", "reports:read", "reports:match",
   ],
   COO: [
-    "dashboard:view", "staff:read", "staff:write", "patient:read", "payroll:read",
-    "documents:read", "documents:write", "performance:read", "roster:read",
-    "announcements:read", "announcements:write", "tokens:read", "schedule:read",
-    "leave:approve", "attendance:read", "attendance:mark", "inventory:read",
-    "inventory:write", "settings:read",
+    "dashboard:view", "staff:read", "staff:write", "patient:read",
+    "billing:read",
+    "payroll:read", "payroll:write",
+    "documents:read", "documents:write",
+    "performance:read", "roster:read", "roster:write",
+    "announcements:read", "announcements:write",
+    "tokens:read", "schedule:read",
+    "leave:approve", "attendance:read", "attendance:write",
+    "insurance:read", "insurance:write",
+    "inventory:read", "inventory:write",
+    "settings:read",
   ],
   METRON: [
     "dashboard:view", "staff:read", "patient:read", "patient:write",
-    "documents:read", "documents:write", "roster:read", "roster:write",
-    "schedule:read", "schedule:write", "attendance:read", "attendance:mark",
+    "documents:read", "documents:write",
+    "roster:read", "roster:write",
+    "schedule:read", "schedule:write",
+    "attendance:read", "attendance:write",
     "medicine:administer", "reports:read",
   ],
   DOCTOR: [
-    "dashboard:view", "staff:read", "patient:read", "patient:write", "lab:read",
-    "lab:write", "documents:read", "performance:read", "schedule:read",
-    "leave:apply", "attendance:read", "medicine:prescribe", "reports:read",
+    "dashboard:view", "staff:read", "patient:read", "patient:write",
+    "lab:read", "lab:write",
+    "documents:read", "performance:read",
+    "schedule:read", "leave:apply", "attendance:read",
+    "medicine:prescribe", "reports:read",
   ],
   ACCOUNTANT: [
-    "dashboard:view", "staff:read", "payroll:read", "payroll:process",
-    "documents:read", "documents:write", "leave:approve", "attendance:read",
-    "leave:apply",
+    "dashboard:view", "staff:read",
+    "billing:read", "billing:write",
+    "payroll:read", "payroll:write",
+    "documents:read", "documents:write",
+    "leave:approve", "attendance:read", "leave:apply",
+    "insurance:read", "insurance:write",
   ],
   RECEPTIONIST: [
     "dashboard:view", "patient:read", "patient:write", "patient:register",
-    "tokens:read", "tokens:write", "schedule:read", "documents:read",
+    "billing:read",
+    "tokens:read", "tokens:write",
+    "schedule:read", "documents:read",
     "leave:apply", "attendance:read",
   ],
   SR_NURSE: [
-    "dashboard:view", "patient:read", "patient:write", "documents:read",
-    "documents:write", "roster:read", "attendance:read", "medicine:administer",
-    "reports:read", "leave:apply",
+    "dashboard:view", "patient:read", "patient:write",
+    "documents:read", "documents:write",
+    "roster:read", "attendance:read",
+    "medicine:administer", "reports:read", "leave:apply",
   ],
   JR_NURSE: [
-    "dashboard:view", "patient:read", "documents:read", "roster:read",
+    "dashboard:view", "patient:read",
+    "documents:read", "roster:read",
     "attendance:read", "medicine:administer", "leave:apply",
   ],
   TECHNICIAN: [
-    "dashboard:view", "lab:read", "lab:write", "documents:read", "attendance:read",
+    "dashboard:view", "lab:read", "lab:write",
+    "documents:read", "attendance:read",
     "reports:read", "reports:match", "leave:apply",
+  ],
+  PHARMACIST: [
+    "dashboard:view", "patient:read",
+    "lab:read", "documents:read",
+    "announcements:read", "attendance:read", "leave:apply",
+    "inventory:read", "inventory:write",
+    "medicine:administer", "medicine:prescribe",
   ],
   STAFF: [
     "dashboard:view", "documents:read", "attendance:read", "leave:apply",
+    "announcements:read",
   ],
 };
 

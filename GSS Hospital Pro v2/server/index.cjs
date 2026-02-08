@@ -61609,6 +61609,7 @@ var patients = sqliteTable("patients", {
   bloodGroup: text("blood_group"),
   emergencyContact: text("emergency_contact"),
   insuranceId: text("insurance_id"),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull()
 });
@@ -61622,7 +61623,8 @@ var labTests = sqliteTable("lab_tests", {
   result: text("result"),
   orderedBy: text("ordered_by").notNull(),
   orderedDate: text("ordered_date").notNull(),
-  completedDate: text("completed_date")
+  completedDate: text("completed_date"),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true)
 });
 var tokens = sqliteTable("tokens", {
   id: text("id").primaryKey(),
@@ -61641,7 +61643,8 @@ var documents = sqliteTable("documents", {
   uploadDate: text("upload_date").notNull(),
   expiryDate: text("expiry_date"),
   fileSize: text("file_size").notNull(),
-  filePath: text("file_path")
+  filePath: text("file_path"),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true)
 });
 var announcements = sqliteTable("announcements", {
   id: text("id").primaryKey(),
@@ -61809,7 +61812,8 @@ var billingRecords = sqliteTable("billing_records", {
   // Unpaid | Partial | Paid | Refunded
   createdDate: text("created_date").notNull().default(""),
   paidDate: text("paid_date"),
-  createdBy: text("created_by").notNull().default("system")
+  createdBy: text("created_by").notNull().default("system"),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true)
 });
 
 // src-server/db/index.ts
@@ -61886,6 +61890,7 @@ function setupDatabase() {
       blood_group TEXT,
       emergency_contact TEXT,
       insurance_id TEXT,
+      is_active INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
@@ -61900,7 +61905,8 @@ function setupDatabase() {
       result TEXT,
       ordered_by TEXT NOT NULL,
       ordered_date TEXT NOT NULL,
-      completed_date TEXT
+      completed_date TEXT,
+      is_active INTEGER NOT NULL DEFAULT 1
     );
 
     CREATE TABLE IF NOT EXISTS tokens (
@@ -61921,7 +61927,8 @@ function setupDatabase() {
       upload_date TEXT NOT NULL,
       expiry_date TEXT,
       file_size TEXT NOT NULL,
-      file_path TEXT
+      file_path TEXT,
+      is_active INTEGER NOT NULL DEFAULT 1
     );
 
     CREATE TABLE IF NOT EXISTS announcements (
@@ -62040,7 +62047,8 @@ function setupDatabase() {
       status TEXT NOT NULL DEFAULT 'Unpaid',
       created_date TEXT NOT NULL DEFAULT '',
       paid_date TEXT,
-      created_by TEXT NOT NULL DEFAULT 'system'
+      created_by TEXT NOT NULL DEFAULT 'system',
+      is_active INTEGER NOT NULL DEFAULT 1
     );
 
     CREATE TABLE IF NOT EXISTS medicine_administrations (
@@ -62098,6 +62106,10 @@ function setupDatabase() {
   for (const [col, def] of invCols) {
     addColumnIfMissing("inventory_items", col, def);
   }
+  const softDeleteTables = ["patients", "lab_tests", "documents", "billing_records"];
+  for (const table of softDeleteTables) {
+    addColumnIfMissing(table, "is_active", "INTEGER NOT NULL DEFAULT 1");
+  }
   console.log("\u2713 Database tables initialized");
 }
 
@@ -62116,10 +62128,14 @@ var ROLE_PERMISSIONS = {
     "staff:delete",
     "patient:read",
     "patient:write",
+    "patient:register",
     "patient:delete",
     "lab:read",
     "lab:write",
     "lab:delete",
+    "billing:read",
+    "billing:write",
+    "billing:delete",
     "payroll:read",
     "payroll:write",
     "payroll:approve",
@@ -62151,6 +62167,7 @@ var ROLE_PERMISSIONS = {
     "tokens:write",
     "schedule:read",
     "schedule:write",
+    "schedule:delete",
     "settings:read",
     "settings:write",
     "medicine:administer",
@@ -62160,8 +62177,10 @@ var ROLE_PERMISSIONS = {
     "staff:read",
     "staff:write",
     "patient:read",
-    "lab:read",
+    "billing:read",
+    "billing:write",
     "payroll:read",
+    "payroll:write",
     "payroll:approve",
     "documents:read",
     "documents:write",
@@ -62169,26 +62188,34 @@ var ROLE_PERMISSIONS = {
     "performance:write",
     "roster:read",
     "users:read",
+    "users:write",
     "announcements:read",
     "announcements:write",
     "attendance:read",
     "leave:approve",
     "insurance:read",
     "inventory:read",
+    "inventory:write",
     "reports:read",
     "tokens:read",
     "schedule:read",
-    "settings:read"
+    "schedule:write",
+    "settings:read",
+    "settings:write"
   ],
   CMO: [
     "staff:read",
+    "staff:write",
     "patient:read",
     "patient:write",
     "lab:read",
     "lab:write",
     "documents:read",
+    "documents:write",
     "performance:read",
+    "performance:write",
     "roster:read",
+    "roster:write",
     "announcements:read",
     "attendance:read",
     "leave:approve",
@@ -62205,7 +62232,7 @@ var ROLE_PERMISSIONS = {
     "staff:read",
     "staff:write",
     "patient:read",
-    "lab:read",
+    "billing:read",
     "payroll:read",
     "payroll:write",
     "documents:read",
@@ -62224,7 +62251,8 @@ var ROLE_PERMISSIONS = {
     "inventory:write",
     "reports:read",
     "tokens:read",
-    "schedule:read"
+    "schedule:read",
+    "settings:read"
   ],
   DOCTOR: [
     "patient:read",
@@ -62246,8 +62274,10 @@ var ROLE_PERMISSIONS = {
   METRON: [
     "staff:read",
     "patient:read",
+    "patient:write",
     "lab:read",
     "documents:read",
+    "documents:write",
     "roster:read",
     "roster:write",
     "announcements:read",
@@ -62258,20 +62288,48 @@ var ROLE_PERMISSIONS = {
     "inventory:read",
     "inventory:write",
     "tokens:read",
-    "schedule:read"
+    "schedule:read",
+    "schedule:write",
+    "medicine:administer",
+    "reports:read"
   ],
   ACCOUNTANT: [
     "staff:read",
+    "billing:read",
+    "billing:write",
     "payroll:read",
     "payroll:write",
     "documents:read",
+    "documents:write",
     "announcements:read",
     "attendance:read",
     "leave:apply",
+    "leave:approve",
     "insurance:read",
     "insurance:write",
     "inventory:read",
     "reports:read"
+  ],
+  SR_NURSE: [
+    "patient:read",
+    "patient:write",
+    "documents:read",
+    "documents:write",
+    "announcements:read",
+    "roster:read",
+    "attendance:read",
+    "medicine:administer",
+    "reports:read",
+    "leave:apply"
+  ],
+  JR_NURSE: [
+    "patient:read",
+    "documents:read",
+    "announcements:read",
+    "roster:read",
+    "attendance:read",
+    "medicine:administer",
+    "leave:apply"
   ],
   NURSE: [
     "patient:read",
@@ -62289,6 +62347,8 @@ var ROLE_PERMISSIONS = {
   RECEPTIONIST: [
     "patient:read",
     "patient:write",
+    "patient:register",
+    "billing:read",
     "lab:read",
     "documents:read",
     "announcements:read",
@@ -62305,6 +62365,7 @@ var ROLE_PERMISSIONS = {
     "announcements:read",
     "attendance:read",
     "leave:apply",
+    "reports:read",
     "reports:match"
   ],
   PHARMACIST: [
@@ -62408,7 +62469,7 @@ var import_express2 = __toESM(require_express2(), 1);
 var import_crypto = require("crypto");
 var router2 = (0, import_express2.Router)();
 router2.get("/", requireAuth, requirePermission("staff:read"), (_req, res) => {
-  const allStaff = db.select().from(staff).all();
+  const allStaff = db.select().from(staff).where(eq(staff.isActive, true)).all();
   const result = allStaff.map((s) => {
     const certs = db.select().from(certifications).where(eq(certifications.staffId, s.id)).all();
     const staffKpis = db.select().from(kpis).where(eq(kpis.staffId, s.id)).all();
@@ -62449,7 +62510,12 @@ router2.put("/:id", requireAuth, requirePermission("staff:write"), (req, res) =>
   res.json(updated);
 });
 router2.delete("/:id", requireAuth, requirePermission("staff:delete"), (req, res) => {
-  db.delete(staff).where(eq(staff.id, req.params.id)).run();
+  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
+  if (permanent) {
+    db.delete(staff).where(eq(staff.id, req.params.id)).run();
+  } else {
+    db.update(staff).set({ isActive: false, updatedAt: (/* @__PURE__ */ new Date()).toISOString() }).where(eq(staff.id, req.params.id)).run();
+  }
   res.status(204).send();
 });
 var staff_default = router2;
@@ -62459,7 +62525,8 @@ var import_express3 = __toESM(require_express2(), 1);
 var import_crypto2 = require("crypto");
 var router3 = (0, import_express3.Router)();
 router3.get("/", requireAuth, requirePermission("patient:read"), (_req, res) => {
-  res.json(db.select().from(patients).all());
+  const all = db.select().from(patients).where(eq(patients.isActive, true)).all();
+  res.json(all);
 });
 router3.get("/:id", requireAuth, requirePermission("patient:read"), (req, res) => {
   const p = db.select().from(patients).where(eq(patients.id, req.params.id)).get();
@@ -62480,7 +62547,12 @@ router3.put("/:id", requireAuth, requirePermission("patient:write"), (req, res) 
   res.json(updated);
 });
 router3.delete("/:id", requireAuth, requirePermission("patient:delete"), (req, res) => {
-  db.delete(patients).where(eq(patients.id, req.params.id)).run();
+  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
+  if (permanent) {
+    db.delete(patients).where(eq(patients.id, req.params.id)).run();
+  } else {
+    db.update(patients).set({ isActive: false, updatedAt: (/* @__PURE__ */ new Date()).toISOString() }).where(eq(patients.id, req.params.id)).run();
+  }
   res.status(204).send();
 });
 var patients_default = router3;
@@ -62490,7 +62562,7 @@ var import_express4 = __toESM(require_express2(), 1);
 var import_crypto3 = require("crypto");
 var router4 = (0, import_express4.Router)();
 router4.get("/", requireAuth, requirePermission("lab:read"), (_req, res) => {
-  res.json(db.select().from(labTests).orderBy(desc(labTests.orderedDate)).all());
+  res.json(db.select().from(labTests).where(eq(labTests.isActive, true)).orderBy(desc(labTests.orderedDate)).all());
 });
 router4.get("/:id", requireAuth, requirePermission("lab:read"), (req, res) => {
   const t = db.select().from(labTests).where(eq(labTests.id, req.params.id)).get();
@@ -62518,7 +62590,12 @@ router4.patch("/:id/status", requireAuth, requirePermission("lab:write"), (req, 
   res.json(db.select().from(labTests).where(eq(labTests.id, req.params.id)).get());
 });
 router4.delete("/:id", requireAuth, requirePermission("lab:delete"), (req, res) => {
-  db.delete(labTests).where(eq(labTests.id, req.params.id)).run();
+  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
+  if (permanent) {
+    db.delete(labTests).where(eq(labTests.id, req.params.id)).run();
+  } else {
+    db.update(labTests).set({ isActive: false }).where(eq(labTests.id, req.params.id)).run();
+  }
   res.status(204).send();
 });
 var laboratory_default = router4;
@@ -62549,7 +62626,7 @@ var import_express6 = __toESM(require_express2(), 1);
 var import_crypto5 = require("crypto");
 var router6 = (0, import_express6.Router)();
 router6.get("/", requireAuth, requirePermission("documents:read"), (_req, res) => {
-  res.json(db.select().from(documents).all());
+  res.json(db.select().from(documents).where(eq(documents.isActive, true)).all());
 });
 router6.post("/", requireAuth, requirePermission("documents:write"), (req, res) => {
   const id = (0, import_crypto5.randomUUID)();
@@ -62557,7 +62634,12 @@ router6.post("/", requireAuth, requirePermission("documents:write"), (req, res) 
   res.status(201).json(db.select().from(documents).where(eq(documents.id, id)).get());
 });
 router6.delete("/:id", requireAuth, requirePermission("documents:delete"), (req, res) => {
-  db.delete(documents).where(eq(documents.id, req.params.id)).run();
+  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
+  if (permanent) {
+    db.delete(documents).where(eq(documents.id, req.params.id)).run();
+  } else {
+    db.update(documents).set({ isActive: false }).where(eq(documents.id, req.params.id)).run();
+  }
   res.status(204).send();
 });
 var documents_default = router6;
@@ -62567,7 +62649,7 @@ var import_express7 = __toESM(require_express2(), 1);
 var import_crypto6 = require("crypto");
 var router7 = (0, import_express7.Router)();
 router7.get("/", requireAuth, requirePermission("announcements:read"), (_req, res) => {
-  res.json(db.select().from(announcements).all());
+  res.json(db.select().from(announcements).where(eq(announcements.isActive, true)).all());
 });
 router7.post("/", requireAuth, requirePermission("announcements:write"), (req, res) => {
   const id = (0, import_crypto6.randomUUID)();
@@ -62620,7 +62702,12 @@ router7.put("/:id", requireAuth, requirePermission("announcements:write"), (req,
   });
 });
 router7.delete("/:id", requireAuth, requirePermission("announcements:delete"), (req, res) => {
-  db.delete(announcements).where(eq(announcements.id, req.params.id)).run();
+  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
+  if (permanent) {
+    db.delete(announcements).where(eq(announcements.id, req.params.id)).run();
+  } else {
+    db.update(announcements).set({ isActive: false }).where(eq(announcements.id, req.params.id)).run();
+  }
   res.status(204).send();
 });
 var announcements_default = router7;
@@ -62727,7 +62814,7 @@ router12.get("/", requireAuth, requirePermission("users:read"), (_req, res) => {
     isActive: users.isActive,
     lastLogin: users.lastLogin,
     createdAt: users.createdAt
-  }).from(users).all();
+  }).from(users).where(eq(users.isActive, true)).all();
   res.json(allUsers);
 });
 router12.post("/", requireAuth, requirePermission("users:write"), (req, res) => {
@@ -62778,7 +62865,12 @@ router12.put("/:id", requireAuth, requirePermission("users:write"), (req, res) =
   res.json(updated);
 });
 router12.delete("/:id", requireAuth, requirePermission("users:delete"), (req, res) => {
-  db.delete(users).where(eq(users.id, req.params.id)).run();
+  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
+  if (permanent) {
+    db.delete(users).where(eq(users.id, req.params.id)).run();
+  } else {
+    db.update(users).set({ isActive: false, updatedAt: (/* @__PURE__ */ new Date()).toISOString() }).where(eq(users.id, req.params.id)).run();
+  }
   res.status(204).send();
 });
 var users_default = router12;
@@ -62788,7 +62880,7 @@ var import_express13 = __toESM(require_express2(), 1);
 var import_crypto12 = require("crypto");
 var router13 = (0, import_express13.Router)();
 router13.get("/", requireAuth, requirePermission("schedule:read"), (_req, res) => {
-  res.json(db.select().from(doctorSchedules).all());
+  res.json(db.select().from(doctorSchedules).where(eq(doctorSchedules.isActive, true)).all());
 });
 router13.post("/", requireAuth, requirePermission("schedule:write"), (req, res) => {
   const id = (0, import_crypto12.randomUUID)();
@@ -62803,7 +62895,12 @@ router13.put("/:id", requireAuth, requirePermission("schedule:write"), (req, res
   res.json(updated);
 });
 router13.delete("/:id", requireAuth, requirePermission("schedule:write"), (req, res) => {
-  db.delete(doctorSchedules).where(eq(doctorSchedules.id, req.params.id)).run();
+  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
+  if (permanent) {
+    db.delete(doctorSchedules).where(eq(doctorSchedules.id, req.params.id)).run();
+  } else {
+    db.update(doctorSchedules).set({ isActive: false }).where(eq(doctorSchedules.id, req.params.id)).run();
+  }
   res.status(204).send();
 });
 var schedules_default = router13;
@@ -62913,15 +63010,15 @@ var pharmacy_default = router15;
 var import_express16 = __toESM(require_express2(), 1);
 var import_crypto14 = require("crypto");
 var router16 = (0, import_express16.Router)();
-router16.get("/", requireAuth, requirePermission("payroll:read"), (_req, res) => {
-  res.json(db.select().from(billingRecords).all());
+router16.get("/", requireAuth, requirePermission("billing:read", "payroll:read"), (_req, res) => {
+  res.json(db.select().from(billingRecords).where(eq(billingRecords.isActive, true)).all());
 });
-router16.get("/:id", requireAuth, requirePermission("payroll:read"), (req, res) => {
+router16.get("/:id", requireAuth, requirePermission("billing:read", "payroll:read"), (req, res) => {
   const row = db.select().from(billingRecords).where(eq(billingRecords.id, req.params.id)).get();
   if (!row) return res.status(404).json({ error: "Billing record not found" });
   res.json(row);
 });
-router16.post("/", requireAuth, requirePermission("payroll:write"), (req, res) => {
+router16.post("/", requireAuth, requirePermission("billing:write", "payroll:write"), (req, res) => {
   const id = (0, import_crypto14.randomUUID)();
   const count = db.select().from(billingRecords).all().length;
   const invoiceNumber = req.body.invoiceNumber || `INV-${String(count + 1).padStart(5, "0")}`;
@@ -62931,14 +63028,14 @@ router16.post("/", requireAuth, requirePermission("payroll:write"), (req, res) =
   db.insert(billingRecords).values({ id, ...req.body, invoiceNumber, createdDate, items, subtotal }).run();
   res.status(201).json(db.select().from(billingRecords).where(eq(billingRecords.id, id)).get());
 });
-router16.put("/:id", requireAuth, requirePermission("payroll:write"), (req, res) => {
+router16.put("/:id", requireAuth, requirePermission("billing:write", "payroll:write"), (req, res) => {
   const { id: _id, ...data } = req.body;
   db.update(billingRecords).set(data).where(eq(billingRecords.id, req.params.id)).run();
   const updated = db.select().from(billingRecords).where(eq(billingRecords.id, req.params.id)).get();
   if (!updated) return res.status(404).json({ error: "Billing record not found" });
   res.json(updated);
 });
-router16.patch("/:id/pay", requireAuth, requirePermission("payroll:write"), (req, res) => {
+router16.patch("/:id/pay", requireAuth, requirePermission("billing:write", "payroll:write"), (req, res) => {
   const existing = db.select().from(billingRecords).where(eq(billingRecords.id, req.params.id)).get();
   if (!existing) return res.status(404).json({ error: "Billing record not found" });
   const paidAmount = Number(req.body.paidAmount) || existing.paidAmount;
@@ -62951,10 +63048,15 @@ router16.patch("/:id/pay", requireAuth, requirePermission("payroll:write"), (req
   }).where(eq(billingRecords.id, req.params.id)).run();
   res.json(db.select().from(billingRecords).where(eq(billingRecords.id, req.params.id)).get());
 });
-router16.delete("/:id", requireAuth, requirePermission("payroll:write"), (req, res) => {
+router16.delete("/:id", requireAuth, requirePermission("billing:delete", "payroll:write"), (req, res) => {
   const exists2 = db.select().from(billingRecords).where(eq(billingRecords.id, req.params.id)).get();
   if (!exists2) return res.status(404).json({ error: "Billing record not found" });
-  db.delete(billingRecords).where(eq(billingRecords.id, req.params.id)).run();
+  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
+  if (permanent) {
+    db.delete(billingRecords).where(eq(billingRecords.id, req.params.id)).run();
+  } else {
+    db.update(billingRecords).set({ isActive: false }).where(eq(billingRecords.id, req.params.id)).run();
+  }
   res.json({ success: true });
 });
 var billing_default = router16;

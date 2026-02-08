@@ -8,7 +8,7 @@ import { requireAuth, requirePermission } from "../middleware/auth";
 const router = Router();
 
 router.get("/", requireAuth, requirePermission("documents:read"), (_req, res) => {
-  res.json(db.select().from(documents).all());
+  res.json(db.select().from(documents).where(eq(documents.isActive, true)).all());
 });
 
 router.post("/", requireAuth, requirePermission("documents:write"), (req, res) => {
@@ -17,8 +17,13 @@ router.post("/", requireAuth, requirePermission("documents:write"), (req, res) =
   res.status(201).json(db.select().from(documents).where(eq(documents.id, id)).get());
 });
 
-router.delete("/:id", requireAuth, requirePermission("documents:delete"), (req, res) => {
-  db.delete(documents).where(eq(documents.id, req.params.id)).run();
+router.delete("/:id", requireAuth, requirePermission("documents:delete"), (req: any, res) => {
+  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
+  if (permanent) {
+    db.delete(documents).where(eq(documents.id, req.params.id)).run();
+  } else {
+    db.update(documents).set({ isActive: false }).where(eq(documents.id, req.params.id)).run();
+  }
   res.status(204).send();
 });
 

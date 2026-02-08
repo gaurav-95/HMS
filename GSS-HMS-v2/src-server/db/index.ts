@@ -89,6 +89,7 @@ export function setupDatabase() {
       blood_group TEXT,
       emergency_contact TEXT,
       insurance_id TEXT,
+      is_active INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
@@ -103,7 +104,8 @@ export function setupDatabase() {
       result TEXT,
       ordered_by TEXT NOT NULL,
       ordered_date TEXT NOT NULL,
-      completed_date TEXT
+      completed_date TEXT,
+      is_active INTEGER NOT NULL DEFAULT 1
     );
 
     CREATE TABLE IF NOT EXISTS tokens (
@@ -124,7 +126,8 @@ export function setupDatabase() {
       upload_date TEXT NOT NULL,
       expiry_date TEXT,
       file_size TEXT NOT NULL,
-      file_path TEXT
+      file_path TEXT,
+      is_active INTEGER NOT NULL DEFAULT 1
     );
 
     CREATE TABLE IF NOT EXISTS announcements (
@@ -243,7 +246,8 @@ export function setupDatabase() {
       status TEXT NOT NULL DEFAULT 'Unpaid',
       created_date TEXT NOT NULL DEFAULT '',
       paid_date TEXT,
-      created_by TEXT NOT NULL DEFAULT 'system'
+      created_by TEXT NOT NULL DEFAULT 'system',
+      is_active INTEGER NOT NULL DEFAULT 1
     );
 
     CREATE TABLE IF NOT EXISTS medicine_administrations (
@@ -304,6 +308,12 @@ export function setupDatabase() {
   ];
   for (const [col, def] of invCols) {
     addColumnIfMissing("inventory_items", col, def);
+  }
+
+  // Soft-delete columns for tables that previously lacked is_active
+  const softDeleteTables = ["patients", "lab_tests", "documents", "billing_records"];
+  for (const table of softDeleteTables) {
+    addColumnIfMissing(table, "is_active", "INTEGER NOT NULL DEFAULT 1");
   }
 
   console.log("✓ Database tables initialized");

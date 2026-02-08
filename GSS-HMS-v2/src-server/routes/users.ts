@@ -17,7 +17,7 @@ router.get("/", requireAuth, requirePermission("users:read"), (_req, res) => {
     isActive: users.isActive,
     lastLogin: users.lastLogin,
     createdAt: users.createdAt,
-  }).from(users).all();
+  }).from(users).where(eq(users.isActive, true)).all();
   res.json(allUsers);
 });
 
@@ -64,8 +64,13 @@ router.put("/:id", requireAuth, requirePermission("users:write"), (req, res) => 
   res.json(updated);
 });
 
-router.delete("/:id", requireAuth, requirePermission("users:delete"), (req, res) => {
-  db.delete(users).where(eq(users.id, req.params.id)).run();
+router.delete("/:id", requireAuth, requirePermission("users:delete"), (req: any, res) => {
+  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
+  if (permanent) {
+    db.delete(users).where(eq(users.id, req.params.id)).run();
+  } else {
+    db.update(users).set({ isActive: false, updatedAt: new Date().toISOString() }).where(eq(users.id, req.params.id)).run();
+  }
   res.status(204).send();
 });
 

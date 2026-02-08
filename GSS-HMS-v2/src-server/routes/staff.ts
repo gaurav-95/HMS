@@ -9,7 +9,7 @@ const router = Router();
 
 /** GET /api/staff */
 router.get("/", requireAuth, requirePermission("staff:read"), (_req, res) => {
-  const allStaff = db.select().from(staff).all();
+  const allStaff = db.select().from(staff).where(eq(staff.isActive, true)).all();
 
   // Attach certifications and KPIs
   const result = allStaff.map((s) => {
@@ -71,8 +71,13 @@ router.put("/:id", requireAuth, requirePermission("staff:write"), (req, res) => 
 });
 
 /** DELETE /api/staff/:id */
-router.delete("/:id", requireAuth, requirePermission("staff:delete"), (req, res) => {
-  db.delete(staff).where(eq(staff.id, req.params.id)).run();
+router.delete("/:id", requireAuth, requirePermission("staff:delete"), (req: any, res) => {
+  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
+  if (permanent) {
+    db.delete(staff).where(eq(staff.id, req.params.id)).run();
+  } else {
+    db.update(staff).set({ isActive: false, updatedAt: new Date().toISOString() }).where(eq(staff.id, req.params.id)).run();
+  }
   res.status(204).send();
 });
 

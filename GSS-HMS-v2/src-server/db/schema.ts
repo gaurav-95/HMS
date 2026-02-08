@@ -61,6 +61,7 @@ export const patients = sqliteTable("patients", {
   bloodGroup: text("blood_group"),
   emergencyContact: text("emergency_contact"),
   insuranceId: text("insurance_id"),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
@@ -77,6 +78,7 @@ export const labTests = sqliteTable("lab_tests", {
   orderedBy: text("ordered_by").notNull(),
   orderedDate: text("ordered_date").notNull(),
   completedDate: text("completed_date"),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
 });
 
 // ─── OPD Tokens ─────────────────────────────────────────────
@@ -100,6 +102,7 @@ export const documents = sqliteTable("documents", {
   expiryDate: text("expiry_date"),
   fileSize: text("file_size").notNull(),
   filePath: text("file_path"),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
 });
 
 // ─── Announcements ──────────────────────────────────────────
@@ -261,4 +264,5 @@ export const billingRecords = sqliteTable("billing_records", {
   createdDate: text("created_date").notNull().default(""),
   paidDate: text("paid_date"),
   createdBy: text("created_by").notNull().default("system"),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
 });

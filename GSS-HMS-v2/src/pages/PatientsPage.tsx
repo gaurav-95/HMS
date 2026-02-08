@@ -1,25 +1,33 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { UserPlus, Search, Loader2, Pencil } from "lucide-react";
+import { UserPlus, Search, Loader2, Pencil, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { usePatients, useCreatePatient, useUpdatePatient } from "@/hooks/queries";
+import { usePatients, useCreatePatient, useUpdatePatient, useDeletePatient, usePermanentDeletePatient } from "@/hooks/queries";
 import { ExportButtons } from "@/components/ExportButtons";
+import { useAuth } from "@/context/AuthContext";
+import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 
 const emptyForm = { name: "", age: "", gender: "Male", phone: "", address: "", bloodGroup: "" };
 
 export default function PatientsPage() {
   const { data: patients = [], isLoading } = usePatients();
+  const { hasPermission, user } = useAuth();
   const createPatient = useCreatePatient();
   const updatePatient = useUpdatePatient();
+  const deletePatient = useDeletePatient();
+  const permanentDeletePatient = usePermanentDeletePatient();
   const [searchQuery, setSearchQuery] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [editingPatient, setEditingPatient] = useState<any | null>(null);
+  const [deletingPatient, setDeletingPatient] = useState<any | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const canDelete = hasPermission("patient:delete");
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
 
   const filtered = (patients as any[]).filter(
     (p: any) =>
@@ -98,10 +106,15 @@ export default function PatientsPage() {
                   <TableCell>{p.age}</TableCell>
                   <TableCell><Badge variant="outline">{p.bloodGroup || "—"}</Badge></TableCell>
                   <TableCell className="text-muted-foreground max-w-[200px] truncate">{p.address || "—"}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right space-x-1">
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(p)}>
                       <Pencil size={14} />
                     </Button>
+                    {canDelete && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeletingPatient(p)}>
+                        <Trash2 size={14} />
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -154,6 +167,18 @@ export default function PatientsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation */}
+      <DeleteConfirmationDialog
+        open={!!deletingPatient}
+        onClose={() => setDeletingPatient(null)}
+        onConfirm={() => { deletePatient.mutate(deletingPatient?.id); setDeletingPatient(null); }}
+        entityName={deletingPatient?.name || ""}
+        entityType="patient"
+        isSuperAdmin={isSuperAdmin}
+        onPermanentDelete={() => { permanentDeletePatient.mutate(deletingPatient?.id); setDeletingPatient(null); }}
+        isPending={deletePatient.isPending || permanentDeletePatient.isPending}
+      />
     </div>
   );
 }

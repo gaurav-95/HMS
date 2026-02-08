@@ -8,19 +8,19 @@ import { requireAuth, requirePermission } from "../middleware/auth";
 const router = Router();
 
 /** GET /api/billing – list all billing records */
-router.get("/", requireAuth, requirePermission("payroll:read"), (_req, res) => {
-  res.json(db.select().from(billingRecords).all());
+router.get("/", requireAuth, requirePermission("billing:read", "payroll:read"), (_req, res) => {
+  res.json(db.select().from(billingRecords).where(eq(billingRecords.isActive, true)).all());
 });
 
 /** GET /api/billing/:id – single billing record */
-router.get("/:id", requireAuth, requirePermission("payroll:read"), (req, res) => {
+router.get("/:id", requireAuth, requirePermission("billing:read", "payroll:read"), (req, res) => {
   const row = db.select().from(billingRecords).where(eq(billingRecords.id, req.params.id)).get();
   if (!row) return res.status(404).json({ error: "Billing record not found" });
   res.json(row);
 });
 
 /** POST /api/billing – create new invoice */
-router.post("/", requireAuth, requirePermission("payroll:write"), (req, res) => {
+router.post("/", requireAuth, requirePermission("billing:write", "payroll:write"), (req, res) => {
   const id = randomUUID();
   // Auto-generate invoice number
   const count = db.select().from(billingRecords).all().length;
@@ -33,7 +33,7 @@ router.post("/", requireAuth, requirePermission("payroll:write"), (req, res) => 
 });
 
 /** PUT /api/billing/:id – update billing record */
-router.put("/:id", requireAuth, requirePermission("payroll:write"), (req, res) => {
+router.put("/:id", requireAuth, requirePermission("billing:write", "payroll:write"), (req, res) => {
   const { id: _id, ...data } = req.body;
   db.update(billingRecords).set(data).where(eq(billingRecords.id, req.params.id)).run();
   const updated = db.select().from(billingRecords).where(eq(billingRecords.id, req.params.id)).get();
@@ -42,7 +42,7 @@ router.put("/:id", requireAuth, requirePermission("payroll:write"), (req, res) =
 });
 
 /** PATCH /api/billing/:id/pay – record payment */
-router.patch("/:id/pay", requireAuth, requirePermission("payroll:write"), (req, res) => {
+router.patch("/:id/pay", requireAuth, requirePermission("billing:write", "payroll:write"), (req, res) => {
   const existing = db.select().from(billingRecords).where(eq(billingRecords.id, req.params.id)).get();
   if (!existing) return res.status(404).json({ error: "Billing record not found" });
 
@@ -60,10 +60,15 @@ router.patch("/:id/pay", requireAuth, requirePermission("payroll:write"), (req, 
 });
 
 /** DELETE /api/billing/:id */
-router.delete("/:id", requireAuth, requirePermission("payroll:write"), (req, res) => {
+router.delete("/:id", requireAuth, requirePermission("billing:delete", "payroll:write"), (req: any, res) => {
   const exists = db.select().from(billingRecords).where(eq(billingRecords.id, req.params.id)).get();
   if (!exists) return res.status(404).json({ error: "Billing record not found" });
-  db.delete(billingRecords).where(eq(billingRecords.id, req.params.id)).run();
+  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
+  if (permanent) {
+    db.delete(billingRecords).where(eq(billingRecords.id, req.params.id)).run();
+  } else {
+    db.update(billingRecords).set({ isActive: false }).where(eq(billingRecords.id, req.params.id)).run();
+  }
   res.json({ success: true });
 });
 

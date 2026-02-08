@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useAnnouncements, useCreateAnnouncement } from "@/hooks/queries";
+import { useAnnouncements, useCreateAnnouncement, useUpdateAnnouncement, useDeleteAnnouncement, usePermanentDeleteAnnouncement } from "@/hooks/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,16 +9,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Megaphone, Plus, Loader2 } from "lucide-react";
+import { Megaphone, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
+import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 import { formatDate } from "@/lib/utils";
 
 export default function AnnouncementsPage() {
   const { user, hasPermission } = useAuth();
   const canWrite = hasPermission("announcements:write");
+  const canDelete = hasPermission("announcements:delete");
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
   const { data: announcements = [], isLoading } = useAnnouncements();
   const createAnnouncement = useCreateAnnouncement();
+  const updateAnnouncement = useUpdateAnnouncement();
+  const deleteAnnouncement = useDeleteAnnouncement();
+  const permanentDeleteAnnouncement = usePermanentDeleteAnnouncement();
   const [showCreate, setShowCreate] = useState(false);
   const [announcementType, setAnnouncementType] = useState("general");
+  const [editingAnnouncement, setEditingAnnouncement] = useState<any | null>(null);
+  const [deletingAnnouncement, setDeletingAnnouncement] = useState<any | null>(null);
 
   const allAnnouncements = announcements as any[];
   const visible = allAnnouncements.filter(
@@ -75,9 +83,21 @@ export default function AnnouncementsPage() {
                     <Megaphone className="h-5 w-5" />
                     {a.title}
                   </CardTitle>
-                  <Badge variant={a.type === "penalty" ? "destructive" : a.type === "policy" ? "warning" : "secondary"}>
-                    {a.type}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={a.type === "penalty" ? "destructive" : a.type === "policy" ? "warning" : "secondary"}>
+                      {a.type}
+                    </Badge>
+                    {canWrite && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingAnnouncement(a)}>
+                        <Pencil size={14} />
+                      </Button>
+                    )}
+                    {canDelete && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeletingAnnouncement(a)}>
+                        <Trash2 size={14} />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -132,6 +152,50 @@ export default function AnnouncementsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Announcement Modal */}
+      <Dialog open={!!editingAnnouncement} onOpenChange={(v) => { if (!v) setEditingAnnouncement(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Announcement</DialogTitle></DialogHeader>
+          <form className="space-y-4" onSubmit={(e) => {
+            e.preventDefault();
+            const fd = new FormData(e.currentTarget);
+            updateAnnouncement.mutate({
+              id: editingAnnouncement?.id,
+              title: fd.get("title") as string,
+              body: fd.get("body") as string,
+            });
+            setEditingAnnouncement(null);
+          }}>
+            <div className="space-y-2">
+              <Label>Title</Label>
+              <Input name="title" defaultValue={editingAnnouncement?.title || ""} required />
+            </div>
+            <div className="space-y-2">
+              <Label>Message</Label>
+              <Textarea name="body" defaultValue={editingAnnouncement?.body || ""} rows={4} required />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditingAnnouncement(null)}>Cancel</Button>
+              <Button type="submit" disabled={updateAnnouncement.isPending}>
+                {updateAnnouncement.isPending ? "Saving..." : "Update"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <DeleteConfirmationDialog
+        open={!!deletingAnnouncement}
+        onClose={() => setDeletingAnnouncement(null)}
+        onConfirm={() => { deleteAnnouncement.mutate(deletingAnnouncement?.id); setDeletingAnnouncement(null); }}
+        entityName={deletingAnnouncement?.title || ""}
+        entityType="announcement"
+        isSuperAdmin={isSuperAdmin}
+        onPermanentDelete={() => { permanentDeleteAnnouncement.mutate(deletingAnnouncement?.id); setDeletingAnnouncement(null); }}
+        isPending={deleteAnnouncement.isPending || permanentDeleteAnnouncement.isPending}
+      />
     </div>
   );
 }

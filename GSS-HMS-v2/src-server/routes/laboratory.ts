@@ -8,7 +8,7 @@ import { requireAuth, requirePermission } from "../middleware/auth";
 const router = Router();
 
 router.get("/", requireAuth, requirePermission("lab:read"), (_req, res) => {
-  res.json(db.select().from(labTests).orderBy(desc(labTests.orderedDate)).all());
+  res.json(db.select().from(labTests).where(eq(labTests.isActive, true)).orderBy(desc(labTests.orderedDate)).all());
 });
 
 router.get("/:id", requireAuth, requirePermission("lab:read"), (req, res) => {
@@ -41,8 +41,13 @@ router.patch("/:id/status", requireAuth, requirePermission("lab:write"), (req, r
   res.json(db.select().from(labTests).where(eq(labTests.id, req.params.id)).get());
 });
 
-router.delete("/:id", requireAuth, requirePermission("lab:delete"), (req, res) => {
-  db.delete(labTests).where(eq(labTests.id, req.params.id)).run();
+router.delete("/:id", requireAuth, requirePermission("lab:delete"), (req: any, res) => {
+  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
+  if (permanent) {
+    db.delete(labTests).where(eq(labTests.id, req.params.id)).run();
+  } else {
+    db.update(labTests).set({ isActive: false }).where(eq(labTests.id, req.params.id)).run();
+  }
   res.status(204).send();
 });
 

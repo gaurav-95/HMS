@@ -30,6 +30,10 @@ export function useDeleteStaff() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (id: string) => staffApi.delete(id), onSuccess: () => { qc.invalidateQueries({ queryKey: ["staff"] }); toast.success("Staff member removed"); }, onError: (e) => toast.error(errMsg(e)) });
 }
+export function usePermanentDeleteStaff() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id: string) => staffApi.permanentDelete(id), onSuccess: () => { qc.invalidateQueries({ queryKey: ["staff"] }); toast.success("Staff member permanently deleted"); }, onError: (e) => toast.error(errMsg(e)) });
+}
 
 // ─── Patients ───────────────────────────────────────────────
 export function usePatients() {
@@ -47,6 +51,10 @@ export function useDeletePatient() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (id: string) => patientsApi.delete(id), onSuccess: () => { qc.invalidateQueries({ queryKey: ["patients"] }); toast.success("Patient removed"); }, onError: (e) => toast.error(errMsg(e)) });
 }
+export function usePermanentDeletePatient() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id: string) => patientsApi.permanentDelete(id), onSuccess: () => { qc.invalidateQueries({ queryKey: ["patients"] }); toast.success("Patient permanently deleted"); }, onError: (e) => toast.error(errMsg(e)) });
+}
 
 // ─── Lab Tests ──────────────────────────────────────────────
 export function useLabTests() {
@@ -59,6 +67,10 @@ export function useCreateLabTest() {
 export function useUpdateLabTestStatus() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: ({ id, ...d }: Record<string, unknown> & { id: string }) => labApi.updateStatus(id, d).then((r) => r.data), onSuccess: () => { qc.invalidateQueries({ queryKey: ["lab-tests"] }); toast.success("Lab test status updated"); }, onError: (e) => toast.error(errMsg(e)) });
+}
+export function useUpdateLabTest() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: ({ id, ...d }: Record<string, unknown> & { id: string }) => labApi.update(id, d).then((r) => r.data), onSuccess: () => { qc.invalidateQueries({ queryKey: ["lab-tests"] }); toast.success("Lab test updated"); }, onError: (e) => toast.error(errMsg(e)) });
 }
 
 // ─── OPD Tokens ─────────────────────────────────────────────
@@ -160,6 +172,10 @@ export function useDeleteUser() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (id: string) => usersApi.delete(id), onSuccess: () => { qc.invalidateQueries({ queryKey: ["users"] }); toast.success("User deleted"); }, onError: (e) => toast.error(errMsg(e)) });
 }
+export function usePermanentDeleteUser() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id: string) => usersApi.permanentDelete(id), onSuccess: () => { qc.invalidateQueries({ queryKey: ["users"] }); toast.success("User permanently deleted"); }, onError: (e) => toast.error(errMsg(e)) });
+}
 
 // ─── Schedules ──────────────────────────────────────────────
 export function useSchedules() {
@@ -177,11 +193,19 @@ export function useDeleteSchedule() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (id: string) => schedulesApi.delete(id), onSuccess: () => { qc.invalidateQueries({ queryKey: ["schedules"] }); toast.success("Schedule deleted"); }, onError: (e) => toast.error(errMsg(e)) });
 }
+export function usePermanentDeleteSchedule() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id: string) => schedulesApi.permanentDelete(id), onSuccess: () => { qc.invalidateQueries({ queryKey: ["schedules"] }); toast.success("Schedule permanently deleted"); }, onError: (e) => toast.error(errMsg(e)) });
+}
 
 // ─── Missing hooks (Lab delete, Announcement CRUD, Payroll status) ──
 export function useDeleteLabTest() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (id: string) => labApi.delete(id), onSuccess: () => { qc.invalidateQueries({ queryKey: ["lab-tests"] }); toast.success("Lab test deleted"); }, onError: (e) => toast.error(errMsg(e)) });
+}
+export function usePermanentDeleteLabTest() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id: string) => labApi.permanentDelete(id), onSuccess: () => { qc.invalidateQueries({ queryKey: ["lab-tests"] }); toast.success("Lab test permanently deleted"); }, onError: (e) => toast.error(errMsg(e)) });
 }
 export function useUpdateAnnouncement() {
   const qc = useQueryClient();
@@ -190,6 +214,10 @@ export function useUpdateAnnouncement() {
 export function useDeleteAnnouncement() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (id: string) => announcementsApi.delete(id), onSuccess: () => { qc.invalidateQueries({ queryKey: ["announcements"] }); toast.success("Announcement deleted"); }, onError: (e) => toast.error(errMsg(e)) });
+}
+export function usePermanentDeleteAnnouncement() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id: string) => announcementsApi.permanentDelete(id), onSuccess: () => { qc.invalidateQueries({ queryKey: ["announcements"] }); toast.success("Announcement permanently deleted"); }, onError: (e) => toast.error(errMsg(e)) });
 }
 export function useUpdatePayrollStatus() {
   const qc = useQueryClient();
@@ -236,6 +264,10 @@ export function usePayBilling() {
 export function useDeleteBilling() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (id: string) => billingApi.delete(id), onSuccess: () => { qc.invalidateQueries({ queryKey: ["billing"] }); toast.success("Invoice deleted"); }, onError: (e) => toast.error(errMsg(e)) });
+}
+export function usePermanentDeleteBilling() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id: string) => billingApi.permanentDelete(id), onSuccess: () => { qc.invalidateQueries({ queryKey: ["billing"] }); toast.success("Invoice permanently deleted"); }, onError: (e) => toast.error(errMsg(e)) });
 }
 
 // ─── Medicine Administration (Discrepancy Tracking) ─────────

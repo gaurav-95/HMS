@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useBilling, useCreateBilling, usePayBilling, useDeleteBilling } from "@/hooks/queries";
+import { useBilling, useCreateBilling, usePayBilling, useDeleteBilling, usePermanentDeleteBilling } from "@/hooks/queries";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, Plus, Search, IndianRupee, CreditCard, Trash2 } from "lucide-react";
 import { ExportButtons } from "@/components/ExportButtons";
+import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 
 const today = new Date().toISOString().split("T")[0];
 const PAYMENT_METHODS = ["Cash", "Card", "UPI", "Insurance"] as const;
@@ -35,10 +36,11 @@ interface LineItem { description: string; amount: number; }
 
 export default function BillingPage() {
   const { data: bills = [], isLoading } = useBilling();
-  const { hasPermission, user } = useAuth();
+  const { hasPermission, hasAnyPermission, user } = useAuth();
   const createBill = useCreateBilling();
   const payBill = usePayBilling();
   const deleteBill = useDeleteBilling();
+  const permanentDeleteBill = usePermanentDeleteBilling();
 
   const all = bills as any[];
   const [search, setSearch] = useState("");
@@ -48,6 +50,10 @@ export default function BillingPage() {
   const [payTarget, setPayTarget] = useState<any>(null);
   const [payAmount, setPayAmount] = useState(0);
   const [payMethod, setPayMethod] = useState("Cash");
+  const [deletingBill, setDeletingBill] = useState<any | null>(null);
+  const canWrite = hasAnyPermission(["billing:write", "payroll:write"]);
+  const canDelete = hasAnyPermission(["billing:delete", "payroll:write"]);
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
 
   // Form state
   const [patientName, setPatientName] = useState("");
@@ -129,7 +135,7 @@ export default function BillingPage() {
             columns={["Invoice #", "Patient", "Subtotal", "Discount", "Tax", "Total", "Paid", "Status", "Date"]}
             rows={filtered.map((b: any) => [b.invoiceNumber, b.patientName, b.subtotal, b.discount, b.tax, b.totalAmount, b.paidAmount, b.status, b.createdDate])}
           />
-          {hasPermission("payroll:write") && (
+          {canWrite && (
             <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-1" /> New Invoice</Button>
           )}
         </div>
@@ -200,13 +206,13 @@ export default function BillingPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right space-x-1">
-                    {(b.status === "Unpaid" || b.status === "Partial") && hasPermission("payroll:write") && (
+                    {(b.status === "Unpaid" || b.status === "Partial") && canWrite && (
                       <Button size="sm" variant="outline" onClick={() => openPay(b)}>
                         <CreditCard className="h-3 w-3 mr-1" /> Pay
                       </Button>
                     )}
-                    {hasPermission("payroll:write") && (
-                      <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteBill.mutate(b.id)}>
+                    {canDelete && (
+                      <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDeletingBill(b)}>
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     )}
@@ -289,6 +295,18 @@ export default function BillingPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation */}
+      <DeleteConfirmationDialog
+        open={!!deletingBill}
+        onClose={() => setDeletingBill(null)}
+        onConfirm={() => { deleteBill.mutate(deletingBill?.id); setDeletingBill(null); }}
+        entityName={`Invoice ${deletingBill?.invoiceNumber || ""} (${deletingBill?.patientName || ""})`}
+        entityType="invoice"
+        isSuperAdmin={isSuperAdmin}
+        onPermanentDelete={() => { permanentDeleteBill.mutate(deletingBill?.id); setDeletingBill(null); }}
+        isPending={deleteBill.isPending || permanentDeleteBill.isPending}
+      />
     </div>
   );
 }

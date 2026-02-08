@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useStaff, useCreateStaff, useUpdateStaff } from "@/hooks/queries";
+import { useStaff, useCreateStaff, useUpdateStaff, useDeleteStaff, usePermanentDeleteStaff } from "@/hooks/queries";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,23 +9,29 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, Phone, Mail, Edit, Upload, Loader2 } from "lucide-react";
+import { Search, Plus, Phone, Mail, Edit, Upload, Loader2, Trash2 } from "lucide-react";
 import { getInitials, formatCurrency } from "@/lib/utils";
 import { DEPARTMENTS } from "@/constants";
 import { ExportButtons } from "@/components/ExportButtons";
 import { useNavigate } from "react-router-dom";
+import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 import type { Staff, StaffRole, Department, SalaryType } from "@/types";
 
 export default function StaffDirectoryPage() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
   const navigate = useNavigate();
   const { data: staff = [], isLoading } = useStaff();
   const createStaff = useCreateStaff();
   const updateStaff = useUpdateStaff();
+  const deleteStaff = useDeleteStaff();
+  const permanentDeleteStaff = usePermanentDeleteStaff();
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState<any | null>(null);
+  const [deletingStaff, setDeletingStaff] = useState<any | null>(null);
   const canWrite = hasPermission("staff:write");
+  const canDelete = hasPermission("staff:delete");
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
 
   const filteredStaff = (staff as any[]).filter(
     (s: any) =>
@@ -139,6 +145,11 @@ export default function StaffDirectoryPage() {
                   <Button variant="outline" size="sm" onClick={() => navigate("/documents")} className="gap-1">
                     <Upload size={14} /> Docs
                   </Button>
+                  {canDelete && (
+                    <Button variant="outline" size="sm" className="gap-1 text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setDeletingStaff(member)}>
+                      <Trash2 size={14} />
+                    </Button>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -164,6 +175,18 @@ export default function StaffDirectoryPage() {
           defaultValues={editingStaff}
         />
       )}
+
+      {/* Delete Confirmation */}
+      <DeleteConfirmationDialog
+        open={!!deletingStaff}
+        onClose={() => setDeletingStaff(null)}
+        onConfirm={() => { deleteStaff.mutate(deletingStaff?.id); setDeletingStaff(null); }}
+        entityName={deletingStaff?.name || ""}
+        entityType="staff member"
+        isSuperAdmin={isSuperAdmin}
+        onPermanentDelete={() => { permanentDeleteStaff.mutate(deletingStaff?.id); setDeletingStaff(null); }}
+        isPending={deleteStaff.isPending || permanentDeleteStaff.isPending}
+      />
     </div>
   );
 }

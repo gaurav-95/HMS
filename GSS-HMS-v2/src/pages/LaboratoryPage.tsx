@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { LAB_CATEGORIES } from "@/constants";
 import { useAuth } from "@/context/AuthContext";
-import { useLabTests, useCreateLabTest } from "@/hooks/queries";
+import { useLabTests, useCreateLabTest, useUpdateLabTest, useDeleteLabTest, usePermanentDeleteLabTest } from "@/hooks/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,19 +10,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, Loader2 } from "lucide-react";
+import { Search, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { ExportButtons } from "@/components/ExportButtons";
+import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 import { formatDate } from "@/lib/utils";
 import type { LabTest, LabCategory } from "@/types";
 
 export default function LaboratoryPage() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
   const { data: tests = [], isLoading } = useLabTests();
   const createLabTest = useCreateLabTest();
+  const updateLabTest = useUpdateLabTest();
+  const deleteLabTest = useDeleteLabTest();
+  const permanentDeleteLabTest = usePermanentDeleteLabTest();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("All");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingTest, setEditingTest] = useState<any | null>(null);
+  const [deletingTest, setDeletingTest] = useState<any | null>(null);
   const canWrite = hasPermission("lab:write");
+  const canDelete = hasPermission("lab:delete");
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
 
   const allTests = tests as any[];
   const filteredTests = allTests.filter((t: any) => {
@@ -43,6 +51,12 @@ export default function LaboratoryPage() {
   const handleAddTest = (newTest: Partial<LabTest>) => {
     createLabTest.mutate(newTest as Record<string, unknown>);
     setShowAddModal(false);
+  };
+
+  const handleEditTest = (updatedTest: Partial<LabTest>) => {
+    if (!editingTest) return;
+    updateLabTest.mutate({ id: editingTest.id, ...updatedTest });
+    setEditingTest(null);
   };
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -120,6 +134,7 @@ export default function LaboratoryPage() {
                 <TableHead>Priority</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Date</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -146,11 +161,23 @@ export default function LaboratoryPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{formatDate(test.requestDate)}</TableCell>
+                  <TableCell className="text-right space-x-1">
+                    {canWrite && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingTest(test)}>
+                        <Pencil size={14} />
+                      </Button>
+                    )}
+                    {canDelete && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeletingTest(test)}>
+                        <Trash2 size={14} />
+                      </Button>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
               {filteredTests.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No tests found
                   </TableCell>
                 </TableRow>
@@ -162,30 +189,55 @@ export default function LaboratoryPage() {
 
       {/* Add Test Modal */}
       <AddTestModal open={showAddModal} onClose={() => setShowAddModal(false)} onSubmit={handleAddTest} />
+
+      {/* Edit Test Modal */}
+      {editingTest && (
+        <AddTestModal
+          open={!!editingTest}
+          onClose={() => setEditingTest(null)}
+          onSubmit={handleEditTest}
+          defaultValues={editingTest}
+          title="Edit Lab Test"
+        />
+      )}
+
+      {/* Delete Confirmation */}
+      <DeleteConfirmationDialog
+        open={!!deletingTest}
+        onClose={() => setDeletingTest(null)}
+        onConfirm={() => { deleteLabTest.mutate(deletingTest?.id); setDeletingTest(null); }}
+        entityName={`${deletingTest?.testName} (${deletingTest?.patientName})`}
+        entityType="lab test"
+        isSuperAdmin={isSuperAdmin}
+        onPermanentDelete={() => { permanentDeleteLabTest.mutate(deletingTest?.id); setDeletingTest(null); }}
+        isPending={deleteLabTest.isPending || permanentDeleteLabTest.isPending}
+      />
     </div>
   );
 }
 
 // ── Add Test Modal ─────────────────────────────────────────
 
-function AddTestModal({ open, onClose, onSubmit }: { open: boolean; onClose: () => void; onSubmit: (data: Partial<LabTest>) => void }) {
-  const [patientName, setPatientName] = useState("");
-  const [testName, setTestName] = useState("");
-  const [category, setCategory] = useState<LabCategory>("Biochemistry");
-  const [priority, setPriority] = useState<"Normal" | "Urgent" | "STAT">("Normal");
+function AddTestModal({ open, onClose, onSubmit, defaultValues, title = "Order New Test" }: { open: boolean; onClose: () => void; onSubmit: (data: Partial<LabTest>) => void; defaultValues?: any; title?: string }) {
+  const [patientName, setPatientName] = useState(defaultValues?.patientName || "");
+  const [testName, setTestName] = useState(defaultValues?.testName || "");
+  const [category, setCategory] = useState<LabCategory>(defaultValues?.category || "Biochemistry");
+  const [priority, setPriority] = useState<"Normal" | "Urgent" | "STAT">(defaultValues?.priority || "Normal");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({ patientName, testName, category, priority });
-    setPatientName("");
-    setTestName("");
+    if (!defaultValues) {
+      setPatientName("");
+      setTestName("");
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Order New Test</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -220,7 +272,7 @@ function AddTestModal({ open, onClose, onSubmit }: { open: boolean; onClose: () 
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit">Order Test</Button>
+            <Button type="submit">{defaultValues ? "Update Test" : "Order Test"}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

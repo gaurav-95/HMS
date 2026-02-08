@@ -1,14 +1,15 @@
 import { Router } from "express";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { db } from "../db/index";
 import { patients } from "../db/schema";
-import { requireAuth, requirePermission } from "../middleware/auth";
+import { requireAuth, requirePermission, type AuthRequest } from "../middleware/auth";
 
 const router = Router();
 
 router.get("/", requireAuth, requirePermission("patient:read"), (_req, res) => {
-  res.json(db.select().from(patients).all());
+  const all = db.select().from(patients).where(eq(patients.isActive, true)).all();
+  res.json(all);
 });
 
 router.get("/:id", requireAuth, requirePermission("patient:read"), (req, res) => {
@@ -32,8 +33,13 @@ router.put("/:id", requireAuth, requirePermission("patient:write"), (req, res) =
   res.json(updated);
 });
 
-router.delete("/:id", requireAuth, requirePermission("patient:delete"), (req, res) => {
-  db.delete(patients).where(eq(patients.id, req.params.id)).run();
+router.delete("/:id", requireAuth, requirePermission("patient:delete"), (req: AuthRequest, res) => {
+  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
+  if (permanent) {
+    db.delete(patients).where(eq(patients.id, req.params.id)).run();
+  } else {
+    db.update(patients).set({ isActive: false, updatedAt: new Date().toISOString() }).where(eq(patients.id, req.params.id)).run();
+  }
   res.status(204).send();
 });
 

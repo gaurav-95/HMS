@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useUsers, useCreateUser, useUpdateUser } from "@/hooks/queries";
+import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, usePermanentDeleteUser } from "@/hooks/queries";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,20 +9,26 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, Loader2 } from "lucide-react";
+import { Plus, Edit, Loader2, Trash2 } from "lucide-react";
 import { getInitials } from "@/lib/utils";
+import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 import { ROLE_LABELS, type UserRole, type SystemUser } from "@/types";
 
 const ALL_ROLES = Object.entries(ROLE_LABELS) as [UserRole, string][];
 
 export default function UserManagementPage() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
   const { data: users = [], isLoading } = useUsers();
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
+  const deleteUser = useDeleteUser();
+  const permanentDeleteUser = usePermanentDeleteUser();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingUser, setEditingUser] = useState<any | null>(null);
+  const [deletingUser, setDeletingUser] = useState<any | null>(null);
   const canWrite = hasPermission("users:write");
+  const canDelete = hasPermission("users:delete");
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
 
   const allUsers = users as any[];
 
@@ -75,9 +81,16 @@ export default function UserManagementPage() {
                 </div>
               </div>
               {canWrite && (
-                <Button variant="outline" size="sm" onClick={() => setEditingUser(u)} className="mt-4 w-full gap-2">
-                  <Edit size={14} /> Edit
-                </Button>
+                <div className="mt-4 flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setEditingUser(u)} className="flex-1 gap-2">
+                    <Edit size={14} /> Edit
+                  </Button>
+                  {canDelete && u.id !== user?.id && (
+                    <Button variant="outline" size="sm" className="gap-1 text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setDeletingUser(u)}>
+                      <Trash2 size={14} />
+                    </Button>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>
@@ -95,6 +108,18 @@ export default function UserManagementPage() {
           defaultValues={editingUser}
         />
       )}
+
+      {/* Delete Confirmation */}
+      <DeleteConfirmationDialog
+        open={!!deletingUser}
+        onClose={() => setDeletingUser(null)}
+        onConfirm={() => { deleteUser.mutate(deletingUser?.id); setDeletingUser(null); }}
+        entityName={deletingUser?.name || ""}
+        entityType="user"
+        isSuperAdmin={isSuperAdmin}
+        onPermanentDelete={() => { permanentDeleteUser.mutate(deletingUser?.id); setDeletingUser(null); }}
+        isPending={deleteUser.isPending || permanentDeleteUser.isPending}
+      />
     </div>
   );
 }
