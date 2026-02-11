@@ -46,58 +46,27 @@ if !SYS_MAJOR! GEQ 20 (
 
 :download_node
 echo.
-echo  ----------------------------------------------------------
-echo   Downloading Node.js 22 LTS (portable) ...
-echo   This is a one-time download (~30 MB). Please wait.
-echo  ----------------------------------------------------------
+echo  ==========================================================
+echo   [ERROR] Node.js runtime not found!
 echo.
-
-set "NODE_URL=https://nodejs.org/dist/v22.15.0/node-v22.15.0-win-x64.zip"
-set "NODE_ZIP=%~dp0runtime\node-portable.zip"
-set "NODE_DIR=%~dp0runtime"
-
-if not exist "%NODE_DIR%" mkdir "%NODE_DIR%"
-
-REM Download using PowerShell
-echo  Downloading from nodejs.org ...
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-    "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; " ^
-    "$ProgressPreference = 'SilentlyContinue'; " ^
-    "try { " ^
-    "  Invoke-WebRequest -Uri '%NODE_URL%' -OutFile '%NODE_ZIP%' -UseBasicParsing; " ^
-    "  Write-Host '  Download complete.' " ^
-    "} catch { " ^
-    "  Write-Host ('  ERROR: ' + $_.Exception.Message); " ^
-    "  exit 1 " ^
-    "}"
-
-if %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo  Download failed. Check your internet connection, or
-    echo  install Node.js v20+ manually from https://nodejs.org
-    pause
-    exit /b 1
-)
-
-REM Extract
-echo  Extracting...
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-    "$ProgressPreference = 'SilentlyContinue'; " ^
-    "Expand-Archive -Path '%NODE_ZIP%' -DestinationPath '%NODE_DIR%\temp' -Force; " ^
-    "$inner = Get-ChildItem '%NODE_DIR%\temp' -Directory | Select-Object -First 1; " ^
-    "Copy-Item (Join-Path $inner.FullName '*') '%NODE_DIR%\' -Recurse -Force; " ^
-    "Remove-Item '%NODE_DIR%\temp' -Recurse -Force; " ^
-    "Remove-Item '%NODE_ZIP%' -Force; " ^
-    "Write-Host '  Done.'"
-
-if not exist "%PORTABLE_NODE%" (
-    echo  [ERROR] Extraction failed. Please install Node.js manually.
-    pause
-    exit /b 1
-)
-
-echo  [OK] Node.js 22 LTS installed to runtime folder
-set "NODE_EXE=%PORTABLE_NODE%"
+echo   The portable Node.js runtime is missing from:
+echo     %~dp0runtime\node.exe
+echo.
+echo   This application is designed to run fully offline.
+echo   The "runtime" folder with Node.js should have been
+echo   included with the application.
+echo.
+echo   To fix this:
+echo     1. Download Node.js 22 LTS (Windows x64 .zip) from:
+echo        https://nodejs.org/dist/v22.15.0/node-v22.15.0-win-x64.zip
+echo     2. Extract the ZIP contents into the "runtime" folder
+echo        so that runtime\node.exe exists.
+echo.
+echo   Or install Node.js v20+ system-wide from https://nodejs.org
+echo  ==========================================================
+echo.
+pause
+exit /b 1
 
 :check_version
 for /f "delims=" %%v in ('"%NODE_EXE%" -v 2^>nul') do echo  [OK] Node.js version: %%v

@@ -12,6 +12,13 @@ export default defineConfig(async () => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Use relative asset paths so the app works regardless of base URL
+    assetsDir: "assets",
+    // Remove crossorigin attribute from HTML tags — avoids CORS issues in
+    // standalone / Edge --app mode where the server may not send proper headers.
+    crossOriginLoading: false,
+  },
   clearScreen: false,
   server: {
     port: 1420,

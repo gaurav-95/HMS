@@ -18,8 +18,16 @@ if exist "%PORTABLE_NODE%" (
 ) else (
     where node >nul 2>&1
     if %ERRORLEVEL% NEQ 0 (
-        echo  [ERROR] Node.js not found. Run "Launch GSS Hospital Pro.bat"
-        echo          first — it will download Node.js automatically.
+        echo  [ERROR] Node.js not found!
+        echo.
+        echo  The portable Node.js runtime is missing from:
+        echo    %~dp0runtime\node.exe
+        echo.
+        echo  To fix: download Node.js 22 LTS ^(Windows x64 .zip^) from
+        echo    https://nodejs.org/dist/v22.15.0/node-v22.15.0-win-x64.zip
+        echo  and extract contents into the "runtime" folder.
+        echo.
+        echo  Or install Node.js v20+ system-wide from https://nodejs.org
         pause
         exit /b 1
     )

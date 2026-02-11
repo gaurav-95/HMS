@@ -74,7 +74,16 @@ const frontendDir = fs.existsSync(DIST_DIR) ? DIST_DIR
   : null;
 
 if (frontendDir) {
-  app.use(express.static(frontendDir));
+  app.use(express.static(frontendDir, {
+    // Ensure correct MIME types for all static assets
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith(".css")) {
+        res.setHeader("Content-Type", "text/css; charset=UTF-8");
+      } else if (filePath.endsWith(".js")) {
+        res.setHeader("Content-Type", "application/javascript; charset=UTF-8");
+      }
+    },
+  }));
   // SPA fallback: serve index.html for any non-API route (Express 5 syntax)
   app.get("/{*splat}", (_req, res) => {
     res.sendFile(path.join(frontendDir, "index.html"));

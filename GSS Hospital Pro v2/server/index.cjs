@@ -63234,7 +63234,16 @@ var DIST_DIR_ALT = import_path2.default.resolve(__dirname_esm2, "..", "dist");
 var DIST_DIR_RES = import_path2.default.resolve(__dirname_esm2, "..", "resources", "dist");
 var frontendDir = import_fs2.default.existsSync(DIST_DIR) ? DIST_DIR : import_fs2.default.existsSync(DIST_DIR_RES) ? DIST_DIR_RES : import_fs2.default.existsSync(DIST_DIR_ALT) ? DIST_DIR_ALT : null;
 if (frontendDir) {
-  app.use(import_express19.default.static(frontendDir));
+  app.use(import_express19.default.static(frontendDir, {
+    // Ensure correct MIME types for all static assets
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith(".css")) {
+        res.setHeader("Content-Type", "text/css; charset=UTF-8");
+      } else if (filePath.endsWith(".js")) {
+        res.setHeader("Content-Type", "application/javascript; charset=UTF-8");
+      }
+    }
+  }));
   app.get("/{*splat}", (_req, res) => {
     res.sendFile(import_path2.default.join(frontendDir, "index.html"));
   });
