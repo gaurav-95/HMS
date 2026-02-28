@@ -116,6 +116,10 @@ export function useCreateAttendance() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (d: Record<string, unknown>) => attendanceApi.create(d).then((r) => r.data), onSuccess: () => { qc.invalidateQueries({ queryKey: ["attendance"] }); toast.success("Attendance recorded"); }, onError: (e) => toast.error(errMsg(e)) });
 }
+export function useUpdateAttendance() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: ({ id, ...d }: Record<string, unknown> & { id: string }) => attendanceApi.update(id, d).then((r) => r.data), onSuccess: () => { qc.invalidateQueries({ queryKey: ["attendance"] }); toast.success("Attendance updated"); }, onError: (e) => toast.error(errMsg(e)) });
+}
 
 // ─── Leave ──────────────────────────────────────────────────
 export function useLeaveRequests() {
@@ -222,6 +226,14 @@ export function usePermanentDeleteAnnouncement() {
 export function useUpdatePayrollStatus() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: ({ id, status }: { id: string; status: string }) => payrollApi.updateStatus(id, status).then((r) => r.data), onSuccess: () => { qc.invalidateQueries({ queryKey: ["payroll"] }); toast.success("Payroll status updated"); }, onError: (e) => toast.error(errMsg(e)) });
+}
+export function useDeletePayroll() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id: string) => payrollApi.delete(id), onSuccess: () => { qc.invalidateQueries({ queryKey: ["payroll"] }); toast.success("Payroll entry deleted"); }, onError: (e) => toast.error(errMsg(e)) });
+}
+export function useCancelLeave() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id: string) => leaveApi.cancel(id).then((r) => r.data), onSuccess: () => { qc.invalidateQueries({ queryKey: ["leave"] }); toast.success("Leave request cancelled"); }, onError: (e) => toast.error(errMsg(e)) });
 }
 
 // ─── Pharmacy ───────────────────────────────────────────────

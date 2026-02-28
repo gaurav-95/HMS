@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useStaff, useSchedules } from "@/hooks/queries";
 import { DEPARTMENTS } from "@/constants";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { CalendarClock, Loader2 } from "lucide-react";
+import { CalendarClock, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
@@ -24,22 +25,48 @@ function getShift(startTime: string): string {
   return "Night";
 }
 
+function getMonday(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function addDays(date: Date, days: number): Date {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+function formatShortDate(date: Date): string {
+  return date.toLocaleDateString("en-IN", { month: "short", day: "numeric" });
+}
+
 export default function RosterPage() {
   const navigate = useNavigate();
   const { data: allStaff = [], isLoading: ls } = useStaff();
   const { data: schedules = [], isLoading: lsc } = useSchedules();
   const [deptFilter, setDeptFilter] = useState("All");
+  const [weekOffset, setWeekOffset] = useState(0);
 
   const staff = allStaff as any[];
   const allSchedules = schedules as any[];
+
+  const currentMonday = useMemo(() => addDays(getMonday(new Date()), weekOffset * 7), [weekOffset]);
+  const weekDates = useMemo(() => DAYS.map((_, i) => addDays(currentMonday, i)), [currentMonday]);
+  const weekLabel = `${formatShortDate(weekDates[0])} – ${formatShortDate(weekDates[6])}`;
+  const isCurrentWeek = weekOffset === 0;
 
   const filteredSchedules = deptFilter === "All"
     ? allSchedules
     : allSchedules.filter((s: any) => s.department === deptFilter);
 
   // Build week grid: day → list of schedules
-  const weekGrid = DAYS.map((day) => ({
+  const weekGrid = DAYS.map((day, i) => ({
     day,
+    date: weekDates[i],
     entries: filteredSchedules.filter((s: any) => s.dayOfWeek === day),
   }));
 
@@ -52,18 +79,38 @@ export default function RosterPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold">Duty Roster</h1>
           <p className="text-muted-foreground">Weekly shift scheduling and department-wise roster management</p>
         </div>
-        <Select value={deptFilter} onValueChange={setDeptFilter}>
-          <SelectTrigger className="w-52"><SelectValue placeholder="Filter department" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="All">All Departments</SelectItem>
-            {DEPARTMENTS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Select value={deptFilter} onValueChange={setDeptFilter}>
+            <SelectTrigger className="w-52"><SelectValue placeholder="Filter department" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">All Departments</SelectItem>
+              {DEPARTMENTS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Week Navigation */}
+      <div className="flex items-center justify-center gap-4">
+        <Button variant="outline" size="icon" onClick={() => setWeekOffset((w) => w - 1)}>
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <div className="text-center min-w-[200px]">
+          <p className="font-semibold">{weekLabel}</p>
+          {!isCurrentWeek && (
+            <button className="text-xs text-primary hover:underline" onClick={() => setWeekOffset(0)}>
+              Jump to current week
+            </button>
+          )}
+        </div>
+        <Button variant="outline" size="icon" onClick={() => setWeekOffset((w) => w + 1)}>
+          <ChevronRight className="h-4 w-4" />
+        </Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-4">
@@ -75,33 +122,40 @@ export default function RosterPage() {
 
       {/* Weekly Grid */}
       <Card>
-        <CardHeader><CardTitle className="flex items-center gap-2"><CalendarClock className="h-5 w-5" /> Weekly Roster</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="flex items-center gap-2"><CalendarClock className="h-5 w-5" /> Weekly Roster — {weekLabel}</CardTitle></CardHeader>
         <CardContent className="p-0">
           <div className="grid grid-cols-7 border-b">
-            {DAYS.map((day) => (
-              <div key={day} className="px-3 py-2.5 text-center text-sm font-semibold border-r last:border-r-0 bg-muted/30">
-                {day.slice(0, 3)}
-              </div>
-            ))}
+            {weekGrid.map(({ day, date }) => {
+              const isToday = date.toDateString() === new Date().toDateString();
+              return (
+                <div key={day} className={`px-3 py-2.5 text-center text-sm font-semibold border-r last:border-r-0 ${isToday ? "bg-primary/10 text-primary" : "bg-muted/30"}`}>
+                  <div>{day.slice(0, 3)}</div>
+                  <div className="text-xs font-normal text-muted-foreground">{formatShortDate(date)}</div>
+                </div>
+              );
+            })}
           </div>
           <div className="grid grid-cols-7 min-h-[320px]">
-            {weekGrid.map(({ day, entries }) => (
-              <div key={day} className="border-r last:border-r-0 p-2 space-y-1.5">
-                {entries.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center pt-8">No shifts</p>
-                )}
-                {entries.map((e: any) => {
-                  const shift = getShift(e.startTime);
-                  return (
-                    <div key={e.id} className={`rounded-md px-2 py-1.5 text-xs ${SHIFTS[shift]?.color || "bg-muted"}`}>
-                      <p className="font-medium truncate">{e.doctorName}</p>
-                      <p className="opacity-75">{e.startTime}–{e.endTime}</p>
-                      <p className="opacity-60 truncate">{e.department}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+            {weekGrid.map(({ day, date, entries }) => {
+              const isToday = date.toDateString() === new Date().toDateString();
+              return (
+                <div key={day} className={`border-r last:border-r-0 p-2 space-y-1.5 ${isToday ? "bg-primary/5" : ""}`}>
+                  {entries.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center pt-8">No shifts</p>
+                  )}
+                  {entries.map((e: any) => {
+                    const shift = getShift(e.startTime);
+                    return (
+                      <div key={e.id} className={`rounded-md px-2 py-1.5 text-xs ${SHIFTS[shift]?.color || "bg-muted"}`}>
+                        <p className="font-medium truncate">{e.doctorName}</p>
+                        <p className="opacity-75">{e.startTime}–{e.endTime}</p>
+                        <p className="opacity-60 truncate">{e.department}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
@@ -138,7 +192,7 @@ export default function RosterPage() {
                     <TableCell><Badge className={`${SHIFTS[shift]?.color || ""} border-0`}>{shift}</Badge></TableCell>
                     <TableCell>{s.startTime} – {s.endTime}</TableCell>
                     <TableCell>{s.maxPatients}</TableCell>
-                    <TableCell><Badge variant={s.isActive ? "success" : "secondary"}>{s.isActive ? "Active" : "Inactive"}</Badge></TableCell>
+                    <TableCell><Badge variant={s.isActive !== false ? "success" : "secondary"}>{s.isActive !== false ? "Active" : "Inactive"}</Badge></TableCell>
                   </TableRow>
                 );
               })}

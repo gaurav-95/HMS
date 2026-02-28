@@ -62750,6 +62750,13 @@ router9.patch("/:id/status", requireAuth, requirePermission("leave:approve"), (r
   db.update(leaveRequests).set({ status, approvedBy: req.user.name }).where(eq(leaveRequests.id, req.params.id)).run();
   res.json(db.select().from(leaveRequests).where(eq(leaveRequests.id, req.params.id)).get());
 });
+router9.patch("/:id/cancel", requireAuth, requirePermission("leave:apply"), (req, res) => {
+  const record = db.select().from(leaveRequests).where(eq(leaveRequests.id, req.params.id)).get();
+  if (!record) return res.status(404).json({ error: "Leave request not found" });
+  if (record.status !== "Pending") return res.status(400).json({ error: "Only pending requests can be cancelled" });
+  db.update(leaveRequests).set({ status: "Cancelled" }).where(eq(leaveRequests.id, req.params.id)).run();
+  res.json(db.select().from(leaveRequests).where(eq(leaveRequests.id, req.params.id)).get());
+});
 var leave_default = router9;
 
 // src-server/routes/payroll.ts
@@ -62767,6 +62774,13 @@ router10.post("/", requireAuth, requirePermission("payroll:write"), (req, res) =
 router10.patch("/:id/status", requireAuth, requirePermission("payroll:approve"), (req, res) => {
   db.update(payrollRecords).set({ status: req.body.status }).where(eq(payrollRecords.id, req.params.id)).run();
   res.json(db.select().from(payrollRecords).where(eq(payrollRecords.id, req.params.id)).get());
+});
+router10.delete("/:id", requireAuth, requirePermission("payroll:write"), (req, res) => {
+  const record = db.select().from(payrollRecords).where(eq(payrollRecords.id, req.params.id)).get();
+  if (!record) return res.status(404).json({ error: "Payroll record not found" });
+  if (record.status !== "Draft") return res.status(400).json({ error: "Only draft entries can be deleted" });
+  db.delete(payrollRecords).where(eq(payrollRecords.id, req.params.id)).run();
+  res.json({ success: true });
 });
 var payroll_default = router10;
 
@@ -62894,7 +62908,7 @@ router13.put("/:id", requireAuth, requirePermission("schedule:write"), (req, res
   if (!updated) return res.status(404).json({ error: "Schedule not found" });
   res.json(updated);
 });
-router13.delete("/:id", requireAuth, requirePermission("schedule:write"), (req, res) => {
+router13.delete("/:id", requireAuth, requirePermission("schedule:delete"), (req, res) => {
   const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
   if (permanent) {
     db.delete(doctorSchedules).where(eq(doctorSchedules.id, req.params.id)).run();

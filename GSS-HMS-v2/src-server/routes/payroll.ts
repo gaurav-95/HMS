@@ -24,4 +24,13 @@ router.patch("/:id/status", requireAuth, requirePermission("payroll:approve"), (
   res.json(db.select().from(payrollRecords).where(eq(payrollRecords.id, req.params.id)).get());
 });
 
+/** DELETE /api/payroll/:id – delete draft payroll entry */
+router.delete("/:id", requireAuth, requirePermission("payroll:write"), (req, res) => {
+  const record = db.select().from(payrollRecords).where(eq(payrollRecords.id, req.params.id)).get() as any;
+  if (!record) return res.status(404).json({ error: "Payroll record not found" });
+  if (record.status !== "Draft") return res.status(400).json({ error: "Only draft entries can be deleted" });
+  db.delete(payrollRecords).where(eq(payrollRecords.id, req.params.id)).run();
+  res.json({ success: true });
+});
+
 export default router;

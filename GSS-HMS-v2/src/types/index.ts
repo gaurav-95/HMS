@@ -5,31 +5,49 @@ export type Department =
   | "Pediatrics"
   | "Orthopedics"
   | "General OPD"
+  | "General Medicine"
   | "IPD - General Ward"
   | "Ayush"
   | "ICU"
+  | "Emergency"
   | "Radiology"
   | "Laboratory"
   | "Administration"
   | "Accounts"
   | "Insurance"
-  | "Pharmacy";
+  | "Pharmacy"
+  | "ENT"
+  | "Dermatology"
+  | "Ophthalmology"
+  | "Pathology"
+  | "Gynecology"
+  | "Front Desk"
+  | "Security"
+  | "Finance"
+  | "Nursing";
 
 export type StaffRole =
   | "Consultant"
   | "RMO"
+  | "Doctor"
   | "Staff Nurse"
   | "Sr. Nurse"
   | "Jr. Nurse"
+  | "Nurse"
   | "Paramedic"
   | "Administrative"
   | "Technician"
+  | "Lab Technician"
   | "Lab In-charge"
   | "Receptionist"
   | "Accountant"
+  | "Pharmacist"
+  | "Security"
+  | "Driver"
+  | "Housekeeping"
   | "Metron";
 
-export type NursingClassification = "BSc Nursing" | "GN Nursing" | "BNF";
+export type NursingClassification = "BSc Nursing" | "GN Nursing" | "BNF" | "BSc" | "GNM" | "ANM";
 
 export type SalaryType = "Fixed" | "Shift-Based";
 
@@ -54,13 +72,13 @@ export type DocCategory =
   | "Insurance"
   | "Patient Records";
 
-export type LeaveType = "Casual" | "Sick" | "Earned" | "Maternity" | "Paternity";
+export type LeaveType = "Casual" | "Sick" | "Earned" | "Maternity" | "Paternity" | "Unpaid";
 
 export type LeaveStatus = "Pending" | "Approved" | "Rejected";
 
-export type AttendanceStatus = "Present" | "Absent" | "Half-Day" | "Leave";
+export type AttendanceStatus = "Present" | "Absent" | "Late" | "HalfDay" | "OnLeave";
 
-export type PayrollStatus = "Draft" | "Processed" | "Approved";
+export type PayrollStatus = "Draft" | "Processed" | "Approved" | "Paid";
 
 export type TokenStatus = "Waiting" | "In-Progress" | "Completed" | "Cancelled";
 
@@ -450,15 +468,12 @@ export interface PayrollRecord {
   id: string;
   staffId: string;
   staffName: string;
-  month: number;
-  year: number;
-  baseAmount: number;
-  deductions: Record<string, number>;
-  additions: Record<string, number>;
-  netAmount: number;
+  month: string;
+  baseSalary: number;
+  bonus: number;
+  deductions: number;
+  netSalary: number;
   status: PayrollStatus;
-  processedBy?: string;
-  createdAt: string;
 }
 
 export interface InventoryItem {

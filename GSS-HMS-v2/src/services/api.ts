@@ -105,12 +105,14 @@ export const leaveApi = {
   list: () => api.get("/leave"),
   apply: (data: Record<string, unknown>) => api.post("/leave", data),
   updateStatus: (id: string, status: string) => api.patch(`/leave/${id}/status`, { status }),
+  cancel: (id: string) => api.patch(`/leave/${id}/cancel`),
 };
 
 export const payrollApi = {
   list: () => api.get("/payroll"),
   create: (data: Record<string, unknown>) => api.post("/payroll", data),
   updateStatus: (id: string, status: string) => api.patch(`/payroll/${id}/status`, { status }),
+  delete: (id: string) => api.delete(`/payroll/${id}`),
 };
 
 export const inventoryApi = {

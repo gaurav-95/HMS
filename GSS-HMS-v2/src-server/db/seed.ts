@@ -33,7 +33,7 @@ const userRecords = [
   { id: uuid(), email: "doctor2@gsshospital.com",      password: hash("password123"), name: "Dr. Vikram Rao",     role: "DOCTOR",       isActive: true, createdAt: now, updatedAt: now },
   { id: uuid(), email: "doctor3@gsshospital.com",      password: hash("password123"), name: "Dr. Meena Iyer",     role: "DOCTOR",       isActive: true, createdAt: now, updatedAt: now },
   { id: uuid(), email: "tech@gsshospital.com",         password: hash("password123"), name: "Lab Tech Priya",     role: "TECHNICIAN",   isActive: true, createdAt: now, updatedAt: now },
-  { id: uuid(), email: "nurse@gsshospital.com",        password: hash("password123"), name: "Sunita Yadav",       role: "NURSE",        isActive: true, createdAt: now, updatedAt: now },
+  { id: uuid(), email: "nurse@gsshospital.com",        password: hash("password123"), name: "Sunita Yadav",       role: "SR_NURSE",        isActive: true, createdAt: now, updatedAt: now },
   { id: uuid(), email: "pharmacist@gsshospital.com",   password: hash("password123"), name: "Deepak Joshi",       role: "PHARMACIST",   isActive: true, createdAt: now, updatedAt: now },
   { id: uuid(), email: "accountant@gsshospital.com",   password: hash("password123"), name: "Ramesh Gupta",       role: "ACCOUNTANT",   isActive: true, createdAt: now, updatedAt: now },
   { id: uuid(), email: "metron@gsshospital.com",       password: hash("password123"), name: "Metron Singh",       role: "METRON",       isActive: true, createdAt: now, updatedAt: now },

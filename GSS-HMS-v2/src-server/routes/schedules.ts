@@ -25,7 +25,7 @@ router.put("/:id", requireAuth, requirePermission("schedule:write"), (req, res) 
   res.json(updated);
 });
 
-router.delete("/:id", requireAuth, requirePermission("schedule:write"), (req: any, res) => {
+router.delete("/:id", requireAuth, requirePermission("schedule:delete"), (req: any, res) => {
   const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
   if (permanent) {
     db.delete(doctorSchedules).where(eq(doctorSchedules.id, req.params.id)).run();
