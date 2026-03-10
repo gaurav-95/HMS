@@ -4,7 +4,7 @@ import { db } from "../db/index";
 import {
   staff, patients, labTests, tokens, documents,
   announcements, attendanceRecords, certifications,
-  prescriptions, billingRecords, medicineAdministrations, doctorReviews,
+  prescriptions, billingRecords, medicineAdministrations,
 } from "../db/schema";
 import { requireAuth } from "../middleware/auth";
 

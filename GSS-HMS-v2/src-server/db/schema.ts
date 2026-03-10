@@ -23,10 +23,18 @@ export const staff = sqliteTable("staff", {
   phone: text("phone").notNull(),
   email: text("email").notNull(),
   joiningDate: text("joining_date").notNull(),
+  appointmentDate: text("appointment_date"),
   salaryType: text("salary_type").notNull(),
   baseSalary: real("base_salary").notNull(),
+  ctcAnnual: real("ctc_annual"),
   avatar: text("avatar"),
   nursingClassification: text("nursing_classification"),
+  category: text("category"),           // Admin | Clinical | Receptionist | Nurse | Technical
+  residentialAddress: text("residential_address"),
+  aadhaarDocPath: text("aadhaar_doc_path"),
+  photoPath: text("photo_path"),
+  terminationDate: text("termination_date"),
+  shiftInterval: text("shift_interval"),
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
@@ -148,11 +156,36 @@ export const payrollRecords = sqliteTable("payroll_records", {
   staffId: text("staff_id").notNull().references(() => staff.id),
   staffName: text("staff_name").notNull(),
   month: text("month").notNull(),
+  year: text("year"),
   baseSalary: real("base_salary").notNull(),
+  basicSalary: real("basic_salary"),
+  ta: real("ta").default(0),
+  conveyance: real("conveyance").default(0),
+  pf: real("pf").default(0),
+  tds: real("tds").default(0),
+  hra: real("hra").default(0),
   deductions: real("deductions").notNull().default(0),
   bonus: real("bonus").notNull().default(0),
   netSalary: real("net_salary").notNull(),
   status: text("status").notNull(), // Draft | Processed | Paid
+});
+
+// ─── Performance Evaluations ────────────────────────────────
+export const performanceEvaluations = sqliteTable("performance_evaluations", {
+  id: text("id").primaryKey(),
+  staffId: text("staff_id").notNull().references(() => staff.id),
+  staffName: text("staff_name").notNull(),
+  evaluatorId: text("evaluator_id"),
+  evaluationDate: text("evaluation_date").notNull(),
+  responsible: integer("responsible").notNull(),       // 1-5
+  engaged: integer("engaged").notNull(),               // 1-5
+  selfStarter: integer("self_starter").notNull(),      // 1-5
+  teamPlayer: integer("team_player").notNull(),        // 1-5
+  challenged: integer("challenged").notNull(),         // 1-5
+  employeeOriented: integer("employee_oriented").notNull(), // 1-5
+  overallScore: real("overall_score").notNull(),
+  comments: text("comments"),
+  period: text("period").notNull(),  // e.g. "Q1-2026", "2025-26"
 });
 
 // ─── Inventory ──────────────────────────────────────────────
@@ -232,22 +265,6 @@ export const medicineAdministrations = sqliteTable("medicine_administrations", {
   status: text("status").notNull(), // Administered | Flagged | Resolved
 });
 
-// ─── Doctor Reviews (Karma Score) ───────────────────────────
-export const doctorReviews = sqliteTable("doctor_reviews", {
-  id: text("id").primaryKey(),
-  doctorId: text("doctor_id").notNull().references(() => staff.id),
-  doctorName: text("doctor_name").notNull(),
-  patientName: text("patient_name").notNull(),
-  rating: integer("rating").notNull(),            // 1-5 stars
-  efficacyScore: integer("efficacy_score"),        // 1-10
-  costScore: integer("cost_score"),                // 1-10 (10 = most affordable)
-  reviewText: text("review_text"),
-  diagnosis: text("diagnosis"),
-  treatmentCost: real("treatment_cost"),
-  reviewDate: text("review_date").notNull(),
-  isResolved: integer("is_resolved", { mode: "boolean" }).notNull().default(false),
-});
-
 // ─── Billing ────────────────────────────────────────────────
 export const billingRecords = sqliteTable("billing_records", {
   id: text("id").primaryKey(),
@@ -265,4 +282,15 @@ export const billingRecords = sqliteTable("billing_records", {
   paidDate: text("paid_date"),
   createdBy: text("created_by").notNull().default("system"),
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+});
+
+// ─── Patient Documents ─────────────────────────────────────
+export const patientDocuments = sqliteTable("patient_documents", {
+  id: text("id").primaryKey(),
+  patientId: text("patient_id").notNull().references(() => patients.id),
+  docType: text("doc_type").notNull(), // Aadhar | PAN | Insurance | Prescription | Report | Other
+  fileName: text("file_name").notNull(),
+  mimeType: text("mime_type").notNull(),
+  fileData: text("file_data").notNull(), // base64-encoded
+  uploadedAt: text("uploaded_at").notNull(),
 });

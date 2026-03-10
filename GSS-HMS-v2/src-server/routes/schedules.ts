@@ -18,19 +18,21 @@ router.post("/", requireAuth, requirePermission("schedule:write"), (req, res) =>
 });
 
 router.put("/:id", requireAuth, requirePermission("schedule:write"), (req, res) => {
+  const schedId = String(req.params.id);
   const { id: _id, ...data } = req.body;
-  db.update(doctorSchedules).set(data).where(eq(doctorSchedules.id, req.params.id)).run();
-  const updated = db.select().from(doctorSchedules).where(eq(doctorSchedules.id, req.params.id)).get();
+  db.update(doctorSchedules).set(data).where(eq(doctorSchedules.id, schedId)).run();
+  const updated = db.select().from(doctorSchedules).where(eq(doctorSchedules.id, schedId)).get();
   if (!updated) return res.status(404).json({ error: "Schedule not found" });
   res.json(updated);
 });
 
 router.delete("/:id", requireAuth, requirePermission("schedule:delete"), (req: any, res) => {
+  const schedId = String(req.params.id);
   const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
   if (permanent) {
-    db.delete(doctorSchedules).where(eq(doctorSchedules.id, req.params.id)).run();
+    db.delete(doctorSchedules).where(eq(doctorSchedules.id, schedId)).run();
   } else {
-    db.update(doctorSchedules).set({ isActive: false }).where(eq(doctorSchedules.id, req.params.id)).run();
+    db.update(doctorSchedules).set({ isActive: false }).where(eq(doctorSchedules.id, schedId)).run();
   }
   res.status(204).send();
 });

@@ -80,6 +80,30 @@ export default function AttendancePage() {
   const absent = filtered.filter((a: any) => a.status === "Absent").length;
   const late = filtered.filter((a: any) => a.status === "Late").length;
 
+  // Monthly summary: aggregate attendance per staff member across all records
+  const [summaryMonth, setSummaryMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const monthlySummary = useMemo(() => {
+    if (!summaryMonth) return [];
+    const [yr, mo] = summaryMonth.split("-");
+    const prefix = `${yr}-${mo}`;
+    const monthRecords = allRecords.filter((a: any) => a.date?.startsWith(prefix));
+    const byStaff: Record<string, { name: string; present: number; absent: number; late: number; halfDay: number; leave: number; total: number }> = {};
+    monthRecords.forEach((a: any) => {
+      if (!byStaff[a.staffId]) byStaff[a.staffId] = { name: a.staffName, present: 0, absent: 0, late: 0, halfDay: 0, leave: 0, total: 0 };
+      const row = byStaff[a.staffId];
+      row.total++;
+      if (a.status === "Present") row.present++;
+      else if (a.status === "Absent") row.absent++;
+      else if (a.status === "Late") row.late++;
+      else if (a.status === "HalfDay") row.halfDay++;
+      else if (a.status === "OnLeave") row.leave++;
+    });
+    return Object.entries(byStaff).map(([id, d]) => ({ staffId: id, ...d, pct: d.total > 0 ? Math.round((d.present + d.late + d.halfDay * 0.5) / d.total * 100) : 0 })).sort((a, b) => b.pct - a.pct);
+  }, [allRecords, summaryMonth]);
+
   const handleStaffSelect = (staffId: string) => {
     const s = allStaff.find((m: any) => m.id === staffId);
     setForm((f) => ({ ...f, staffId, staffName: s?.name || "" }));
@@ -164,6 +188,49 @@ export default function AttendancePage() {
         <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Late</p><p className="text-2xl font-bold text-amber-600">{late}</p></CardContent></Card>
         <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Total Records</p><p className="text-2xl font-bold">{filtered.length}</p></CardContent></Card>
       </div>
+
+      {/* Monthly Attendance Report */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Monthly Attendance Report</CardTitle>
+            <Input type="month" value={summaryMonth} onChange={(e) => setSummaryMonth(e.target.value)} className="w-[180px]" />
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Employee</TableHead>
+                <TableHead className="text-center">Present</TableHead>
+                <TableHead className="text-center">Absent</TableHead>
+                <TableHead className="text-center">Late</TableHead>
+                <TableHead className="text-center">Half Day</TableHead>
+                <TableHead className="text-center">Leave</TableHead>
+                <TableHead className="text-center">Attendance %</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {monthlySummary.map((row) => (
+                <TableRow key={row.staffId}>
+                  <TableCell className="font-medium">{row.name}</TableCell>
+                  <TableCell className="text-center text-green-600">{row.present}</TableCell>
+                  <TableCell className="text-center text-red-600">{row.absent}</TableCell>
+                  <TableCell className="text-center text-amber-600">{row.late}</TableCell>
+                  <TableCell className="text-center">{row.halfDay}</TableCell>
+                  <TableCell className="text-center">{row.leave}</TableCell>
+                  <TableCell className="text-center">
+                    <Badge variant={row.pct >= 90 ? "success" : row.pct >= 75 ? "secondary" : "destructive"}>{row.pct}%</Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {monthlySummary.length === 0 && (
+                <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">No attendance data for this month</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       {/* Table */}
       <Card>

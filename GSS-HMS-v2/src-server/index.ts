@@ -27,7 +27,7 @@ import dashboardRoutes from "./routes/dashboard";
 import pharmacyRoutes from "./routes/pharmacy";
 import billingRoutes from "./routes/billing";
 import medicineAdminRoutes from "./routes/medicine-admin";
-import doctorReviewRoutes from "./routes/doctor-reviews";
+import performanceRoutes from "./routes/performance";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3001;
@@ -57,7 +57,14 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/pharmacy", pharmacyRoutes);
 app.use("/api/billing", billingRoutes);
 app.use("/api/medicine-admin", medicineAdminRoutes);
-app.use("/api/doctor-reviews", doctorReviewRoutes);
+app.use("/api/performance-evaluations", performanceRoutes);
+
+// ─── Serve uploaded files ─────────────────────────────────────
+const UPLOADS_DIR = path.resolve(__dirname_esm, "..", "data", "uploads");
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+app.use("/uploads", express.static(UPLOADS_DIR));
 
 // ─── Health check ───────────────────────────────────────────
 app.get("/api/health", (_req, res) => {

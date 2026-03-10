@@ -3,31 +3,30 @@ import { useAuth } from "@/context/AuthContext";
 import { useAnnouncements } from "@/hooks/queries";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Bell, Megaphone, X, ArrowLeft, ChevronRight, Home } from "lucide-react";
+import { LogOut, Bell, Megaphone, X, ArrowLeft, ChevronRight, Home, Play } from "lucide-react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { formatDate } from "@/lib/utils";
 
 // Route-to-breadcrumb mapping
 const ROUTE_META: Record<string, { label: string; group: string }> = {
   "/dashboard": { label: "Dashboard", group: "Overview" },
-  "/staff": { label: "Staff Registry", group: "Staff & HR" },
-  "/attendance": { label: "Attendance", group: "Staff & HR" },
-  "/leave": { label: "Leave Management", group: "Staff & HR" },
-  "/roster": { label: "Duty Roster", group: "Staff & HR" },
-  "/payroll": { label: "Payroll", group: "Staff & HR" },
-  "/performance": { label: "Performance", group: "Staff & HR" },
-  "/schedules": { label: "Schedules", group: "Patient Care" },
   "/patients": { label: "Patients", group: "Patient Care" },
   "/opd": { label: "OPD & Tokens", group: "Patient Care" },
-  "/pharmacy": { label: "Pharmacy", group: "Patient Care" },
   "/laboratory": { label: "Labs & Radiology", group: "Patient Care" },
-  "/doctor-karma": { label: "Doctor Karma", group: "Clinical Quality" },
-  "/medicine-discrepancy": { label: "Med Discrepancy", group: "Clinical Quality" },
-  "/nurse-management": { label: "Nurse Management", group: "Clinical Quality" },
-  "/technician": { label: "Technician", group: "Clinical Quality" },
+  "/pharmacy": { label: "Pharmacy", group: "Patient Care" },
+  "/staff": { label: "Staff Registry", group: "Staff & HR" },
+  "/nurse-management": { label: "Nurse Management", group: "Staff & HR" },
+  "/technician": { label: "Technician", group: "Staff & HR" },
+  "/schedules": { label: "Schedules", group: "Staff & HR" },
+  "/roster": { label: "Duty Roster", group: "Staff & HR" },
+  "/attendance": { label: "Attendance", group: "Staff & HR" },
+  "/leave": { label: "Leave Management", group: "Staff & HR" },
+  "/performance": { label: "Performance", group: "Staff & HR" },
+  "/payroll": { label: "Payroll", group: "Finance" },
+  "/billing": { label: "Billing", group: "Finance" },
+  "/insurance": { label: "Insurance", group: "Finance" },
   "/inventory": { label: "Inventory", group: "Operations" },
-  "/billing": { label: "Billing", group: "Operations" },
-  "/insurance": { label: "Insurance", group: "Operations" },
+  "/medicine-discrepancy": { label: "Med Discrepancy", group: "Operations" },
   "/documents": { label: "Documents", group: "Operations" },
   "/announcements": { label: "Announcements", group: "Operations" },
   "/reports": { label: "Reports", group: "Administration" },
@@ -35,7 +34,7 @@ const ROUTE_META: Record<string, { label: string; group: string }> = {
   "/settings": { label: "Settings", group: "Administration" },
 };
 
-export function Header() {
+export function Header({ onStartTour }: { onStartTour?: () => void }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -114,6 +113,14 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-2">
+        {/* Demo Tour */}
+        {onStartTour && (
+          <Button variant="ghost" size="sm" onClick={onStartTour} className="gap-1.5 text-muted-foreground" title="Start guided demo tour">
+            <Play size={16} className="text-primary" />
+            <span className="text-xs hidden sm:inline">Demo Tour</span>
+          </Button>
+        )}
+
         {/* Notification Bell */}
         <div className="relative" ref={ref}>
           <Button variant="ghost" size="icon" className="relative" onClick={() => setOpen(!open)}>

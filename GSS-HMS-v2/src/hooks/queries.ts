@@ -4,7 +4,8 @@ import {
   staffApi, patientsApi, labApi, tokensApi, documentsApi,
   announcementsApi, attendanceApi, leaveApi, payrollApi,
   inventoryApi, usersApi, schedulesApi, dashboardApi,
-  pharmacyApi, billingApi, medicineAdminApi, doctorReviewsApi,
+  pharmacyApi, billingApi, medicineAdminApi,
+  performanceEvalApi,
 } from "@/services/api";
 
 const errMsg = (e: unknown) => (e as any)?.response?.data?.error || (e as Error).message || "Something went wrong";
@@ -54,6 +55,19 @@ export function useDeletePatient() {
 export function usePermanentDeletePatient() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (id: string) => patientsApi.permanentDelete(id), onSuccess: () => { qc.invalidateQueries({ queryKey: ["patients"] }); toast.success("Patient permanently deleted"); }, onError: (e) => toast.error(errMsg(e)) });
+}
+
+// ─── Patient Documents ──────────────────────────────────────
+export function usePatientDocuments(patientId: string) {
+  return useQuery({ queryKey: ["patient-documents", patientId], queryFn: () => patientsApi.listDocuments(patientId).then((r) => r.data), enabled: !!patientId });
+}
+export function useUploadPatientDocument() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: ({ patientId, ...d }: Record<string, unknown> & { patientId: string }) => patientsApi.uploadDocument(patientId, d).then((r) => r.data), onSuccess: (_d, vars) => { qc.invalidateQueries({ queryKey: ["patient-documents", vars.patientId] }); toast.success("Document uploaded"); }, onError: (e) => toast.error(errMsg(e)) });
+}
+export function useDeletePatientDocument() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: ({ patientId, docId }: { patientId: string; docId: string }) => patientsApi.deleteDocument(patientId, docId), onSuccess: (_d, vars) => { qc.invalidateQueries({ queryKey: ["patient-documents", vars.patientId] }); toast.success("Document deleted"); }, onError: (e) => toast.error(errMsg(e)) });
 }
 
 // ─── Lab Tests ──────────────────────────────────────────────
@@ -302,18 +316,25 @@ export function useDeleteMedicineAdmin() {
   return useMutation({ mutationFn: (id: string) => medicineAdminApi.delete(id), onSuccess: () => { qc.invalidateQueries({ queryKey: ["medicine-admin"] }); toast.success("Record deleted"); }, onError: (e) => toast.error(errMsg(e)) });
 }
 
-// ─── Doctor Reviews (Karma Score) ───────────────────────────
-export function useDoctorReviews() {
-  return useQuery({ queryKey: ["doctor-reviews"], queryFn: () => doctorReviewsApi.list().then((r) => r.data) });
+// ─── Performance Evaluations ──────────────────────────────
+export function usePerformanceEvaluations() {
+  return useQuery({ queryKey: ["performance-evaluations"], queryFn: () => performanceEvalApi.list().then((r) => r.data) });
 }
-export function useDoctorKarma() {
-  return useQuery({ queryKey: ["doctor-reviews", "karma"], queryFn: () => doctorReviewsApi.karma().then((r) => r.data) });
-}
-export function useCreateDoctorReview() {
+export function useCreatePerformanceEval() {
   const qc = useQueryClient();
-  return useMutation({ mutationFn: (d: Record<string, unknown>) => doctorReviewsApi.create(d).then((r) => r.data), onSuccess: () => { qc.invalidateQueries({ queryKey: ["doctor-reviews"] }); toast.success("Review submitted"); }, onError: (e) => toast.error(errMsg(e)) });
+  return useMutation({ mutationFn: (d: Record<string, unknown>) => performanceEvalApi.create(d).then((r) => r.data), onSuccess: () => { qc.invalidateQueries({ queryKey: ["performance-evaluations"] }); toast.success("Evaluation submitted"); }, onError: (e) => toast.error(errMsg(e)) });
 }
-export function useDeleteDoctorReview() {
+export function useUpdatePerformanceEval() {
   const qc = useQueryClient();
-  return useMutation({ mutationFn: (id: string) => doctorReviewsApi.delete(id), onSuccess: () => { qc.invalidateQueries({ queryKey: ["doctor-reviews"] }); toast.success("Review deleted"); }, onError: (e) => toast.error(errMsg(e)) });
+  return useMutation({ mutationFn: ({ id, ...d }: Record<string, unknown> & { id: string }) => performanceEvalApi.update(id, d).then((r) => r.data), onSuccess: () => { qc.invalidateQueries({ queryKey: ["performance-evaluations"] }); toast.success("Evaluation updated"); }, onError: (e) => toast.error(errMsg(e)) });
+}
+export function useDeletePerformanceEval() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id: string) => performanceEvalApi.delete(id), onSuccess: () => { qc.invalidateQueries({ queryKey: ["performance-evaluations"] }); toast.success("Evaluation deleted"); }, onError: (e) => toast.error(errMsg(e)) });
+}
+
+// ─── Staff File Upload ───────────────────────────────────
+export function useUploadStaffFile() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: ({ id, file, fieldType }: { id: string; file: File; fieldType: "photo" | "aadhaar" }) => staffApi.uploadFile(id, file, fieldType).then((r) => r.data), onSuccess: () => { qc.invalidateQueries({ queryKey: ["staff"] }); toast.success("File uploaded"); }, onError: (e) => toast.error(errMsg(e)) });
 }

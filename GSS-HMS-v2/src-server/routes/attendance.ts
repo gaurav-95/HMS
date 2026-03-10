@@ -20,9 +20,10 @@ router.post("/", requireAuth, requirePermission("attendance:write"), (req, res) 
 
 /** PUT /api/attendance/:id – update (e.g. add check-out time) */
 router.put("/:id", requireAuth, requirePermission("attendance:write"), (req, res) => {
+  const attId = String(req.params.id);
   const { id: _id, ...data } = req.body;
-  db.update(attendanceRecords).set(data).where(eq(attendanceRecords.id, req.params.id)).run();
-  const updated = db.select().from(attendanceRecords).where(eq(attendanceRecords.id, req.params.id)).get();
+  db.update(attendanceRecords).set(data).where(eq(attendanceRecords.id, attId)).run();
+  const updated = db.select().from(attendanceRecords).where(eq(attendanceRecords.id, attId)).get();
   if (!updated) return res.status(404).json({ error: "Record not found" });
   res.json(updated);
 });

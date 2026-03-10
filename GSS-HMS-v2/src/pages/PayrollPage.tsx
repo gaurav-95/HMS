@@ -31,6 +31,13 @@ const blankForm = {
   deductions: 0,
   netSalary: 0,
   status: "Draft",
+  // breakdown fields
+  basicSalary: 0,
+  ta: 0,
+  conveyance: 0,
+  hra: 0,
+  pf: 0,
+  tds: 0,
 };
 
 export default function PayrollPage() {
@@ -54,8 +61,8 @@ export default function PayrollPage() {
   const [form, setForm] = useState(blankForm);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
 
-  // Auto-compute net salary
-  const netSalary = (form.baseSalary || 0) + (form.bonus || 0) - (form.deductions || 0);
+  // Auto-compute net salary from breakdown
+  const netSalary = (form.basicSalary || 0) + (form.ta || 0) + (form.conveyance || 0) + (form.hra || 0) + (form.bonus || 0) - (form.pf || 0) - (form.tds || 0) - (form.deductions || 0);
 
   const filtered = useMemo(() => {
     return allPayroll.filter((p: any) => {
@@ -88,7 +95,7 @@ export default function PayrollPage() {
         staffId,
         staffName: s.name,
         baseSalary: base,
-        netSalary: base + (f.bonus || 0) - (f.deductions || 0),
+        basicSalary: base,
       }));
     }
   };
@@ -97,6 +104,7 @@ export default function PayrollPage() {
     if (!form.staffId) return;
     createPayroll.mutate({
       ...form,
+      baseSalary: form.basicSalary,
       netSalary,
     }, { onSuccess: () => { setOpen(false); setForm(blankForm); } });
   };
@@ -128,8 +136,8 @@ export default function PayrollPage() {
         <div className="flex items-center gap-2">
           <ExportButtons
             title="Monthly Payroll"
-            columns={["Employee", "Month", "Year", "Base Salary", "Bonus", "Deductions", "Net Salary", "Status"]}
-            rows={filtered.map((p: any) => [p.staffName || "", p.month || "", p.year || "", p.baseSalary ?? 0, p.bonus ?? 0, p.deductions ?? 0, p.netSalary ?? 0, p.status || ""])}
+            columns={["Employee", "Month", "Year", "Basic", "TA", "Conveyance", "HRA", "PF", "TDS", "Bonus", "Deductions", "Net Salary", "Status"]}
+            rows={filtered.map((p: any) => [p.staffName || "", p.month || "", p.year || "", p.basicSalary || p.baseSalary || 0, p.ta || 0, p.conveyance || 0, p.hra || 0, p.pf || 0, p.tds || 0, p.bonus ?? 0, p.deductions ?? 0, p.netSalary ?? 0, p.status || ""])}
           />
           {hasPermission("payroll:write") && (
             <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-1" /> Create Payroll</Button>
@@ -179,9 +187,12 @@ export default function PayrollPage() {
               <TableRow>
                 <TableHead>Employee</TableHead>
                 <TableHead>Month</TableHead>
-                <TableHead className="text-right">Base Salary</TableHead>
-                <TableHead className="text-right">Bonus</TableHead>
-                <TableHead className="text-right">Deductions</TableHead>
+                <TableHead className="text-right">Basic</TableHead>
+                <TableHead className="text-right">TA</TableHead>
+                <TableHead className="text-right">Conv.</TableHead>
+                <TableHead className="text-right">HRA</TableHead>
+                <TableHead className="text-right">PF</TableHead>
+                <TableHead className="text-right">TDS</TableHead>
                 <TableHead className="text-right">Net Salary</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -194,9 +205,12 @@ export default function PayrollPage() {
                   <TableRow key={p.id}>
                     <TableCell className="font-medium">{p.staffName}</TableCell>
                     <TableCell>{p.month} {p.year}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(p.baseSalary)}</TableCell>
-                    <TableCell className="text-right text-green-600">{formatCurrency(p.bonus)}</TableCell>
-                    <TableCell className="text-right text-red-600">{formatCurrency(p.deductions)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(p.basicSalary || p.baseSalary)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(p.ta || 0)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(p.conveyance || 0)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(p.hra || 0)}</TableCell>
+                    <TableCell className="text-right text-red-600">{formatCurrency(p.pf || 0)}</TableCell>
+                    <TableCell className="text-right text-red-600">{formatCurrency(p.tds || 0)}</TableCell>
                     <TableCell className="text-right font-semibold">{formatCurrency(p.netSalary)}</TableCell>
                     <TableCell>
                       <Badge variant={p.status === "Paid" ? "success" : p.status === "Approved" ? "info" : p.status === "Processed" ? "secondary" : "warning"}>
@@ -221,7 +235,7 @@ export default function PayrollPage() {
                 );
               })}
               {filtered.length === 0 && (
-                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No payroll records match filters</TableCell></TableRow>
+                <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">No payroll records match filters</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
@@ -259,16 +273,38 @@ export default function PayrollPage() {
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>Base Salary</Label>
-                <Input type="number" value={form.baseSalary} onChange={(e) => setForm((f) => ({ ...f, baseSalary: Number(e.target.value) }))} />
+                <Label>Basic Salary</Label>
+                <Input type="number" value={form.basicSalary} onChange={(e) => setForm((f) => ({ ...f, basicSalary: Number(e.target.value) }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>TA</Label>
+                <Input type="number" value={form.ta} onChange={(e) => setForm((f) => ({ ...f, ta: Number(e.target.value) }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Conveyance</Label>
+                <Input type="number" value={form.conveyance} onChange={(e) => setForm((f) => ({ ...f, conveyance: Number(e.target.value) }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>HRA</Label>
+                <Input type="number" value={form.hra} onChange={(e) => setForm((f) => ({ ...f, hra: Number(e.target.value) }))} />
               </div>
               <div className="space-y-2">
                 <Label>Bonus</Label>
                 <Input type="number" value={form.bonus} onChange={(e) => setForm((f) => ({ ...f, bonus: Number(e.target.value) }))} />
               </div>
               <div className="space-y-2">
-                <Label>Deductions</Label>
+                <Label>Other Deductions</Label>
                 <Input type="number" value={form.deductions} onChange={(e) => setForm((f) => ({ ...f, deductions: Number(e.target.value) }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>PF (Provident Fund)</Label>
+                <Input type="number" value={form.pf} onChange={(e) => setForm((f) => ({ ...f, pf: Number(e.target.value) }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>TDS (Tax Deducted at Source)</Label>
+                <Input type="number" value={form.tds} onChange={(e) => setForm((f) => ({ ...f, tds: Number(e.target.value) }))} />
               </div>
             </div>
             <div className="bg-muted rounded-md p-3 text-center">

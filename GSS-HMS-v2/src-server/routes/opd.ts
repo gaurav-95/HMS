@@ -31,8 +31,9 @@ router.post("/", requireAuth, requirePermission("tokens:write"), (req, res) => {
 
 /** PATCH /api/tokens/:id/status */
 router.patch("/:id/status", requireAuth, requirePermission("tokens:write"), (req, res) => {
-  db.update(tokens).set({ status: req.body.status }).where(eq(tokens.id, req.params.id)).run();
-  res.json(db.select().from(tokens).where(eq(tokens.id, req.params.id)).get());
+  const tokenId = String(req.params.id);
+  db.update(tokens).set({ status: req.body.status }).where(eq(tokens.id, tokenId)).run();
+  res.json(db.select().from(tokens).where(eq(tokens.id, tokenId)).get());
 });
 
 export default router;

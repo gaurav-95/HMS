@@ -32,6 +32,7 @@ router.post("/", requireAuth, requirePermission("announcements:write"), (req, re
 });
 
 router.put("/:id", requireAuth, requirePermission("announcements:write"), (req, res) => {
+  const annId = String(req.params.id);
   const { id: _id, ...data } = req.body;
   // Map frontend field names to schema column names
   if (data.body && !data.content) { data.content = data.body; delete data.body; }
@@ -40,8 +41,8 @@ router.put("/:id", requireAuth, requirePermission("announcements:write"), (req, 
   if (data.penaltyConfig && typeof data.penaltyConfig === "object") {
     data.penaltyConfig = JSON.stringify(data.penaltyConfig);
   }
-  db.update(announcements).set(data).where(eq(announcements.id, req.params.id)).run();
-  const updated = db.select().from(announcements).where(eq(announcements.id, req.params.id)).get();
+  db.update(announcements).set(data).where(eq(announcements.id, annId)).run();
+  const updated = db.select().from(announcements).where(eq(announcements.id, annId)).get();
   if (!updated) return res.status(404).json({ error: "Announcement not found" });
   res.json({
     ...updated,
@@ -50,11 +51,12 @@ router.put("/:id", requireAuth, requirePermission("announcements:write"), (req, 
 });
 
 router.delete("/:id", requireAuth, requirePermission("announcements:delete"), (req: any, res) => {
+  const annId = String(req.params.id);
   const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
   if (permanent) {
-    db.delete(announcements).where(eq(announcements.id, req.params.id)).run();
+    db.delete(announcements).where(eq(announcements.id, annId)).run();
   } else {
-    db.update(announcements).set({ isActive: false }).where(eq(announcements.id, req.params.id)).run();
+    db.update(announcements).set({ isActive: false }).where(eq(announcements.id, annId)).run();
   }
   res.status(204).send();
 });

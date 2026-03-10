@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Building2, Clock, Shield, Database, Save } from "lucide-react";
+import { Settings, Building2, Clock, Shield, Database, Save, Lightbulb, Play } from "lucide-react";
 import { toast } from "sonner";
 
 const HOSPITAL_DEFAULTS = {
@@ -203,6 +203,30 @@ export default function SettingsPage() {
             <span className="text-sm text-muted-foreground">Logged in as:</span>
             <Badge variant="secondary">{user?.name}</Badge>
             <Badge variant="outline">{user?.role}</Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Help & Onboarding */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Lightbulb className="h-5 w-5" />
+            <div>
+              <CardTitle>Help & Onboarding</CardTitle>
+              <CardDescription>Page hints, guided tour, and first-time user assistance</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Guided Demo Tour</p>
+              <p className="text-xs text-muted-foreground">Step-by-step walkthrough of all {23} pages and features</p>
+            </div>
+            <Button variant="default" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent("gss-start-tour")); }}>
+              <Play className="h-4 w-4 mr-1" /> Start Tour
+            </Button>
           </div>
         </CardContent>
       </Card>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useStaff, useCreateStaff, useUpdateStaff, useDeleteStaff, usePermanentDeleteStaff } from "@/hooks/queries";
+import { useStaff, useCreateStaff, useUpdateStaff, useDeleteStaff, usePermanentDeleteStaff, useUploadStaffFile } from "@/hooks/queries";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,13 +10,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Plus, Phone, Mail, Edit, Upload, Loader2, Trash2, ClipboardCheck, Wallet, Filter } from "lucide-react";
+import { Search, Plus, Phone, Mail, Edit, Upload, Loader2, Trash2, ClipboardCheck, Wallet, Filter, Camera, FileText, ChevronDown, ChevronUp, X, MapPin, Calendar } from "lucide-react";
 import { getInitials, formatCurrency } from "@/lib/utils";
-import { DEPARTMENTS, STAFF_ROLES } from "@/constants";
+import { DEPARTMENTS, STAFF_ROLES, STAFF_CATEGORIES, getDefaultCategory } from "@/constants";
 import { ExportButtons } from "@/components/ExportButtons";
 import { useNavigate } from "react-router-dom";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
-import type { Staff, StaffRole, Department, SalaryType, NursingClassification } from "@/types";
+import type { Staff, StaffRole, Department, SalaryType, NursingClassification, StaffCategory } from "@/types";
 
 const NURSING_ROLES = ["Staff Nurse", "Sr. Nurse", "Jr. Nurse", "Nurse"];
 
@@ -31,6 +31,9 @@ export default function StaffDirectoryPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [deptFilter, setDeptFilter] = useState("All");
   const [roleFilter, setRoleFilter] = useState("All");
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [showTerminated, setShowTerminated] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState<any | null>(null);
   const [deletingStaff, setDeletingStaff] = useState<any | null>(null);
@@ -44,17 +47,23 @@ export default function StaffDirectoryPage() {
     (s: any) => {
       const matchSearch = !searchQuery ||
         s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.role.toLowerCase().includes(searchQuery.toLowerCase());
+        s.department?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.role?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.phone?.includes(searchQuery) ||
+        s.email?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchDept = deptFilter === "All" || s.department === deptFilter;
       const matchRole = roleFilter === "All" || s.role === roleFilter;
-      return matchSearch && matchDept && matchRole;
+      const matchCategory = categoryFilter === "All" || s.category === categoryFilter;
+      const matchTerminated = showTerminated ? !!s.terminationDate : !s.terminationDate;
+      return matchSearch && matchDept && matchRole && matchCategory && matchTerminated;
     }
   );
 
   // Collect unique departments and roles from actual data for smarter filtering
   const uniqueDepts = [...new Set(allStaff.map((s: any) => s.department))].sort();
   const uniqueRoles = [...new Set(allStaff.map((s: any) => s.role))].sort();
+
+  const activeFilterCount = [deptFilter !== "All", roleFilter !== "All", categoryFilter !== "All", showTerminated].filter(Boolean).length;
 
   const handleAddStaff = (newStaff: Partial<Staff>) => {
     createStaff.mutate(newStaff as Record<string, unknown>);
@@ -93,40 +102,76 @@ export default function StaffDirectoryPage() {
       </div>
 
       {/* Search + Filters */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name, department, or role..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+      <div className="space-y-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search name, dept, role, phone, email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowFilters(!showFilters)}>
+            <Filter className="h-4 w-4" />
+            Filters
+            {activeFilterCount > 0 && <Badge variant="default" className="ml-1 h-5 min-w-[20px] px-1 text-[10px]">{activeFilterCount}</Badge>}
+            {showFilters ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </Button>
+          <Button
+            variant={showTerminated ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowTerminated(!showTerminated)}
+            className="gap-1.5"
+          >
+            {showTerminated ? "Showing Terminated" : "Active Staff"}
+          </Button>
         </div>
-        <Select value={deptFilter} onValueChange={setDeptFilter}>
-          <SelectTrigger className="w-[180px]"><Filter className="h-4 w-4 mr-1" /><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="All">All Departments</SelectItem>
-            {uniqueDepts.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={roleFilter} onValueChange={setRoleFilter}>
-          <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="All">All Roles</SelectItem>
-            {uniqueRoles.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        {showFilters && (
+          <div className="flex items-center gap-3 flex-wrap p-3 bg-muted/50 rounded-lg border">
+            <Select value={deptFilter} onValueChange={setDeptFilter}>
+              <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All Departments</SelectItem>
+                {uniqueDepts.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All Roles</SelectItem>
+                {uniqueRoles.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All Categories</SelectItem>
+                {STAFF_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {activeFilterCount > 0 && (
+              <Button variant="ghost" size="sm" onClick={() => { setDeptFilter("All"); setRoleFilter("All"); setCategoryFilter("All"); }} className="gap-1 text-muted-foreground">
+                <X size={14} /> Clear filters
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Staff Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filteredStaff.map((member) => (
-          <Card key={member.id} className="hover:shadow-md transition-shadow">
+          <Card key={member.id} className={`hover:shadow-md transition-shadow ${member.terminationDate ? "opacity-70 border-destructive/30" : ""}`}>
             <CardContent className="pt-6">
               <div className="flex items-start gap-4">
                 <Avatar className="h-14 w-14">
-                  <AvatarImage src={member.imageUrl} />
+                  {member.photoPath ? (
+                    <AvatarImage src={`/uploads/staff/${member.photoPath.split("/").pop()}`} />
+                  ) : (
+                    <AvatarImage src={member.imageUrl} />
+                  )}
                   <AvatarFallback className="bg-primary/10 text-primary font-bold">
                     {getInitials(member.name)}
                   </AvatarFallback>
@@ -134,24 +179,42 @@ export default function StaffDirectoryPage() {
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold truncate">{member.name}</h3>
                   <p className="text-sm text-muted-foreground">{member.role}</p>
-                  <Badge variant="secondary" className="mt-1">{member.department}</Badge>
-                  {member.nursingClassification && (
-                    <Badge variant="info" className="mt-1 ml-1">{member.nursingClassification}</Badge>
-                  )}
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    <Badge variant="secondary">{member.department}</Badge>
+                    {member.category && <Badge variant="outline">{member.category}</Badge>}
+                    {member.nursingClassification && <Badge variant="info">{member.nursingClassification}</Badge>}
+                    {member.terminationDate && <Badge variant="destructive">Terminated</Badge>}
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-4 space-y-2 text-sm">
+              <div className="mt-4 space-y-1.5 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Phone size={14} /> <span className="truncate">{member.phone}</span>
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Mail size={14} /> <span className="truncate">{member.email}</span>
                 </div>
+                {member.residentialAddress && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin size={14} /> <span className="truncate">{member.residentialAddress}</span>
+                  </div>
+                )}
+                {member.appointmentDate && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Calendar size={14} /> <span>Appointed: {member.appointmentDate}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Salary:</span>
                   <span className="font-medium">{formatCurrency(member.baseSalary)}</span>
                 </div>
+                {member.ctcAnnual && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">CTC (Annual):</span>
+                    <span className="font-medium">{formatCurrency(member.ctcAnnual)}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Type:</span>
                   <Badge variant="outline" className="text-[10px]">{member.salaryType || "Fixed"}</Badge>
@@ -265,9 +328,24 @@ function StaffFormModal({ open, onClose, onSubmit, title, defaultValues }: Staff
   const [panNumber, setPanNumber] = useState(defaultValues?.panNumber || "");
   const [shiftRate, setShiftRate] = useState(defaultValues?.shiftRate?.toString() || "");
   const [attendanceRate, setAttendanceRate] = useState(defaultValues?.attendanceRate?.toString() || "");
+  // New HR fields
+  const [appointmentDate, setAppointmentDate] = useState(defaultValues?.appointmentDate || "");
+  const [category, setCategory] = useState<string>(defaultValues?.category || getDefaultCategory(defaultValues?.role || "Doctor"));
+  const [ctcAnnual, setCtcAnnual] = useState(defaultValues?.ctcAnnual?.toString() || "");
+  const [residentialAddress, setResidentialAddress] = useState(defaultValues?.residentialAddress || "");
+  const [terminationDate, setTerminationDate] = useState(defaultValues?.terminationDate || "");
+  const [shiftInterval, setShiftInterval] = useState(defaultValues?.shiftInterval || "");
 
   const isNurse = NURSING_ROLES.includes(role);
   const isShiftBased = salaryType === "Shift-Based";
+
+  // Auto-update category when role changes
+  const handleRoleChange = (v: string) => {
+    setRole(v as StaffRole);
+    if (!defaultValues?.category) {
+      setCategory(getDefaultCategory(v));
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -283,6 +361,12 @@ function StaffFormModal({ open, onClose, onSubmit, title, defaultValues }: Staff
       address: address || undefined,
       aadhaarNumber: aadhaarNumber || undefined,
       panNumber: panNumber || undefined,
+      appointmentDate: appointmentDate || undefined,
+      category: category as StaffCategory || undefined,
+      ctcAnnual: ctcAnnual ? parseInt(ctcAnnual) : undefined,
+      residentialAddress: residentialAddress || undefined,
+      terminationDate: terminationDate || undefined,
+      shiftInterval: shiftInterval || undefined,
     };
     if (isNurse && nursingClassification) {
       data.nursingClassification = nursingClassification as NursingClassification;
@@ -309,7 +393,7 @@ function StaffFormModal({ open, onClose, onSubmit, title, defaultValues }: Staff
             </div>
             <div className="space-y-2">
               <Label>Role <span className="text-destructive">*</span></Label>
-              <Select value={role} onValueChange={(v) => setRole(v as StaffRole)}>
+              <Select value={role} onValueChange={handleRoleChange}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {STAFF_ROLES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
@@ -357,6 +441,35 @@ function StaffFormModal({ open, onClose, onSubmit, title, defaultValues }: Staff
             </div>
           )}
 
+          {/* Category & Dates */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {STAFF_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Appointment Date</Label>
+              <Input type="date" value={appointmentDate} onChange={(e) => setAppointmentDate(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>CTC Annual (₹)</Label>
+              <Input type="number" value={ctcAnnual} onChange={(e) => setCtcAnnual(e.target.value)} placeholder="Annual CTC" />
+            </div>
+            <div className="space-y-2">
+              <Label>Shift Interval</Label>
+              <Input value={shiftInterval} onChange={(e) => setShiftInterval(e.target.value)} placeholder="e.g. 8 AM – 4 PM" />
+            </div>
+            <div className="space-y-2">
+              <Label>Termination Date</Label>
+              <Input type="date" value={terminationDate} onChange={(e) => setTerminationDate(e.target.value)} />
+            </div>
+          </div>
+
           {/* Salary */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -400,7 +513,11 @@ function StaffFormModal({ open, onClose, onSubmit, title, defaultValues }: Staff
           </div>
           <div className="space-y-2">
             <Label>Address</Label>
-            <Textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Full address" rows={2} />
+            <Textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Official address" rows={2} />
+          </div>
+          <div className="space-y-2">
+            <Label>Residential Address</Label>
+            <Textarea value={residentialAddress} onChange={(e) => setResidentialAddress(e.target.value)} placeholder="Residential address" rows={2} />
           </div>
 
           <DialogFooter>

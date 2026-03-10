@@ -30,7 +30,7 @@ import BillingPage from "@/pages/BillingPage";
 import ReportsPage from "@/pages/ReportsPage";
 import SettingsPage from "@/pages/SettingsPage";
 import MedicineDiscrepancyPage from "@/pages/MedicineDiscrepancyPage";
-import DoctorKarmaPage from "@/pages/DoctorKarmaPage";
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -74,7 +74,6 @@ export default function App() {
             <Route path="/reports" element={<ProtectedRoute requiredPermissions={["reports:read"]}><ReportsPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute requiredPermissions={["settings:read"]}><SettingsPage /></ProtectedRoute>} />
             <Route path="/medicine-discrepancy" element={<ProtectedRoute requiredPermissions={["patient:read"]}><MedicineDiscrepancyPage /></ProtectedRoute>} />
-            <Route path="/doctor-karma" element={<ProtectedRoute requiredPermissions={["reports:read"]}><DoctorKarmaPage /></ProtectedRoute>} />
           </Route>
 
           {/* Default redirect */}

@@ -12,7 +12,7 @@ router.get("/", requireAuth, requirePermission("lab:read"), (_req, res) => {
 });
 
 router.get("/:id", requireAuth, requirePermission("lab:read"), (req, res) => {
-  const t = db.select().from(labTests).where(eq(labTests.id, req.params.id)).get();
+  const t = db.select().from(labTests).where(eq(labTests.id, String(req.params.id))).get();
   if (!t) return res.status(404).json({ error: "Lab test not found" });
   res.json(t);
 });
@@ -27,26 +27,29 @@ router.post("/", requireAuth, requirePermission("lab:write"), (req: any, res) =>
 });
 
 router.put("/:id", requireAuth, requirePermission("lab:write"), (req, res) => {
+  const labId = String(req.params.id);
   const { id: _id, ...data } = req.body;
-  db.update(labTests).set(data).where(eq(labTests.id, req.params.id)).run();
-  const updated = db.select().from(labTests).where(eq(labTests.id, req.params.id)).get();
+  db.update(labTests).set(data).where(eq(labTests.id, labId)).run();
+  const updated = db.select().from(labTests).where(eq(labTests.id, labId)).get();
   if (!updated) return res.status(404).json({ error: "Lab test not found" });
   res.json(updated);
 });
 
 /** PATCH /api/lab-tests/:id/status – quick status update */
 router.patch("/:id/status", requireAuth, requirePermission("lab:write"), (req, res) => {
+  const labId = String(req.params.id);
   const { status, result, completedDate } = req.body;
-  db.update(labTests).set({ status, result, completedDate }).where(eq(labTests.id, req.params.id)).run();
-  res.json(db.select().from(labTests).where(eq(labTests.id, req.params.id)).get());
+  db.update(labTests).set({ status, result, completedDate }).where(eq(labTests.id, labId)).run();
+  res.json(db.select().from(labTests).where(eq(labTests.id, labId)).get());
 });
 
 router.delete("/:id", requireAuth, requirePermission("lab:delete"), (req: any, res) => {
+  const labId = String(req.params.id);
   const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
   if (permanent) {
-    db.delete(labTests).where(eq(labTests.id, req.params.id)).run();
+    db.delete(labTests).where(eq(labTests.id, labId)).run();
   } else {
-    db.update(labTests).set({ isActive: false }).where(eq(labTests.id, req.params.id)).run();
+    db.update(labTests).set({ isActive: false }).where(eq(labTests.id, labId)).run();
   }
   res.status(204).send();
 });

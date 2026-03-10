@@ -1,19 +1,67 @@
-import { useMemo } from "react";
-import { useStaff } from "@/hooks/queries";
+import { useState, useMemo } from "react";
+import { useStaff, usePerformanceEvaluations, useCreatePerformanceEval, useDeletePerformanceEval } from "@/hooks/queries";
+import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, TrendingUp, TrendingDown, Award } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, Award, Plus, Trash2 } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { ExportButtons } from "@/components/ExportButtons";
+import { EVALUATION_CRITERIA } from "@/constants";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend, PieChart, Pie, Cell } from "recharts";
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
 
 export default function PerformancePage() {
   const { data: staff = [], isLoading } = useStaff();
+  const { data: evaluations = [], isLoading: evalsLoading } = usePerformanceEvaluations();
+  const createEval = useCreatePerformanceEval();
+  const deleteEval = useDeletePerformanceEval();
+  const { hasPermission } = useAuth();
 
   const allStaff = staff as any[];
+  const allEvals = evaluations as any[];
+
+  const [showEvalDialog, setShowEvalDialog] = useState(false);
+  const [evalForm, setEvalForm] = useState({
+    staffId: "",
+    staffName: "",
+    period: "",
+    responsible: 3,
+    engaged: 3,
+    selfStarter: 3,
+    teamPlayer: 3,
+    challenged: 3,
+    employeeOriented: 3,
+    comments: "",
+  });
+
+  const handleCreateEval = () => {
+    if (!evalForm.staffId || !evalForm.period) return;
+    createEval.mutate(evalForm, {
+      onSuccess: () => {
+        setShowEvalDialog(false);
+        setEvalForm({ staffId: "", staffName: "", period: "", responsible: 3, engaged: 3, selfStarter: 3, teamPlayer: 3, challenged: 3, employeeOriented: 3, comments: "" });
+      },
+    });
+  };
+
+  // Build radar data from evaluations
+  const evalRadarData = useMemo(() => {
+    if (allEvals.length === 0) return [];
+    return EVALUATION_CRITERIA.map((c) => ({
+      subject: c.label,
+      value: Math.round(allEvals.reduce((sum: number, e: any) => sum + (e[c.key] || 0), 0) / allEvals.length * 20), // scale 1-5 → 0-100
+    }));
+  }, [allEvals]);
 
   // Aggregated KPI data across staff
   const { avgScores, topPerformers, departmentAvg, radarData, exportRows } = useMemo(() => {
@@ -62,7 +110,7 @@ export default function PerformancePage() {
     return { avgScores, topPerformers, departmentAvg, radarData, exportRows };
   }, [allStaff]);
 
-  if (isLoading) return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (isLoading || evalsLoading) return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   const overallAvg = avgScores.length > 0 ? Math.round(avgScores.reduce((s, a) => s + a.avg, 0) / avgScores.length) : 0;
 
@@ -230,6 +278,130 @@ export default function PerformancePage() {
           </Card>
         )}
       </div>
+
+      {/* ── Behavioral Evaluations ───────────────────────── */}
+      <div className="flex items-center justify-between pt-4">
+        <h2 className="text-lg font-semibold">Behavioral Evaluations</h2>
+        {hasPermission("performance:write") && (
+          <Button size="sm" onClick={() => setShowEvalDialog(true)} className="gap-1">
+            <Plus size={14} /> New Evaluation
+          </Button>
+        )}
+      </div>
+
+      {/* Evaluation Radar */}
+      {evalRadarData.length > 0 && (
+        <Card>
+          <CardHeader><CardTitle className="text-base">Average Behavioral Scores</CardTitle></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <RadarChart data={evalRadarData} cx="50%" cy="50%" outerRadius="70%">
+                <PolarGrid />
+                <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11 }} />
+                <PolarRadiusAxis domain={[0, 100]} />
+                <Radar name="Avg Score" dataKey="value" stroke="#10b981" fill="#10b981" fillOpacity={0.3} />
+                <Legend />
+              </RadarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Evaluation Table */}
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Employee</TableHead>
+                <TableHead>Period</TableHead>
+                {EVALUATION_CRITERIA.map((c) => <TableHead key={c.key} className="text-center">{c.label}</TableHead>)}
+                <TableHead className="text-center">Overall</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {allEvals.map((ev: any) => (
+                <TableRow key={ev.id}>
+                  <TableCell className="font-medium">{ev.staffName}</TableCell>
+                  <TableCell>{ev.period}</TableCell>
+                  {EVALUATION_CRITERIA.map((c) => (
+                    <TableCell key={c.key} className="text-center">
+                      <Badge variant={ev[c.key] >= 4 ? "success" : ev[c.key] >= 3 ? "secondary" : "warning"}>{ev[c.key]}/5</Badge>
+                    </TableCell>
+                  ))}
+                  <TableCell className="text-center font-semibold">{(ev.overallScore || 0).toFixed(1)}</TableCell>
+                  <TableCell className="text-right">
+                    {hasPermission("performance:write") && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteEval.mutate(ev.id)}>
+                        <Trash2 size={14} />
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+              {allEvals.length === 0 && (
+                <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">No evaluations yet</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Create Evaluation Dialog */}
+      <Dialog open={showEvalDialog} onOpenChange={setShowEvalDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>New Behavioral Evaluation</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Staff Member</Label>
+              <Select value={evalForm.staffId} onValueChange={(v) => {
+                const s = allStaff.find((m: any) => m.id === v);
+                setEvalForm((f) => ({ ...f, staffId: v, staffName: s?.name || "" }));
+              }}>
+                <SelectTrigger><SelectValue placeholder="Select staff" /></SelectTrigger>
+                <SelectContent>
+                  {allStaff.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Evaluation Period</Label>
+              <Input value={evalForm.period} onChange={(e) => setEvalForm((f) => ({ ...f, period: e.target.value }))} placeholder="e.g. Q1 2025, Jan 2025" />
+            </div>
+            {EVALUATION_CRITERIA.map((c) => (
+              <div key={c.key} className="flex items-center justify-between">
+                <Label className="text-sm">{c.label}</Label>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <Button
+                      key={n}
+                      type="button"
+                      variant={(evalForm as any)[c.key] === n ? "default" : "outline"}
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => setEvalForm((f) => ({ ...f, [c.key]: n }))}
+                    >
+                      {n}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <div className="space-y-2">
+              <Label>Comments</Label>
+              <Textarea value={evalForm.comments} onChange={(e) => setEvalForm((f) => ({ ...f, comments: e.target.value }))} rows={2} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEvalDialog(false)}>Cancel</Button>
+            <Button onClick={handleCreateEval} disabled={!evalForm.staffId || !evalForm.period || createEval.isPending}>
+              {createEval.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              Submit Evaluation
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

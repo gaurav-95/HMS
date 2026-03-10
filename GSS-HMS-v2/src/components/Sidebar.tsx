@@ -1,4 +1,5 @@
-import { NavLink } from "react-router-dom";
+import { useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -7,7 +8,7 @@ import {
   FileText, BarChart3, CalendarClock, Settings, Megaphone,
   ClipboardCheck, Calendar, Shield, Warehouse, Stethoscope,
   Wrench, UserCog, BriefcaseMedical, Ticket, Pill, Receipt, PieChart,
-  AlertTriangle, Star,
+  AlertTriangle, ChevronDown,
 } from "lucide-react";
 import type { Permission } from "@/types";
 
@@ -35,37 +36,36 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
     links: [
       { label: "Patients", path: "/patients", icon: <UserPlus size={20} />, permissions: ["patient:read"] },
       { label: "OPD & Tokens", path: "/opd", icon: <Ticket size={20} />, permissions: ["tokens:read"] },
-      { label: "Pharmacy", path: "/pharmacy", icon: <Pill size={20} />, permissions: ["patient:read"] },
-      { label: "Schedules", path: "/schedules", icon: <Stethoscope size={20} />, permissions: ["schedule:read"] },
       { label: "Labs & Radiology", path: "/laboratory", icon: <TestTubeDiagonal size={20} />, permissions: ["lab:read"] },
+      { label: "Pharmacy", path: "/pharmacy", icon: <Pill size={20} />, permissions: ["patient:read"] },
     ],
   },
   {
     title: "Staff & HR",
     links: [
       { label: "Staff Registry", path: "/staff", icon: <Users size={20} />, permissions: ["staff:read"] },
+      { label: "Nurse Mgmt", path: "/nurse-management", icon: <BriefcaseMedical size={20} />, permissions: ["roster:write"] },
+      { label: "Technician", path: "/technician", icon: <Wrench size={20} />, permissions: ["reports:match"] },
+      { label: "Schedules", path: "/schedules", icon: <Stethoscope size={20} />, permissions: ["schedule:read"] },
+      { label: "Duty Roster", path: "/roster", icon: <CalendarClock size={20} />, permissions: ["roster:read"] },
       { label: "Attendance", path: "/attendance", icon: <ClipboardCheck size={20} />, permissions: ["attendance:read"] },
       { label: "Leave Mgmt", path: "/leave", icon: <Calendar size={20} />, permissions: ["leave:apply"] },
-      { label: "Duty Roster", path: "/roster", icon: <CalendarClock size={20} />, permissions: ["roster:read"] },
-      { label: "Payroll", path: "/payroll", icon: <Wallet size={20} />, permissions: ["payroll:read"] },
       { label: "Performance", path: "/performance", icon: <BarChart3 size={20} />, permissions: ["performance:read"] },
     ],
   },
   {
-    title: "Clinical Quality",
+    title: "Finance",
     links: [
-      { label: "Doctor Karma", path: "/doctor-karma", icon: <Star size={20} />, permissions: ["reports:read"] },
-      { label: "Med Discrepancy", path: "/medicine-discrepancy", icon: <AlertTriangle size={20} />, permissions: ["patient:read"] },
-      { label: "Nurse Mgmt", path: "/nurse-management", icon: <BriefcaseMedical size={20} />, permissions: ["roster:write"] },
-      { label: "Technician", path: "/technician", icon: <Wrench size={20} />, permissions: ["reports:match"] },
+      { label: "Payroll", path: "/payroll", icon: <Wallet size={20} />, permissions: ["payroll:read"] },
+      { label: "Billing", path: "/billing", icon: <Receipt size={20} />, permissions: ["payroll:read"] },
+      { label: "Insurance", path: "/insurance", icon: <Shield size={20} />, permissions: ["insurance:read"] },
     ],
   },
   {
     title: "Operations",
     links: [
       { label: "Inventory", path: "/inventory", icon: <Warehouse size={20} />, permissions: ["inventory:read"] },
-      { label: "Billing", path: "/billing", icon: <Receipt size={20} />, permissions: ["payroll:read"] },
-      { label: "Insurance", path: "/insurance", icon: <Shield size={20} />, permissions: ["insurance:read"] },
+      { label: "Med Discrepancy", path: "/medicine-discrepancy", icon: <AlertTriangle size={20} />, permissions: ["patient:read"] },
       { label: "Documents", path: "/documents", icon: <FileText size={20} />, permissions: ["documents:read"] },
       { label: "Announcements", path: "/announcements", icon: <Megaphone size={20} />, permissions: ["announcements:read"] },
     ],
@@ -82,8 +82,7 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
 
 export function Sidebar() {
   const { user, hasAnyPermission } = useAuth();
-
-  if (!user) return null;
+  const location = useLocation();
 
   // Filter groups: keep only links the user can see, then drop empty groups
   const visibleGroups = SIDEBAR_GROUPS
@@ -92,6 +91,24 @@ export function Sidebar() {
       links: group.links.filter((link) => hasAnyPermission(link.permissions)),
     }))
     .filter((group) => group.links.length > 0);
+
+  // Initialize collapsed state — auto-expand group containing the active route
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => {
+    const state: Record<string, boolean> = {};
+    visibleGroups.forEach((g) => {
+      const hasActive = g.links.some((l) => location.pathname.startsWith(l.path));
+      state[g.title] = !hasActive; // collapsed if not active
+    });
+    // Always keep Overview expanded
+    if (state["Overview"] !== undefined) state["Overview"] = false;
+    return state;
+  });
+
+  const toggleGroup = (title: string) => {
+    setCollapsed((prev) => ({ ...prev, [title]: !prev[title] }));
+  };
+
+  if (!user) return null;
 
   return (
     <aside className="flex h-full w-64 flex-col border-r bg-sidebar">
@@ -107,36 +124,68 @@ export function Sidebar() {
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-4">
-        {visibleGroups.map((group, gi) => (
-          <div key={group.title}>
-            {/* Show section header for all groups except the first (Overview / Dashboard) */}
-            {gi > 0 && (
-              <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-                {group.title}
-              </p>
-            )}
-            <div className="space-y-0.5">
-              {group.links.map((link) => (
-                <NavLink
-                  key={link.path}
-                  to={link.path}
-                  className={({ isActive }) =>
-                    cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                      isActive
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                    )
-                  }
-                >
-                  {link.icon}
-                  {link.label}
-                </NavLink>
-              ))}
+      <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
+        {visibleGroups.map((group, gi) => {
+          const isCollapsed = !!collapsed[group.title];
+          const isFirstGroup = gi === 0;
+          return (
+            <div key={group.title}>
+              {isFirstGroup ? (
+                /* Overview group — no header, always expanded */
+                <div className="space-y-0.5">
+                  {group.links.map((link) => (
+                    <NavLink
+                      key={link.path}
+                      to={link.path}
+                      className={({ isActive }) =>
+                        cn(
+                          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                          isActive
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                            : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                        )
+                      }
+                    >
+                      {link.icon}
+                      {link.label}
+                    </NavLink>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={() => toggleGroup(group.title)}
+                    className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 hover:text-muted-foreground transition-colors"
+                  >
+                    {group.title}
+                    <ChevronDown size={14} className={cn("transition-transform", isCollapsed ? "-rotate-90" : "")} />
+                  </button>
+                  {!isCollapsed && (
+                    <div className="space-y-0.5">
+                      {group.links.map((link) => (
+                        <NavLink
+                          key={link.path}
+                          to={link.path}
+                          className={({ isActive }) =>
+                            cn(
+                              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                              isActive
+                                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                                : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                            )
+                          }
+                        >
+                          {link.icon}
+                          {link.label}
+                        </NavLink>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </nav>
 
       {/* Bottom user info */}

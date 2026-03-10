@@ -169,11 +169,35 @@ export function setupDatabase() {
       staff_id TEXT NOT NULL REFERENCES staff(id),
       staff_name TEXT NOT NULL,
       month TEXT NOT NULL,
+      year TEXT,
       base_salary REAL NOT NULL,
+      basic_salary REAL,
+      ta REAL DEFAULT 0,
+      conveyance REAL DEFAULT 0,
+      pf REAL DEFAULT 0,
+      tds REAL DEFAULT 0,
+      hra REAL DEFAULT 0,
       deductions REAL NOT NULL DEFAULT 0,
       bonus REAL NOT NULL DEFAULT 0,
       net_salary REAL NOT NULL,
       status TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS performance_evaluations (
+      id TEXT PRIMARY KEY,
+      staff_id TEXT NOT NULL REFERENCES staff(id),
+      staff_name TEXT NOT NULL,
+      evaluator_id TEXT,
+      evaluation_date TEXT NOT NULL,
+      responsible INTEGER NOT NULL,
+      engaged INTEGER NOT NULL,
+      self_starter INTEGER NOT NULL,
+      team_player INTEGER NOT NULL,
+      challenged INTEGER NOT NULL,
+      employee_oriented INTEGER NOT NULL,
+      overall_score REAL NOT NULL,
+      comments TEXT,
+      period TEXT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS inventory_items (
@@ -267,19 +291,14 @@ export function setupDatabase() {
       status TEXT NOT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS doctor_reviews (
+    CREATE TABLE IF NOT EXISTS patient_documents (
       id TEXT PRIMARY KEY,
-      doctor_id TEXT NOT NULL REFERENCES staff(id),
-      doctor_name TEXT NOT NULL,
-      patient_name TEXT NOT NULL,
-      rating INTEGER NOT NULL,
-      efficacy_score INTEGER,
-      cost_score INTEGER,
-      review_text TEXT,
-      diagnosis TEXT,
-      treatment_cost REAL,
-      review_date TEXT NOT NULL,
-      is_resolved INTEGER NOT NULL DEFAULT 0
+      patient_id TEXT NOT NULL REFERENCES patients(id),
+      doc_type TEXT NOT NULL,
+      file_name TEXT NOT NULL,
+      mime_type TEXT NOT NULL,
+      file_data TEXT NOT NULL,
+      uploaded_at TEXT NOT NULL
     );
   `);
 
@@ -314,6 +333,35 @@ export function setupDatabase() {
   const softDeleteTables = ["patients", "lab_tests", "documents", "billing_records"];
   for (const table of softDeleteTables) {
     addColumnIfMissing(table, "is_active", "INTEGER NOT NULL DEFAULT 1");
+  }
+
+  // Staff columns added for HR enhancements
+  const staffHrCols: [string, string][] = [
+    ["appointment_date", "TEXT"],
+    ["ctc_annual", "REAL"],
+    ["category", "TEXT"],
+    ["residential_address", "TEXT"],
+    ["aadhaar_doc_path", "TEXT"],
+    ["photo_path", "TEXT"],
+    ["termination_date", "TEXT"],
+    ["shift_interval", "TEXT"],
+  ];
+  for (const [col, def] of staffHrCols) {
+    addColumnIfMissing("staff", col, def);
+  }
+
+  // Payroll breakdown columns
+  const payrollCols: [string, string][] = [
+    ["year", "TEXT"],
+    ["basic_salary", "REAL"],
+    ["ta", "REAL DEFAULT 0"],
+    ["conveyance", "REAL DEFAULT 0"],
+    ["pf", "REAL DEFAULT 0"],
+    ["tds", "REAL DEFAULT 0"],
+    ["hra", "REAL DEFAULT 0"],
+  ];
+  for (const [col, def] of payrollCols) {
+    addColumnIfMissing("payroll_records", col, def);
   }
 
   console.log("✓ Database tables initialized");

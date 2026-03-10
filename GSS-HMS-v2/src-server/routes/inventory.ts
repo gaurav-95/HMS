@@ -12,7 +12,7 @@ router.get("/", requireAuth, requirePermission("inventory:read"), (_req, res) =>
 });
 
 router.get("/:id", requireAuth, requirePermission("inventory:read"), (req, res) => {
-  const item = db.select().from(inventoryItems).where(eq(inventoryItems.id, req.params.id)).get();
+  const item = db.select().from(inventoryItems).where(eq(inventoryItems.id, String(req.params.id))).get();
   if (!item) return res.status(404).json({ error: "Item not found" });
   res.json(item);
 });
@@ -24,15 +24,16 @@ router.post("/", requireAuth, requirePermission("inventory:write"), (req, res) =
 });
 
 router.put("/:id", requireAuth, requirePermission("inventory:write"), (req, res) => {
+  const itemId = String(req.params.id);
   const { id: _id, ...data } = req.body;
-  db.update(inventoryItems).set(data).where(eq(inventoryItems.id, req.params.id)).run();
-  const updated = db.select().from(inventoryItems).where(eq(inventoryItems.id, req.params.id)).get();
+  db.update(inventoryItems).set(data).where(eq(inventoryItems.id, itemId)).run();
+  const updated = db.select().from(inventoryItems).where(eq(inventoryItems.id, itemId)).get();
   if (!updated) return res.status(404).json({ error: "Item not found" });
   res.json(updated);
 });
 
 router.delete("/:id", requireAuth, requirePermission("inventory:delete"), (req, res) => {
-  db.delete(inventoryItems).where(eq(inventoryItems.id, req.params.id)).run();
+  db.delete(inventoryItems).where(eq(inventoryItems.id, String(req.params.id))).run();
   res.status(204).send();
 });
 

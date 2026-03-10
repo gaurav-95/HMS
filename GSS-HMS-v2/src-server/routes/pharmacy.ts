@@ -14,7 +14,7 @@ router.get("/", requireAuth, requirePermission("patient:read"), (_req, res) => {
 
 /** GET /api/pharmacy/:id – single prescription */
 router.get("/:id", requireAuth, requirePermission("patient:read"), (req, res) => {
-  const row = db.select().from(prescriptions).where(eq(prescriptions.id, req.params.id)).get();
+  const row = db.select().from(prescriptions).where(eq(prescriptions.id, String(req.params.id))).get();
   if (!row) return res.status(404).json({ error: "Prescription not found" });
   res.json(row);
 });
@@ -28,31 +28,34 @@ router.post("/", requireAuth, requirePermission("lab:write"), (req, res) => {
 
 /** PUT /api/pharmacy/:id – update prescription */
 router.put("/:id", requireAuth, requirePermission("lab:write"), (req, res) => {
+  const rxId = String(req.params.id);
   const { id: _id, ...data } = req.body;
-  db.update(prescriptions).set(data).where(eq(prescriptions.id, req.params.id)).run();
-  const updated = db.select().from(prescriptions).where(eq(prescriptions.id, req.params.id)).get();
+  db.update(prescriptions).set(data).where(eq(prescriptions.id, rxId)).run();
+  const updated = db.select().from(prescriptions).where(eq(prescriptions.id, rxId)).get();
   if (!updated) return res.status(404).json({ error: "Prescription not found" });
   res.json(updated);
 });
 
 /** PATCH /api/pharmacy/:id/dispense – dispense a prescription */
 router.patch("/:id/dispense", requireAuth, requirePermission("inventory:write"), (req, res) => {
+  const rxId = String(req.params.id);
   const { dispensedBy } = req.body;
   db.update(prescriptions).set({
     status: "Dispensed",
     dispensedDate: new Date().toISOString().split("T")[0],
     dispensedBy: dispensedBy || "Pharmacy",
-  }).where(eq(prescriptions.id, req.params.id)).run();
-  const updated = db.select().from(prescriptions).where(eq(prescriptions.id, req.params.id)).get();
+  }).where(eq(prescriptions.id, rxId)).run();
+  const updated = db.select().from(prescriptions).where(eq(prescriptions.id, rxId)).get();
   if (!updated) return res.status(404).json({ error: "Prescription not found" });
   res.json(updated);
 });
 
 /** DELETE /api/pharmacy/:id */
 router.delete("/:id", requireAuth, requirePermission("lab:delete"), (req, res) => {
-  const exists = db.select().from(prescriptions).where(eq(prescriptions.id, req.params.id)).get();
+  const rxId = String(req.params.id);
+  const exists = db.select().from(prescriptions).where(eq(prescriptions.id, rxId)).get();
   if (!exists) return res.status(404).json({ error: "Prescription not found" });
-  db.delete(prescriptions).where(eq(prescriptions.id, req.params.id)).run();
+  db.delete(prescriptions).where(eq(prescriptions.id, rxId)).run();
   res.json({ success: true });
 });
 

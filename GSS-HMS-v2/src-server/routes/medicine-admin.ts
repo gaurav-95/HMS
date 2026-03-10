@@ -24,7 +24,7 @@ router.get("/discrepancies", requireAuth, requirePermission("reports:read"), (_r
 
 /** GET /api/medicine-admin/:id */
 router.get("/:id", requireAuth, (req, res) => {
-  const record = db.select().from(medicineAdministrations).where(eq(medicineAdministrations.id, req.params.id)).get();
+  const record = db.select().from(medicineAdministrations).where(eq(medicineAdministrations.id, String(req.params.id))).get();
   if (!record) return res.status(404).json({ error: "Record not found" });
   res.json(record);
 });
@@ -70,19 +70,20 @@ router.post("/", requireAuth, requirePermission("medicine:administer"), (req, re
 
 /** PATCH /api/medicine-admin/:id/resolve – resolve a discrepancy */
 router.patch("/:id/resolve", requireAuth, requirePermission("reports:match"), (req, res) => {
+  const medId = String(req.params.id);
   const { notes } = req.body;
   db.update(medicineAdministrations)
     .set({ status: "Resolved", discrepancyNotes: notes || "Resolved by reviewer" })
-    .where(eq(medicineAdministrations.id, req.params.id))
+    .where(eq(medicineAdministrations.id, medId))
     .run();
-  const updated = db.select().from(medicineAdministrations).where(eq(medicineAdministrations.id, req.params.id)).get();
+  const updated = db.select().from(medicineAdministrations).where(eq(medicineAdministrations.id, medId)).get();
   if (!updated) return res.status(404).json({ error: "Record not found" });
   res.json(updated);
 });
 
 /** DELETE /api/medicine-admin/:id */
 router.delete("/:id", requireAuth, requirePermission("medicine:administer"), (req, res) => {
-  db.delete(medicineAdministrations).where(eq(medicineAdministrations.id, req.params.id)).run();
+  db.delete(medicineAdministrations).where(eq(medicineAdministrations.id, String(req.params.id))).run();
   res.status(204).send();
 });
 

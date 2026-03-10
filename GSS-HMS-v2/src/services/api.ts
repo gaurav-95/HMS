@@ -53,6 +53,14 @@ export const staffApi = {
   update: (id: string, data: Record<string, unknown>) => api.put(`/staff/${id}`, data),
   delete: (id: string) => api.delete(`/staff/${id}`),
   permanentDelete: (id: string) => api.delete(`/staff/${id}?permanent=true`),
+  uploadFile: (id: string, file: File, fieldType: "photo" | "aadhaar") => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("fieldType", fieldType);
+    return api.post(`/staff/${id}/upload`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 };
 
 export const patientsApi = {
@@ -62,6 +70,11 @@ export const patientsApi = {
   update: (id: string, data: Record<string, unknown>) => api.put(`/patients/${id}`, data),
   delete: (id: string) => api.delete(`/patients/${id}`),
   permanentDelete: (id: string) => api.delete(`/patients/${id}?permanent=true`),
+  // Patient Documents
+  listDocuments: (patientId: string) => api.get(`/patients/${patientId}/documents`),
+  uploadDocument: (patientId: string, data: Record<string, unknown>) => api.post(`/patients/${patientId}/documents`, data),
+  downloadDocument: (patientId: string, docId: string) => api.get(`/patients/${patientId}/documents/${docId}/download`),
+  deleteDocument: (patientId: string, docId: string) => api.delete(`/patients/${patientId}/documents/${docId}`),
 };
 
 export const labApi = {
@@ -171,11 +184,9 @@ export const medicineAdminApi = {
   delete: (id: string) => api.delete(`/medicine-admin/${id}`),
 };
 
-export const doctorReviewsApi = {
-  list: () => api.get("/doctor-reviews"),
-  karma: () => api.get("/doctor-reviews/karma"),
-  get: (id: string) => api.get(`/doctor-reviews/${id}`),
-  create: (data: Record<string, unknown>) => api.post("/doctor-reviews", data),
-  update: (id: string, data: Record<string, unknown>) => api.put(`/doctor-reviews/${id}`, data),
-  delete: (id: string) => api.delete(`/doctor-reviews/${id}`),
+export const performanceEvalApi = {
+  list: () => api.get("/performance-evaluations"),
+  create: (data: Record<string, unknown>) => api.post("/performance-evaluations", data),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/performance-evaluations/${id}`, data),
+  delete: (id: string) => api.delete(`/performance-evaluations/${id}`),
 };

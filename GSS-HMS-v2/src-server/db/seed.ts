@@ -13,7 +13,7 @@ import {
   labTests, tokens, documents, announcements,
   attendanceRecords, leaveRequests, payrollRecords,
   inventoryItems, doctorSchedules, prescriptions, billingRecords,
-  medicineAdministrations, doctorReviews,
+  medicineAdministrations,
 } from "./schema";
 
 setupDatabase();
@@ -420,30 +420,6 @@ const medAdminRecords = [
 
 for (const ma of medAdminRecords) db.insert(medicineAdministrations).values(ma).run();
 console.log(`  ✓ ${medAdminRecords.length} medicine administrations (${medAdminRecords.filter(m => m.hasDiscrepancy).length} discrepancies)`);
-
-// ═══════════════════════════════════════════════════════════════
-//  DOCTOR REVIEWS / KARMA  (12 reviews across 3 doctors)
-// ═══════════════════════════════════════════════════════════════
-const reviewRecords = [
-  // Dr. Anjali — high karma
-  { id: uuid(), doctorId: S.anjali, doctorName: "Dr. Anjali Sharma", patientName: "Suresh Mehta",  rating: 5, efficacyScore: 9,  costScore: 8, reviewText: "Very thorough examination. Explained everything clearly.",         diagnosis: "Type 2 Diabetes", treatmentCost: 1200, reviewDate: "2026-02-01", isResolved: false },
-  { id: uuid(), doctorId: S.anjali, doctorName: "Dr. Anjali Sharma", patientName: "Priya Desai",   rating: 4, efficacyScore: 8,  costScore: 7, reviewText: "Good treatment but had to wait a long time.",                    diagnosis: "Hypothyroidism",   treatmentCost: 1500, reviewDate: "2026-02-03", isResolved: false },
-  { id: uuid(), doctorId: S.anjali, doctorName: "Dr. Anjali Sharma", patientName: "Arun Gupta",    rating: 5, efficacyScore: 10, costScore: 9, reviewText: "Excellent follow-up. Blood sugar under control now.",            diagnosis: "Diabetes Management", treatmentCost: 800, reviewDate: "2026-02-04", isResolved: false },
-  { id: uuid(), doctorId: S.anjali, doctorName: "Dr. Anjali Sharma", patientName: "Fatima Begum",  rating: 4, efficacyScore: 8,  costScore: 8, reviewText: "Caring and attentive. Would recommend.",                         diagnosis: "Upper Respiratory Infection", treatmentCost: 600, reviewDate: "2026-02-06", isResolved: false },
-  // Dr. Vikram — medium karma (some low reviews)
-  { id: uuid(), doctorId: S.vikram, doctorName: "Dr. Vikram Rao",    patientName: "Lakshmi Reddy", rating: 3, efficacyScore: 6,  costScore: 4, reviewText: "Treatment was okay but very expensive. Expected more relief.",  diagnosis: "Knee Osteoarthritis", treatmentCost: 8500, reviewDate: "2026-02-04", isResolved: false },
-  { id: uuid(), doctorId: S.vikram, doctorName: "Dr. Vikram Rao",    patientName: "Arun Gupta",    rating: 4, efficacyScore: 7,  costScore: 5, reviewText: "Good surgical advice. Could improve bedside manner.",           diagnosis: "Rotator Cuff Tear",   treatmentCost: 15000, reviewDate: "2026-01-25", isResolved: false },
-  { id: uuid(), doctorId: S.vikram, doctorName: "Dr. Vikram Rao",    patientName: "Dinesh Tiwari", rating: 2, efficacyScore: 4,  costScore: 3, reviewText: "Had to visit thrice. No improvement. Very costly.",            diagnosis: "Lumbar Spondylosis",  treatmentCost: 12000, reviewDate: "2026-02-06", isResolved: false },
-  { id: uuid(), doctorId: S.vikram, doctorName: "Dr. Vikram Rao",    patientName: "Ravi Shankar",  rating: 5, efficacyScore: 9,  costScore: 6, reviewText: "Excellent fracture management. Quick recovery.",               diagnosis: "Colles Fracture",     treatmentCost: 5000, reviewDate: "2026-01-10", isResolved: false },
-  // Dr. Meena — high karma (pediatrics)
-  { id: uuid(), doctorId: S.meena,  doctorName: "Dr. Meena Iyer",    patientName: "Anita Kumari",  rating: 5, efficacyScore: 10, costScore: 9, reviewText: "Amazing with children. Very patient and gentle.",               diagnosis: "Viral Fever",         treatmentCost: 400,  reviewDate: "2026-02-04", isResolved: false },
-  { id: uuid(), doctorId: S.meena,  doctorName: "Dr. Meena Iyer",    patientName: "Sneha Patil",   rating: 5, efficacyScore: 9,  costScore: 10, reviewText: "Affordable and effective treatment. Highly recommend.",        diagnosis: "Allergic Rhinitis",   treatmentCost: 350,  reviewDate: "2026-02-05", isResolved: false },
-  { id: uuid(), doctorId: S.meena,  doctorName: "Dr. Meena Iyer",    patientName: "Fatima Begum",  rating: 4, efficacyScore: 8,  costScore: 9,  reviewText: "Good pediatric care for my child. Follow-up was helpful.",    diagnosis: "Gastroenteritis",     treatmentCost: 550,  reviewDate: "2026-02-02", isResolved: false },
-  { id: uuid(), doctorId: S.meena,  doctorName: "Dr. Meena Iyer",    patientName: "Lakshmi Reddy", rating: 3, efficacyScore: 6,  costScore: 8,  reviewText: "Treatment took longer than expected, but eventually worked.", diagnosis: "Bronchitis (child)",  treatmentCost: 700,  reviewDate: "2026-01-28", isResolved: true },
-];
-
-for (const r of reviewRecords) db.insert(doctorReviews).values(r).run();
-console.log(`  ✓ ${reviewRecords.length} doctor reviews`);
 
 // ═══════════════════════════════════════════════════════════════
 //  BILLING RECORDS  (8 — all statuses: Paid, Unpaid, Partial,

@@ -49,6 +49,8 @@ export type StaffRole =
 
 export type NursingClassification = "BSc Nursing" | "GN Nursing" | "BNF" | "BSc" | "GNM" | "ANM";
 
+export type StaffCategory = "Admin" | "Clinical" | "Receptionist" | "Nurse" | "Technical";
+
 export type SalaryType = "Fixed" | "Shift-Based";
 
 export type ShiftType = "Morning" | "Evening" | "Night" | "Off";
@@ -328,16 +330,24 @@ export interface Staff {
   role: StaffRole;
   department: Department;
   nursingClassification?: NursingClassification;
+  category?: StaffCategory;
   phone: string;
   email: string;
   address?: string;
+  residentialAddress?: string;
   joiningDate: string;
+  appointmentDate?: string;
+  terminationDate?: string;
   salaryType: SalaryType;
   baseSalary: number;
+  ctcAnnual?: number;
   shiftRate?: number;
   attendanceRate?: number;
+  shiftInterval?: string;
   imageUrl?: string;
+  photoPath?: string;
   aadhaarNumber?: string;
+  aadhaarDocPath?: string;
   panNumber?: string;
   kpis: KPI[];
   certifications: Certification[];
@@ -469,11 +479,35 @@ export interface PayrollRecord {
   staffId: string;
   staffName: string;
   month: string;
+  year?: string;
   baseSalary: number;
+  basicSalary?: number;
+  ta?: number;
+  conveyance?: number;
+  pf?: number;
+  tds?: number;
+  hra?: number;
   bonus: number;
   deductions: number;
   netSalary: number;
   status: PayrollStatus;
+}
+
+export interface PerformanceEvaluation {
+  id: string;
+  staffId: string;
+  staffName: string;
+  evaluatorId?: string;
+  evaluationDate: string;
+  responsible: number;
+  engaged: number;
+  selfStarter: number;
+  teamPlayer: number;
+  challenged: number;
+  employeeOriented: number;
+  overallScore: number;
+  comments?: string;
+  period: string;
 }
 
 export interface InventoryItem {

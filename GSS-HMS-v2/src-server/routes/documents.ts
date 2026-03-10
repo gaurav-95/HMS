@@ -18,11 +18,12 @@ router.post("/", requireAuth, requirePermission("documents:write"), (req, res) =
 });
 
 router.delete("/:id", requireAuth, requirePermission("documents:delete"), (req: any, res) => {
+  const docId = String(req.params.id);
   const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
   if (permanent) {
-    db.delete(documents).where(eq(documents.id, req.params.id)).run();
+    db.delete(documents).where(eq(documents.id, docId)).run();
   } else {
-    db.update(documents).set({ isActive: false }).where(eq(documents.id, req.params.id)).run();
+    db.update(documents).set({ isActive: false }).where(eq(documents.id, docId)).run();
   }
   res.status(204).send();
 });
