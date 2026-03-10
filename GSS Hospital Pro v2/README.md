@@ -79,14 +79,16 @@ For example: `http://192.168.29.193:3001`
 | `data/` | **Active** SQLite database used by the server |
 | `resources/app/dist/` | Built frontend (HTML/CSS/JS) |
 | `runtime/` | Auto-created: portable Node.js (if downloaded) |
+| `server/setup.js` | Auto-fixes native database driver for different architectures |
 
 ---
 
 ## Requirements
 
-- **Windows 10 or 11**
-- **Internet connection** only needed on first run if Node.js isn't installed
-- **Microsoft Edge** (pre-installed on all Windows 10/11) for standalone window mode
+- **Windows 7 SP1 or later** (32-bit or 64-bit)
+- **Internet connection** only needed on first run (to download Node.js + native driver if needed)
+- **Microsoft Edge or Google Chrome** for standalone window mode (falls back to default browser)
+- **Visual C++ Redistributable** — usually already installed; if the database driver fails to load, download from https://aka.ms/vs/17/release/vc_redist.x64.exe (or vc_redist.x86.exe for 32-bit)
 
 ---
 
@@ -100,7 +102,8 @@ Launch GSS Hospital Pro.bat
   │       ├── REST API at /api/*
   │       ├── SQLite database (data/gss-hms.db)
   │       └── Serves frontend static files
-  └── 3. Opens Edge in app mode (http://localhost:3001)
+  ├── 2b. Auto-downloads correct native driver for your architecture
+  └── 3. Opens Edge/Chrome in app mode (http://localhost:3001)
               └── Clean window, no address bar — looks like native app
 ```
 
