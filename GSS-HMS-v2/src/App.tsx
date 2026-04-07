@@ -5,6 +5,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { AppLayout } from "@/components/AppLayout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
@@ -25,6 +26,7 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
+    <TooltipProvider delayDuration={300}>
     <ErrorBoundary>
     <Toaster position="top-right" richColors closeButton duration={3000} />
     <BrowserRouter>
@@ -50,6 +52,7 @@ export default function App() {
       </AuthProvider>
     </BrowserRouter>
     </ErrorBoundary>
+    </TooltipProvider>
     </QueryClientProvider>
   );
 }

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Settings, Building2, Clock, Shield, Database, Save, Lightbulb, Play, ArrowRightLeft, FlaskConical, UserCog, AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { Tip } from "@/components/ui/tooltip";
 
 const HOSPITAL_DEFAULTS = {
   name: "Gandhi Seva Sadan Hospital",
@@ -264,9 +265,11 @@ export default function SettingsPage() {
                 </p>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={() => setSwitchDialogOpen(true)}>
-              Switch to {appMode === "demo" ? "User" : "Demo"} Mode
-            </Button>
+            <Tip content="Replaces ALL current data and switches mode — you will be logged out">
+              <Button variant="outline" size="sm" onClick={() => setSwitchDialogOpen(true)}>
+                Switch to {appMode === "demo" ? "User" : "Demo"} Mode
+              </Button>
+            </Tip>
           </div>
         </CardContent>
       </Card>
@@ -288,9 +291,11 @@ export default function SettingsPage() {
               <p className="text-sm font-medium">Guided Demo Tour</p>
               <p className="text-xs text-muted-foreground">Step-by-step walkthrough of all 7 pages and features</p>
             </div>
-            <Button variant="default" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent("gss-start-tour")); }}>
-              <Play className="h-4 w-4 mr-1" /> Start Tour
-            </Button>
+            <Tip content="Launch an interactive guided walkthrough of all pages">
+              <Button variant="default" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent("gss-start-tour")); }}>
+                <Play className="h-4 w-4 mr-1" /> Start Tour
+              </Button>
+            </Tip>
           </div>
         </CardContent>
       </Card>

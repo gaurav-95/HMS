@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Edit, Loader2, Trash2, Search, Filter, ArrowUpDown } from "lucide-react";
+import { Tip } from "@/components/ui/tooltip";
 import { getInitials } from "@/lib/utils";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 import { ROLE_LABELS, type UserRole } from "@/types";
@@ -98,9 +99,11 @@ export default function UserManagementPage() {
             <SelectItem value="recent">Sort: Recent</SelectItem>
           </SelectContent>
         </Select>
-        <Button variant={showInactive ? "default" : "outline"} size="sm" onClick={() => setShowInactive(!showInactive)}>
-          {showInactive ? "Showing Inactive" : "Show Inactive"}
-        </Button>
+        <Tip content="Switch between viewing active users and deactivated accounts">
+          <Button variant={showInactive ? "default" : "outline"} size="sm" onClick={() => setShowInactive(!showInactive)}>
+            {showInactive ? "Showing Inactive" : "Show Inactive"}
+          </Button>
+        </Tip>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">

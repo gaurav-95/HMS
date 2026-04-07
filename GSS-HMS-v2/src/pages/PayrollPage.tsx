@@ -14,6 +14,7 @@ import { ExportButtons } from "@/components/ExportButtons";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 import { formatCurrency } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tip } from "@/components/ui/tooltip";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const currentMonth = MONTHS[new Date().getMonth()];
@@ -111,7 +112,9 @@ export default function PayrollPage() {
             rows={filtered.map((p: any) => [p.staffName, p.department || "", p.month, p.year, p.basicSalary || 0, p.hra || 0, p.epfEmployer || 0, p.otherAllowance || 0, p.grossSalary || 0, p.professionalTax || 0, p.epfEmployee || 0, p.leaveDeductions || 0, p.netSalary || 0, p.totalShifts || 0, p.attendedShifts || 0, p.leavesTaken || 0, p.status])}
           />
           {hasPermission("payroll:write") && (
-            <Button onClick={openGenerateDialog} className="gap-1.5"><Zap size={16} /> Generate Payroll</Button>
+            <Tip content="Auto-calculate salary for selected staff based on their attendance records">
+              <Button onClick={openGenerateDialog} className="gap-1.5"><Zap size={16} /> Generate Payroll</Button>
+            </Tip>
           )}
         </div>
       </div>
@@ -198,9 +201,11 @@ export default function PayrollPage() {
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         {nextStatus && hasPermission("payroll:approve") && (
-                          <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => handleStatusChange(p.id, p.status)}>
-                            <ArrowRight className="h-3 w-3 mr-1" /> {nextStatus}
-                          </Button>
+                          <Tip content={`Advance status: ${p.status} → ${nextStatus}`}>
+                            <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => handleStatusChange(p.id, p.status)}>
+                              <ArrowRight className="h-3 w-3 mr-1" /> {nextStatus}
+                            </Button>
+                          </Tip>
                         )}
                         {p.status === "Draft" && hasPermission("payroll:write") && (
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteTarget(p)}>

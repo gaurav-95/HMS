@@ -14,6 +14,7 @@ import { Search, Plus, Phone, Mail, Edit, Loader2, Trash2, ClipboardCheck, Walle
 import { getInitials, formatCurrency } from "@/lib/utils";
 import { DEPARTMENTS, STAFF_ROLES, STAFF_CATEGORIES, getDefaultCategory } from "@/constants";
 import { ExportButtons } from "@/components/ExportButtons";
+import { Tip } from "@/components/ui/tooltip";
 import { useNavigate } from "react-router-dom";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 import type { Staff, StaffRole, Department, SalaryType, NursingClassification, StaffCategory } from "@/types";
@@ -119,14 +120,16 @@ export default function StaffDirectoryPage() {
             {activeFilterCount > 0 && <Badge variant="default" className="ml-1 h-5 min-w-[20px] px-1 text-[10px]">{activeFilterCount}</Badge>}
             {showFilters ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </Button>
-          <Button
-            variant={showTerminated ? "default" : "outline"}
-            size="sm"
-            onClick={() => setShowTerminated(!showTerminated)}
-            className="gap-1.5"
-          >
-            {showTerminated ? "Showing Terminated" : "Active Staff"}
-          </Button>
+          <Tip content="Switch between viewing active employees and terminated records">
+            <Button
+              variant={showTerminated ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowTerminated(!showTerminated)}
+              className="gap-1.5"
+            >
+              {showTerminated ? "Showing Terminated" : "Active Staff"}
+            </Button>
+          </Tip>
         </div>
         {showFilters && (
           <div className="flex items-center gap-3 flex-wrap p-3 bg-muted/50 rounded-lg border">
@@ -226,12 +229,16 @@ export default function StaffDirectoryPage() {
                       <Edit size={14} />
                     </Button>
                   )}
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/attendance?staff=${member.id}`)} title="Attendance">
-                    <ClipboardCheck size={14} />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/payroll?staff=${member.id}`)} title="Payroll">
-                    <Wallet size={14} />
-                  </Button>
+                  <Tip content="View attendance history">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/attendance?staff=${member.id}`)}>
+                      <ClipboardCheck size={14} />
+                    </Button>
+                  </Tip>
+                  <Tip content="View payroll records">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/payroll?staff=${member.id}`)}>
+                      <Wallet size={14} />
+                    </Button>
+                  </Tip>
                   {canDelete && (
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeletingStaff(member)} title="Delete">
                       <Trash2 size={14} />

@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar, Plus, Loader2, Search, Filter, XCircle, Trash2, Settings, CheckCircle2, X, AlertTriangle, Pencil } from "lucide-react";
 import { ExportButtons } from "@/components/ExportButtons";
+import { Tip } from "@/components/ui/tooltip";
 
 const blankForm = {
   staffId: "",
@@ -145,9 +146,11 @@ export default function LeavePage() {
           </SelectContent>
         </Select>
         {isSuperAdmin && (
-          <Button variant="outline" size="sm" onClick={() => setShowTypeManager(true)} className="gap-1.5">
-            <Settings size={14} /> Manage Types
-          </Button>
+          <Tip content="Add, edit, or remove leave type categories (e.g. Casual, Sick)">
+            <Button variant="outline" size="sm" onClick={() => setShowTypeManager(true)} className="gap-1.5">
+              <Settings size={14} /> Manage Types
+            </Button>
+          </Tip>
         )}
       </div>
 
@@ -221,12 +224,14 @@ export default function LeavePage() {
                       )}
                       {/* SUPER_ADMIN can edit status of already-decided leaves */}
                       {l.status !== "Pending" && l.status !== "Cancelled" && isSuperAdmin && (
-                        <Button size="sm" variant="outline" onClick={() => {
-                          setEditStatusTarget({ id: l.id, staffName: l.staffName, currentStatus: l.status });
-                          setEditStatusValue(l.status);
-                        }}>
-                          <Pencil className="h-3.5 w-3.5 mr-1" /> Edit Status
-                        </Button>
+                        <Tip content="Override this leave decision (change between Approved/Rejected/Pending)">
+                          <Button size="sm" variant="outline" onClick={() => {
+                            setEditStatusTarget({ id: l.id, staffName: l.staffName, currentStatus: l.status });
+                            setEditStatusValue(l.status);
+                          }}>
+                            <Pencil className="h-3.5 w-3.5 mr-1" /> Edit Status
+                          </Button>
+                        </Tip>
                       )}
                       {l.status === "Pending" && hasPermission("leave:apply") && (
                         <Button size="sm" variant="ghost" className="text-muted-foreground" onClick={() => cancelLeave.mutate(l.id)}>

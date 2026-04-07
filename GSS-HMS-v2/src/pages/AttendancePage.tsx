@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClipboardCheck, Loader2, Plus, Search, Filter, Pencil, Layers } from "lucide-react";
 import { ExportButtons } from "@/components/ExportButtons";
+import { Tip } from "@/components/ui/tooltip";
 import { useSearchParams } from "react-router-dom";
 
 const today = new Date().toISOString().split("T")[0];
@@ -192,9 +193,11 @@ export default function AttendancePage() {
             {uniqueDepts.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Button variant={groupByDept ? "default" : "outline"} size="sm" onClick={() => setGroupByDept(!groupByDept)} className="gap-1.5">
-          <Layers size={14} /> Group by Dept
-        </Button>
+        <Tip content="Toggle grouping attendance records by department">
+          <Button variant={groupByDept ? "default" : "outline"} size="sm" onClick={() => setGroupByDept(!groupByDept)} className="gap-1.5">
+            <Layers size={14} /> Group by Dept
+          </Button>
+        </Tip>
       </div>
 
       {/* Summary cards */}
@@ -291,9 +294,11 @@ export default function AttendancePage() {
                         </TableCell>
                         {hasPermission("attendance:write") && (
                           <TableCell className="text-right">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(a)}>
-                              <Pencil size={14} />
-                            </Button>
+                            <Tip content="Edit attendance status and check-in/out times">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(a)}>
+                                <Pencil size={14} />
+                              </Button>
+                            </Tip>
                           </TableCell>
                         )}
                       </TableRow>
@@ -317,9 +322,11 @@ export default function AttendancePage() {
                     </TableCell>
                     {hasPermission("attendance:write") && (
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(a)}>
-                          <Pencil size={14} />
-                        </Button>
+                        <Tip content="Edit attendance status and check-in/out times">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(a)}>
+                            <Pencil size={14} />
+                          </Button>
+                        </Tip>
                       </TableCell>
                     )}
                   </TableRow>
