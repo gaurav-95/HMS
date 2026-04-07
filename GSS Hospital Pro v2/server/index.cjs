@@ -79606,6 +79606,29 @@ var attendance_default = router3;
 // src-server/routes/leave.ts
 var import_express4 = __toESM(require_express2(), 1);
 var import_crypto4 = require("crypto");
+function dateRange(start, end) {
+  const dates = [];
+  const cur = /* @__PURE__ */ new Date(start + "T00:00:00");
+  const last = /* @__PURE__ */ new Date(end + "T00:00:00");
+  while (cur <= last) {
+    dates.push(cur.toISOString().slice(0, 10));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return dates;
+}
+function syncLeaveToAttendance(staffId, staffName, startDate, endDate) {
+  for (const d of dateRange(startDate, endDate)) {
+    const exists2 = db.select({ id: attendanceRecords.id }).from(attendanceRecords).where(and(eq(attendanceRecords.staffId, staffId), eq(attendanceRecords.date, d))).get();
+    if (!exists2) {
+      db.insert(attendanceRecords).values({ id: (0, import_crypto4.randomUUID)(), staffId, staffName, date: d, status: "OnLeave" }).run();
+    }
+  }
+}
+function removeLeaveAttendance(staffId, startDate, endDate) {
+  for (const d of dateRange(startDate, endDate)) {
+    db.delete(attendanceRecords).where(and(eq(attendanceRecords.staffId, staffId), eq(attendanceRecords.date, d), eq(attendanceRecords.status, "OnLeave"))).run();
+  }
+}
 var router4 = (0, import_express4.Router)();
 router4.get("/", requireAuth, requirePermission("leave:apply"), (req, res) => {
   const userRole = req.user.role;
@@ -79663,7 +79686,13 @@ router4.patch("/:id/status", requireAuth, requirePermission("leave:approve"), (r
   if (record.status !== "Pending" && req.user.role !== "SUPER_ADMIN") {
     return res.status(403).json({ error: "Only Super Admin can change a decided leave status" });
   }
+  const wasApproved = record.status === "Approved";
   db.update(leaveRequests).set({ status, approvedBy: req.user.name }).where(eq(leaveRequests.id, leaveId)).run();
+  if (status === "Approved" && !wasApproved) {
+    syncLeaveToAttendance(record.staffId, record.staffName, record.startDate, record.endDate);
+  } else if (status !== "Approved" && wasApproved) {
+    removeLeaveAttendance(record.staffId, record.startDate, record.endDate);
+  }
   res.json(db.select().from(leaveRequests).where(eq(leaveRequests.id, leaveId)).get());
 });
 router4.patch("/:id/cancel", requireAuth, requirePermission("leave:apply"), (req, res) => {
@@ -79676,6 +79705,9 @@ router4.patch("/:id/cancel", requireAuth, requirePermission("leave:apply"), (req
   const canApprove = hasPermission(req.user.role, "leave:approve");
   if (!isOwner && !canApprove) {
     return res.status(403).json({ error: "You can only cancel your own leave requests" });
+  }
+  if (record.status === "Approved") {
+    removeLeaveAttendance(record.staffId, record.startDate, record.endDate);
   }
   db.update(leaveRequests).set({ status: "Cancelled" }).where(eq(leaveRequests.id, leaveId)).run();
   res.json(db.select().from(leaveRequests).where(eq(leaveRequests.id, leaveId)).get());

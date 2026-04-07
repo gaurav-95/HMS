@@ -1,9 +1,41 @@
 import { Router } from "express";
-import { eq, inArray } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { db } from "../db/index";
-import { leaveRequests, leaveTypes, staff } from "../db/schema";
+import { leaveRequests, leaveTypes, staff, attendanceRecords } from "../db/schema";
 import { requireAuth, requirePermission, AuthRequest, hasPermission } from "../middleware/auth";
+
+/** Generate all YYYY-MM-DD strings from start to end (inclusive) */
+function dateRange(start: string, end: string): string[] {
+  const dates: string[] = [];
+  const cur = new Date(start + "T00:00:00");
+  const last = new Date(end + "T00:00:00");
+  while (cur <= last) {
+    dates.push(cur.toISOString().slice(0, 10));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return dates;
+}
+
+/** Create OnLeave attendance records for each day in an approved leave */
+function syncLeaveToAttendance(staffId: string, staffName: string, startDate: string, endDate: string) {
+  for (const d of dateRange(startDate, endDate)) {
+    const exists = db.select({ id: attendanceRecords.id }).from(attendanceRecords)
+      .where(and(eq(attendanceRecords.staffId, staffId), eq(attendanceRecords.date, d))).get();
+    if (!exists) {
+      db.insert(attendanceRecords).values({ id: randomUUID(), staffId, staffName, date: d, status: "OnLeave" }).run();
+    }
+  }
+}
+
+/** Remove auto-created OnLeave attendance records when a leave is un-approved */
+function removeLeaveAttendance(staffId: string, startDate: string, endDate: string) {
+  for (const d of dateRange(startDate, endDate)) {
+    db.delete(attendanceRecords)
+      .where(and(eq(attendanceRecords.staffId, staffId), eq(attendanceRecords.date, d), eq(attendanceRecords.status, "OnLeave")))
+      .run();
+  }
+}
 
 const router = Router();
 
@@ -87,10 +119,20 @@ router.patch("/:id/status", requireAuth, requirePermission("leave:approve"), (re
     return res.status(403).json({ error: "Only Super Admin can change a decided leave status" });
   }
 
+  const wasApproved = record.status === "Approved";
+
   db.update(leaveRequests)
     .set({ status, approvedBy: req.user!.name })
     .where(eq(leaveRequests.id, leaveId))
     .run();
+
+  // Sync attendance: create OnLeave records when approved, remove them when un-approved
+  if (status === "Approved" && !wasApproved) {
+    syncLeaveToAttendance(record.staffId, record.staffName, record.startDate, record.endDate);
+  } else if (status !== "Approved" && wasApproved) {
+    removeLeaveAttendance(record.staffId, record.startDate, record.endDate);
+  }
+
   res.json(db.select().from(leaveRequests).where(eq(leaveRequests.id, leaveId)).get());
 });
 
@@ -107,6 +149,11 @@ router.patch("/:id/cancel", requireAuth, requirePermission("leave:apply"), (req:
   const canApprove = hasPermission(req.user!.role, "leave:approve");
   if (!isOwner && !canApprove) {
     return res.status(403).json({ error: "You can only cancel your own leave requests" });
+  }
+
+  // If the leave was somehow approved before cancellation (SUPER_ADMIN flow), clean up attendance
+  if (record.status === "Approved") {
+    removeLeaveAttendance(record.staffId, record.startDate, record.endDate);
   }
 
   db.update(leaveRequests).set({ status: "Cancelled" }).where(eq(leaveRequests.id, leaveId)).run();
