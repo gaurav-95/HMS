@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Plus, Phone, Mail, Edit, Upload, Loader2, Trash2, ClipboardCheck, Wallet, Filter, Camera, FileText, ChevronDown, ChevronUp, X, MapPin, Calendar } from "lucide-react";
+import { Search, Plus, Phone, Mail, Edit, Loader2, Trash2, ClipboardCheck, Wallet, Filter, Camera, FileText, ChevronDown, ChevronUp, X } from "lucide-react";
 import { getInitials, formatCurrency } from "@/lib/utils";
 import { DEPARTMENTS, STAFF_ROLES, STAFF_CATEGORIES, getDefaultCategory } from "@/constants";
 import { ExportButtons } from "@/components/ExportButtons";
@@ -161,106 +161,88 @@ export default function StaffDirectoryPage() {
       </div>
 
       {/* Staff Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredStaff.map((member) => (
-          <Card key={member.id} className={`hover:shadow-md transition-shadow ${member.terminationDate ? "opacity-70 border-destructive/30" : ""}`}>
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-4">
-                <Avatar className="h-14 w-14">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {filteredStaff.map((member) => {
+          const certValid = member.certifications?.filter((c: any) => c.status === "Valid").length || 0;
+          const certExpiring = member.certifications?.filter((c: any) => c.status === "Expiring").length || 0;
+          const certExpired = member.certifications?.filter((c: any) => c.status === "Expired").length || 0;
+          const totalCerts = (member.certifications?.length) || 0;
+          return (
+          <Card key={member.id} className={`hover:shadow-md transition-shadow ${member.terminationDate ? "opacity-60 border-destructive/30" : ""}`}>
+            <CardContent className="p-4">
+              {/* Row 1: Identity + Salary */}
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10 shrink-0">
                   {member.photoPath ? (
                     <AvatarImage src={`/uploads/staff/${member.photoPath.split("/").pop()}`} />
                   ) : (
                     <AvatarImage src={member.imageUrl} />
                   )}
-                  <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                  <AvatarFallback className="bg-primary/10 text-primary font-bold text-sm">
                     {getInitials(member.name)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold truncate">{member.name}</h3>
-                  <p className="text-sm text-muted-foreground">{member.role}</p>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    <Badge variant="secondary">{member.department}</Badge>
-                    {member.category && <Badge variant="outline">{member.category}</Badge>}
-                    {member.nursingClassification && <Badge variant="info">{member.nursingClassification}</Badge>}
-                    {member.terminationDate && <Badge variant="destructive">Terminated</Badge>}
+                  <div className="flex items-baseline justify-between gap-2">
+                    <h3 className="font-semibold text-sm truncate">{member.name}</h3>
+                    {member.baseSalary != null && (
+                      <span className="text-sm font-semibold tabular-nums shrink-0">{formatCurrency(member.baseSalary)}</span>
+                    )}
                   </div>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {member.role} · {member.department}
+                    {member.nursingClassification ? ` · ${member.nursingClassification}` : ""}
+                  </p>
                 </div>
               </div>
 
-              <div className="mt-4 space-y-1.5 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Phone size={14} /> <span className="truncate">{member.phone}</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Mail size={14} /> <span className="truncate">{member.email}</span>
-                </div>
-                {member.residentialAddress && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin size={14} /> <span className="truncate">{member.residentialAddress}</span>
-                  </div>
+              {/* Row 2: Contact */}
+              <div className="mt-2.5 flex items-center gap-4 text-xs text-muted-foreground">
+                {member.phone && (
+                  <span className="flex items-center gap-1 truncate"><Phone size={12} />{member.phone}</span>
                 )}
-                {member.appointmentDate && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar size={14} /> <span>Appointed: {member.appointmentDate}</span>
-                  </div>
+                {member.email && (
+                  <span className="flex items-center gap-1 truncate"><Mail size={12} />{member.email}</span>
                 )}
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Salary:</span>
-                  <span className="font-medium">{formatCurrency(member.baseSalary)}</span>
-                </div>
-                {member.ctcAnnual && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">CTC (Annual):</span>
-                    <span className="font-medium">{formatCurrency(member.ctcAnnual)}</span>
-                  </div>
-                )}
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Type:</span>
-                  <Badge variant="outline" className="text-[10px]">{member.salaryType || "Fixed"}</Badge>
-                </div>
               </div>
 
-              {/* Certifications */}
-              {member.certifications && member.certifications.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1">
-                  {member.certifications.map((cert: any) => (
-                    <Badge
-                      key={cert.id}
-                      variant={cert.status === "Valid" ? "success" : cert.status === "Expired" ? "destructive" : "warning"}
-                      className="text-[10px]"
-                    >
-                      {cert.name}: {cert.status}
-                    </Badge>
-                  ))}
+              {/* Row 3: Tags + Certs + Actions */}
+              <div className="mt-2.5 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                  {member.category && <Badge variant="outline" className="text-[10px] px-1.5 py-0">{member.category}</Badge>}
+                  {member.terminationDate && <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Terminated</Badge>}
+                  {totalCerts > 0 && (
+                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground" title={member.certifications.map((c: any) => `${c.name}: ${c.status}`).join(", ")}>
+                      {certValid > 0 && <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />}
+                      {certExpiring > 0 && <span className="inline-block h-2 w-2 rounded-full bg-amber-500" />}
+                      {certExpired > 0 && <span className="inline-block h-2 w-2 rounded-full bg-red-500" />}
+                      {totalCerts} cert{totalCerts > 1 ? "s" : ""}
+                    </span>
+                  )}
                 </div>
-              )}
-
-              {/* Quick Actions */}
-              <div className="mt-4 flex gap-1.5 flex-wrap">
-                {canWrite && (
-                  <Button variant="outline" size="sm" onClick={() => setEditingStaff(member)} className="gap-1 flex-1">
-                    <Edit size={14} /> Edit
+                <div className="flex items-center gap-1 shrink-0">
+                  {canWrite && (
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingStaff(member)} title="Edit">
+                      <Edit size={14} />
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/attendance?staff=${member.id}`)} title="Attendance">
+                    <ClipboardCheck size={14} />
                   </Button>
-                )}
-                <Button variant="outline" size="sm" onClick={() => navigate(`/attendance?staff=${member.id}`)} className="gap-1" title="View Attendance">
-                  <ClipboardCheck size={14} />
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => navigate(`/payroll?staff=${member.id}`)} className="gap-1" title="View Payroll">
-                  <Wallet size={14} />
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => navigate("/documents")} className="gap-1" title="Documents">
-                  <Upload size={14} />
-                </Button>
-                {canDelete && (
-                  <Button variant="outline" size="sm" className="gap-1 text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setDeletingStaff(member)}>
-                    <Trash2 size={14} />
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/payroll?staff=${member.id}`)} title="Payroll">
+                    <Wallet size={14} />
                   </Button>
-                )}
+                  {canDelete && (
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeletingStaff(member)} title="Delete">
+                      <Trash2 size={14} />
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </div>
 
       {filteredStaff.length === 0 && (

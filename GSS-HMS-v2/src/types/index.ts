@@ -90,52 +90,25 @@ export type InventoryStatus = "Active" | "Damaged" | "Disposed";
 
 export type DisposalType = "Sell" | "Charitable";
 
-// ─── Hierarchical Roles ──────────────────────────────────
+// ─── Simplified Roles (4 roles) ──────────────────────────
 
 export type UserRole =
   | "SUPER_ADMIN"
-  | "CEO"
-  | "COO"
-  | "CMO"
-  | "METRON"
-  | "DOCTOR"
-  | "SR_NURSE"
-  | "JR_NURSE"
-  | "RECEPTIONIST"
-  | "TECHNICIAN"
-  | "ACCOUNTANT"
-  | "PHARMACIST"
+  | "ADMIN"
+  | "LEADER"
   | "STAFF";
 
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
   SUPER_ADMIN: 0,
-  CEO: 1,
-  CMO: 1,
-  COO: 2,
-  METRON: 2,
-  DOCTOR: 2,
-  ACCOUNTANT: 3,
-  RECEPTIONIST: 3,
-  SR_NURSE: 3,
-  JR_NURSE: 3,
-  TECHNICIAN: 3,
-  PHARMACIST: 3,
-  STAFF: 4,
+  ADMIN: 1,
+  LEADER: 2,
+  STAFF: 3,
 };
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   SUPER_ADMIN: "Super Admin",
-  CEO: "CEO",
-  COO: "COO",
-  CMO: "CMO",
-  METRON: "Metron",
-  DOCTOR: "Doctor",
-  SR_NURSE: "Sr. Nurse",
-  JR_NURSE: "Jr. Nurse",
-  RECEPTIONIST: "Receptionist",
-  TECHNICIAN: "Technician",
-  ACCOUNTANT: "Accountant",
-  PHARMACIST: "Pharmacist",
+  ADMIN: "Admin",
+  LEADER: "Leader",
   STAFF: "Staff",
 };
 
@@ -146,167 +119,51 @@ export type Permission =
   | "staff:read"
   | "staff:write"
   | "staff:delete"
-  | "patient:read"
-  | "patient:write"
-  | "patient:register"
-  | "patient:delete"
-  | "lab:read"
-  | "lab:write"
-  | "lab:delete"
-  | "billing:read"
-  | "billing:write"
-  | "billing:delete"
   | "payroll:read"
   | "payroll:write"
   | "payroll:approve"
-  | "documents:read"
-  | "documents:write"
-  | "documents:delete"
-  | "performance:read"
-  | "performance:write"
-  | "roster:read"
-  | "roster:write"
   | "users:read"
   | "users:write"
   | "users:delete"
-  | "announcements:read"
-  | "announcements:write"
-  | "announcements:delete"
-  | "tokens:read"
-  | "tokens:write"
-  | "schedule:read"
-  | "schedule:write"
-  | "schedule:delete"
   | "leave:apply"
   | "leave:approve"
+  | "leave:manage-types"
   | "attendance:read"
   | "attendance:write"
-  | "insurance:read"
-  | "insurance:write"
-  | "inventory:read"
-  | "inventory:write"
-  | "inventory:delete"
-  | "medicine:administer"
-  | "medicine:prescribe"
-  | "reports:read"
-  | "reports:match"
   | "settings:read"
   | "settings:write";
 
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   SUPER_ADMIN: [
-    "dashboard:view", "staff:read", "staff:write", "staff:delete",
-    "patient:read", "patient:write", "patient:register", "patient:delete",
-    "lab:read", "lab:write", "lab:delete",
-    "billing:read", "billing:write", "billing:delete",
+    "dashboard:view",
+    "staff:read", "staff:write", "staff:delete",
     "payroll:read", "payroll:write", "payroll:approve",
-    "documents:read", "documents:write", "documents:delete",
-    "performance:read", "performance:write",
-    "roster:read", "roster:write",
     "users:read", "users:write", "users:delete",
-    "announcements:read", "announcements:write", "announcements:delete",
-    "tokens:read", "tokens:write",
-    "schedule:read", "schedule:write", "schedule:delete",
-    "leave:apply", "leave:approve",
+    "leave:apply", "leave:approve", "leave:manage-types",
     "attendance:read", "attendance:write",
-    "insurance:read", "insurance:write",
-    "inventory:read", "inventory:write", "inventory:delete",
-    "medicine:prescribe", "medicine:administer",
-    "reports:read", "reports:match",
     "settings:read", "settings:write",
   ],
-  CEO: [
-    "dashboard:view", "staff:read", "staff:write", "patient:read",
-    "billing:read", "billing:write",
-    "payroll:read", "payroll:write", "payroll:approve",
-    "documents:read", "documents:write",
-    "performance:read", "performance:write", "roster:read",
+  ADMIN: [
+    "dashboard:view",
+    "staff:read", "staff:write",
+    "payroll:read",
     "users:read", "users:write",
-    "announcements:read", "announcements:write",
-    "tokens:read", "schedule:read", "schedule:write",
-    "leave:approve", "attendance:read",
-    "insurance:read", "inventory:read", "inventory:write",
-    "reports:read", "settings:read", "settings:write",
-  ],
-  CMO: [
-    "dashboard:view", "staff:read", "staff:write", "patient:read", "patient:write",
-    "lab:read", "lab:write",
-    "documents:read", "documents:write",
-    "performance:read", "performance:write",
-    "roster:read", "roster:write",
-    "schedule:read", "schedule:write",
-    "leave:approve", "attendance:read",
-    "medicine:prescribe", "reports:read", "reports:match",
-  ],
-  COO: [
-    "dashboard:view", "staff:read", "staff:write", "patient:read",
-    "billing:read",
-    "payroll:read", "payroll:write",
-    "documents:read", "documents:write",
-    "performance:read", "roster:read", "roster:write",
-    "announcements:read", "announcements:write",
-    "tokens:read", "schedule:read",
-    "leave:approve", "attendance:read", "attendance:write",
-    "insurance:read", "insurance:write",
-    "inventory:read", "inventory:write",
+    "leave:apply", "leave:approve",
+    "attendance:read", "attendance:write",
     "settings:read",
   ],
-  METRON: [
-    "dashboard:view", "staff:read", "patient:read", "patient:write",
-    "documents:read", "documents:write",
-    "roster:read", "roster:write",
-    "schedule:read", "schedule:write",
+  LEADER: [
+    "dashboard:view",
+    "staff:read",
+    "payroll:read",
+    "leave:apply", "leave:approve",
     "attendance:read", "attendance:write",
-    "medicine:administer", "reports:read",
-  ],
-  DOCTOR: [
-    "dashboard:view", "staff:read", "patient:read", "patient:write",
-    "lab:read", "lab:write",
-    "documents:read", "performance:read",
-    "schedule:read", "leave:apply", "attendance:read",
-    "medicine:prescribe", "reports:read",
-  ],
-  ACCOUNTANT: [
-    "dashboard:view", "staff:read",
-    "billing:read", "billing:write",
-    "payroll:read", "payroll:write",
-    "documents:read", "documents:write",
-    "leave:approve", "attendance:read", "leave:apply",
-    "insurance:read", "insurance:write",
-  ],
-  RECEPTIONIST: [
-    "dashboard:view", "patient:read", "patient:write", "patient:register",
-    "billing:read",
-    "tokens:read", "tokens:write",
-    "schedule:read", "documents:read",
-    "leave:apply", "attendance:read",
-  ],
-  SR_NURSE: [
-    "dashboard:view", "patient:read", "patient:write",
-    "documents:read", "documents:write",
-    "roster:read", "attendance:read",
-    "medicine:administer", "reports:read", "leave:apply",
-  ],
-  JR_NURSE: [
-    "dashboard:view", "patient:read",
-    "documents:read", "roster:read",
-    "attendance:read", "medicine:administer", "leave:apply",
-  ],
-  TECHNICIAN: [
-    "dashboard:view", "lab:read", "lab:write",
-    "documents:read", "attendance:read",
-    "reports:read", "reports:match", "leave:apply",
-  ],
-  PHARMACIST: [
-    "dashboard:view", "patient:read",
-    "lab:read", "documents:read",
-    "announcements:read", "attendance:read", "leave:apply",
-    "inventory:read", "inventory:write",
-    "medicine:administer", "medicine:prescribe",
   ],
   STAFF: [
-    "dashboard:view", "documents:read", "attendance:read", "leave:apply",
-    "announcements:read",
+    "dashboard:view",
+    "attendance:read",
+    "leave:apply",
+    "payroll:read",
   ],
 };
 
@@ -319,6 +176,7 @@ export interface AuthenticatedUser {
   name: string;
   email: string;
   role: UserRole;
+  department?: string;
   permissions: Permission[];
   avatarUrl?: string;
 }
@@ -478,15 +336,22 @@ export interface PayrollRecord {
   id: string;
   staffId: string;
   staffName: string;
+  department?: string;
   month: string;
   year?: string;
   baseSalary: number;
   basicSalary?: number;
-  ta?: number;
-  conveyance?: number;
-  pf?: number;
-  tds?: number;
   hra?: number;
+  epfEmployer?: number;
+  otherAllowance?: number;
+  grossSalary?: number;
+  professionalTax?: number;
+  epfEmployee?: number;
+  leaveDeductions?: number;
+  totalShifts?: number;
+  attendedShifts?: number;
+  leavesTaken?: number;
+  shiftRate?: number;
   bonus: number;
   deductions: number;
   netSalary: number;
@@ -532,7 +397,18 @@ export interface SystemUser {
   name: string;
   email: string;
   role: UserRole;
+  department?: string;
   isActive: boolean;
   avatarUrl?: string;
   createdAt: string;
+}
+
+export interface LeaveTypeConfig {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
+export interface AppSettings {
+  workingDaysPerMonth: number;
 }

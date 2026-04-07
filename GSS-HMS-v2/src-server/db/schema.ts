@@ -6,7 +6,8 @@ export const users = sqliteTable("users", {
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   name: text("name").notNull(),
-  role: text("role").notNull(), // UserRole enum value
+  role: text("role").notNull(), // SUPER_ADMIN | ADMIN | LEADER | STAFF
+  department: text("department"), // for LEADER role — department they lead
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   lastLogin: text("last_login"),
   createdAt: text("created_at").notNull(),
@@ -155,19 +156,26 @@ export const payrollRecords = sqliteTable("payroll_records", {
   id: text("id").primaryKey(),
   staffId: text("staff_id").notNull().references(() => staff.id),
   staffName: text("staff_name").notNull(),
+  department: text("department"),
   month: text("month").notNull(),
   year: text("year"),
   baseSalary: real("base_salary").notNull(),
   basicSalary: real("basic_salary"),
-  ta: real("ta").default(0),
-  conveyance: real("conveyance").default(0),
-  pf: real("pf").default(0),
-  tds: real("tds").default(0),
   hra: real("hra").default(0),
+  epfEmployer: real("epf_employer").default(0),
+  otherAllowance: real("other_allowance").default(0),
+  grossSalary: real("gross_salary").default(0),
+  professionalTax: real("professional_tax").default(0),
+  epfEmployee: real("epf_employee").default(0),
+  leaveDeductions: real("leave_deductions").default(0),
+  totalShifts: integer("total_shifts").default(0),
+  attendedShifts: integer("attended_shifts").default(0),
+  leavesTaken: integer("leaves_taken").default(0),
+  shiftRate: real("shift_rate").default(0),
   deductions: real("deductions").notNull().default(0),
   bonus: real("bonus").notNull().default(0),
   netSalary: real("net_salary").notNull(),
-  status: text("status").notNull(), // Draft | Processed | Paid
+  status: text("status").notNull(), // Draft | Processed | Approved | Paid
 });
 
 // ─── Performance Evaluations ────────────────────────────────
@@ -293,4 +301,20 @@ export const patientDocuments = sqliteTable("patient_documents", {
   mimeType: text("mime_type").notNull(),
   fileData: text("file_data").notNull(), // base64-encoded
   uploadedAt: text("uploaded_at").notNull(),
+});
+
+// ─── Leave Types (configurable by Super Admin) ──────────────
+export const leaveTypes = sqliteTable("leave_types", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdBy: text("created_by").notNull(),
+  createdAt: text("created_at").notNull(),
+});
+
+// ─── App Settings (key-value) ───────────────────────────────
+export const appSettings = sqliteTable("app_settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: text("updated_at").notNull(),
 });

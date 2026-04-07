@@ -38,6 +38,8 @@ router.delete("/:id", requireAuth, requirePermission("patient:delete"), (req: Au
   const patId = String(req.params.id);
   const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
   if (permanent) {
+    // Delete related documents first (FK constraint)
+    db.delete(patientDocuments).where(eq(patientDocuments.patientId, patId)).run();
     db.delete(patients).where(eq(patients.id, patId)).run();
   } else {
     db.update(patients).set({ isActive: false, updatedAt: new Date().toISOString() }).where(eq(patients.id, patId)).run();

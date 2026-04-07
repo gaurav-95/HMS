@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import bcrypt from "bcryptjs";
 import { db } from "../db/index";
-import { users } from "../db/schema";
+import { users, staff } from "../db/schema";
 import { requireAuth, requirePermission } from "../middleware/auth";
 
 const router = Router();
@@ -14,11 +14,20 @@ router.get("/", requireAuth, requirePermission("users:read"), (_req, res) => {
     email: users.email,
     name: users.name,
     role: users.role,
+    department: users.department,
     isActive: users.isActive,
     lastLogin: users.lastLogin,
     createdAt: users.createdAt,
-  }).from(users).where(eq(users.isActive, true)).all();
-  res.json(allUsers);
+  }).from(users).all();
+
+  // Attach staff photo if linked
+  const result = allUsers.map((u) => {
+    const linked = db.select({ photoPath: staff.photoPath, avatar: staff.avatar })
+      .from(staff).where(eq(staff.userId, u.id)).get();
+    return { ...u, photoPath: linked?.photoPath || null, avatar: linked?.avatar || null };
+  });
+
+  res.json(result);
 });
 
 router.post("/", requireAuth, requirePermission("users:write"), (req, res) => {
@@ -30,6 +39,7 @@ router.post("/", requireAuth, requirePermission("users:write"), (req, res) => {
     email: req.body.email,
     name: req.body.name,
     role: req.body.role,
+    department: req.body.department || null,
     password: hashed,
     isActive: req.body.isActive ?? true,
     createdAt: now,
@@ -38,7 +48,7 @@ router.post("/", requireAuth, requirePermission("users:write"), (req, res) => {
 
   const created = db.select({
     id: users.id, email: users.email, name: users.name,
-    role: users.role, isActive: users.isActive, createdAt: users.createdAt,
+    role: users.role, department: users.department, isActive: users.isActive, createdAt: users.createdAt,
   }).from(users).where(eq(users.id, id)).get();
   res.status(201).json(created);
 });
@@ -49,6 +59,7 @@ router.put("/:id", requireAuth, requirePermission("users:write"), (req, res) => 
     name: req.body.name,
     email: req.body.email,
     role: req.body.role,
+    department: req.body.department ?? null,
     isActive: req.body.isActive,
     updatedAt: new Date().toISOString(),
   };
@@ -59,7 +70,7 @@ router.put("/:id", requireAuth, requirePermission("users:write"), (req, res) => 
 
   const updated = db.select({
     id: users.id, email: users.email, name: users.name,
-    role: users.role, isActive: users.isActive, createdAt: users.createdAt,
+    role: users.role, department: users.department, isActive: users.isActive, createdAt: users.createdAt,
   }).from(users).where(eq(users.id, userId)).get();
   if (!updated) return res.status(404).json({ error: "User not found" });
   res.json(updated);
@@ -69,6 +80,8 @@ router.delete("/:id", requireAuth, requirePermission("users:delete"), (req: any,
   const userId = String(req.params.id);
   const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
   if (permanent) {
+    // Unlink any staff referencing this user before deleting
+    db.update(staff).set({ userId: null }).where(eq(staff.userId, userId)).run();
     db.delete(users).where(eq(users.id, userId)).run();
   } else {
     db.update(users).set({ isActive: false, updatedAt: new Date().toISOString() }).where(eq(users.id, userId)).run();

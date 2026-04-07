@@ -14,12 +14,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function buildAuthUser(data: { id: string; email: string; name: string; role: string }): AuthenticatedUser {
+function buildAuthUser(data: { id: string; email: string; name: string; role: string; department?: string }): AuthenticatedUser {
   return {
     id: data.id,
     name: data.name,
     email: data.email,
     role: data.role as UserRole,
+    department: data.department || undefined,
     permissions: ROLE_PERMISSIONS[data.role as UserRole] || [],
   };
 }

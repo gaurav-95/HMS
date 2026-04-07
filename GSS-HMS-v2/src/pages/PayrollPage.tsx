@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { usePayroll, useCreatePayroll, useUpdatePayrollStatus, useDeletePayroll, useStaff } from "@/hooks/queries";
+﻿import { useState, useMemo } from "react";
+import { usePayroll, useCreatePayroll, useGeneratePayroll, useUpdatePayrollStatus, useDeletePayroll, useStaff } from "@/hooks/queries";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,117 +9,59 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Plus, Search, Filter, Trash2, ArrowRight } from "lucide-react";
+import { Loader2, Search, Filter, Trash2, ArrowRight, Zap } from "lucide-react";
 import { ExportButtons } from "@/components/ExportButtons";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 import { formatCurrency } from "@/lib/utils";
-import { useSearchParams } from "react-router-dom";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const currentMonth = MONTHS[new Date().getMonth()];
 const currentYear = new Date().getFullYear().toString();
-
 const STATUS_FLOW: Record<string, string> = { Draft: "Processed", Processed: "Approved", Approved: "Paid" };
-
-const blankForm = {
-  staffId: "",
-  staffName: "",
-  month: currentMonth,
-  year: currentYear,
-  baseSalary: 0,
-  bonus: 0,
-  deductions: 0,
-  netSalary: 0,
-  status: "Draft",
-  // breakdown fields
-  basicSalary: 0,
-  ta: 0,
-  conveyance: 0,
-  hra: 0,
-  pf: 0,
-  tds: 0,
-};
 
 export default function PayrollPage() {
   const { data: payroll = [], isLoading } = usePayroll();
   const { data: staffList = [] } = useStaff();
   const { hasPermission } = useAuth();
-  const createPayroll = useCreatePayroll();
+  const generatePayroll = useGeneratePayroll();
   const updatePayrollStatus = useUpdatePayrollStatus();
   const deletePayroll = useDeletePayroll();
 
   const allPayroll = payroll as any[];
   const allStaff = staffList as any[];
 
-  const [searchParams] = useSearchParams();
-  const staffIdFromUrl = searchParams.get("staff") || "";
-
   const [search, setSearch] = useState("");
   const [filterMonth, setFilterMonth] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState(blankForm);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
-
-  // Auto-compute net salary from breakdown
-  const netSalary = (form.basicSalary || 0) + (form.ta || 0) + (form.conveyance || 0) + (form.hra || 0) + (form.bonus || 0) - (form.pf || 0) - (form.tds || 0) - (form.deductions || 0);
+  const [genMonth, setGenMonth] = useState(currentMonth);
+  const [genYear, setGenYear] = useState(currentYear);
+  const [showGenerate, setShowGenerate] = useState(false);
 
   const filtered = useMemo(() => {
     return allPayroll.filter((p: any) => {
       const matchSearch = !search || p.staffName?.toLowerCase().includes(search.toLowerCase());
       const matchMonth = filterMonth === "all" || p.month === filterMonth;
       const matchStatus = filterStatus === "all" || p.status === filterStatus;
-      const matchStaffUrl = !staffIdFromUrl || p.staffId === staffIdFromUrl;
-      return matchSearch && matchMonth && matchStatus && matchStaffUrl;
+      return matchSearch && matchMonth && matchStatus;
     });
-  }, [allPayroll, search, filterMonth, filterStatus, staffIdFromUrl]);
+  }, [allPayroll, search, filterMonth, filterStatus]);
 
-  const totalGross = filtered.reduce((sum: number, p: any) => sum + (p.baseSalary || 0) + (p.bonus || 0), 0);
-  const totalNet = filtered.reduce((sum: number, p: any) => sum + (p.netSalary || 0), 0);
-  const totalDeductions = filtered.reduce((sum: number, p: any) => sum + (p.deductions || 0), 0);
-
-  const staffMap = useMemo(() => {
-    const map: Record<string, any> = {};
-    allStaff.forEach((s: any) => { map[s.id] = s; });
-    return map;
-  }, [allStaff]);
-
-  const urlStaffName = staffIdFromUrl ? staffMap[staffIdFromUrl]?.name : null;
-
-  const handleStaffSelect = (staffId: string) => {
-    const s = allStaff.find((m: any) => m.id === staffId);
-    if (s) {
-      const base = s.baseSalary || 0;
-      setForm((f) => ({
-        ...f,
-        staffId,
-        staffName: s.name,
-        baseSalary: base,
-        basicSalary: base,
-      }));
-    }
-  };
-
-  const handleSubmit = () => {
-    if (!form.staffId) return;
-    createPayroll.mutate({
-      ...form,
-      baseSalary: form.basicSalary,
-      netSalary,
-    }, { onSuccess: () => { setOpen(false); setForm(blankForm); } });
-  };
+  const totalGross = filtered.reduce((s: number, p: any) => s + (p.grossSalary || 0), 0);
+  const totalNet = filtered.reduce((s: number, p: any) => s + (p.netSalary || 0), 0);
+  const totalDeductions = filtered.reduce((s: number, p: any) => s + (p.deductions || 0), 0);
 
   const handleStatusChange = (id: string, currentStatus: string) => {
-    const nextStatus = STATUS_FLOW[currentStatus];
-    if (nextStatus) {
-      updatePayrollStatus.mutate({ id, status: nextStatus });
-    }
+    const next = STATUS_FLOW[currentStatus];
+    if (next) updatePayrollStatus.mutate({ id, status: next });
+  };
+
+  const handleGenerate = () => {
+    generatePayroll.mutate({ month: genMonth, year: genYear }, { onSuccess: () => setShowGenerate(false) });
   };
 
   const handleDelete = () => {
-    if (deleteTarget) {
-      deletePayroll.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) });
-    }
+    if (deleteTarget) deletePayroll.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) });
   };
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -129,18 +71,16 @@ export default function PayrollPage() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold">Monthly Payroll</h1>
-          <p className="text-muted-foreground">
-            {urlStaffName ? `Showing payroll for ${urlStaffName}` : "Salary processing and disbursement"}
-          </p>
+          <p className="text-muted-foreground">Indian salary structure &mdash; auto-generated from attendance</p>
         </div>
         <div className="flex items-center gap-2">
           <ExportButtons
             title="Monthly Payroll"
-            columns={["Employee", "Month", "Year", "Basic", "TA", "Conveyance", "HRA", "PF", "TDS", "Bonus", "Deductions", "Net Salary", "Status"]}
-            rows={filtered.map((p: any) => [p.staffName || "", p.month || "", p.year || "", p.basicSalary || p.baseSalary || 0, p.ta || 0, p.conveyance || 0, p.hra || 0, p.pf || 0, p.tds || 0, p.bonus ?? 0, p.deductions ?? 0, p.netSalary ?? 0, p.status || ""])}
+            columns={["Employee", "Department", "Month", "Year", "Basic", "HRA", "EPF (Employer)", "Other Allowance", "Gross Salary", "Prof. Tax", "EPF (Employee)", "Leave Ded.", "Net Salary", "Shifts", "Attended", "Leaves", "Status"]}
+            rows={filtered.map((p: any) => [p.staffName, p.department || "", p.month, p.year, p.basicSalary || 0, p.hra || 0, p.epfEmployer || 0, p.otherAllowance || 0, p.grossSalary || 0, p.professionalTax || 0, p.epfEmployee || 0, p.leaveDeductions || 0, p.netSalary || 0, p.totalShifts || 0, p.attendedShifts || 0, p.leavesTaken || 0, p.status])}
           />
           {hasPermission("payroll:write") && (
-            <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-1" /> Create Payroll</Button>
+            <Button onClick={() => setShowGenerate(true)} className="gap-1.5"><Zap size={16} /> Generate Payroll</Button>
           )}
         </div>
       </div>
@@ -182,18 +122,22 @@ export default function PayrollPage() {
       <Card>
         <CardHeader><CardTitle>Payroll Records</CardTitle></CardHeader>
         <CardContent className="p-0">
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Employee</TableHead>
+                <TableHead>Dept</TableHead>
                 <TableHead>Month</TableHead>
                 <TableHead className="text-right">Basic</TableHead>
-                <TableHead className="text-right">TA</TableHead>
-                <TableHead className="text-right">Conv.</TableHead>
                 <TableHead className="text-right">HRA</TableHead>
-                <TableHead className="text-right">PF</TableHead>
-                <TableHead className="text-right">TDS</TableHead>
+                <TableHead className="text-right">Other</TableHead>
+                <TableHead className="text-right">Gross</TableHead>
+                <TableHead className="text-right">EPF</TableHead>
+                <TableHead className="text-right">PT</TableHead>
+                <TableHead className="text-right">Leave Ded.</TableHead>
                 <TableHead className="text-right">Net Salary</TableHead>
+                <TableHead className="text-center">Shifts</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -204,14 +148,17 @@ export default function PayrollPage() {
                 return (
                   <TableRow key={p.id}>
                     <TableCell className="font-medium">{p.staffName}</TableCell>
+                    <TableCell>{p.department || "—"}</TableCell>
                     <TableCell>{p.month} {p.year}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(p.basicSalary || p.baseSalary)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(p.ta || 0)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(p.conveyance || 0)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(p.basicSalary || 0)}</TableCell>
                     <TableCell className="text-right">{formatCurrency(p.hra || 0)}</TableCell>
-                    <TableCell className="text-right text-red-600">{formatCurrency(p.pf || 0)}</TableCell>
-                    <TableCell className="text-right text-red-600">{formatCurrency(p.tds || 0)}</TableCell>
-                    <TableCell className="text-right font-semibold">{formatCurrency(p.netSalary)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(p.otherAllowance || 0)}</TableCell>
+                    <TableCell className="text-right font-medium">{formatCurrency(p.grossSalary || 0)}</TableCell>
+                    <TableCell className="text-right text-red-600">{formatCurrency(p.epfEmployee || 0)}</TableCell>
+                    <TableCell className="text-right text-red-600">{formatCurrency(p.professionalTax || 0)}</TableCell>
+                    <TableCell className="text-right text-red-600">{formatCurrency(p.leaveDeductions || 0)}</TableCell>
+                    <TableCell className="text-right font-bold">{formatCurrency(p.netSalary || 0)}</TableCell>
+                    <TableCell className="text-center">{p.attendedShifts ?? 0}/{p.totalShifts ?? 0}</TableCell>
                     <TableCell>
                       <Badge variant={p.status === "Paid" ? "success" : p.status === "Approved" ? "info" : p.status === "Processed" ? "secondary" : "warning"}>
                         {p.status}
@@ -235,88 +182,42 @@ export default function PayrollPage() {
                 );
               })}
               {filtered.length === 0 && (
-                <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">No payroll records match filters</TableCell></TableRow>
+                <TableRow><TableCell colSpan={14} className="text-center py-8 text-muted-foreground">No payroll records match filters</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Create Payroll Dialog */}
-      <Dialog open={open} onOpenChange={setOpen}>
+      {/* Generate Payroll Dialog */}
+      <Dialog open={showGenerate} onOpenChange={setShowGenerate}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Create Payroll Entry</DialogTitle></DialogHeader>
-          <div className="grid gap-4 py-2">
+          <DialogHeader><DialogTitle>Generate Monthly Payroll</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Auto-calculate salary for all active staff based on attendance data for the selected month. Existing records won't be duplicated.</p>
+          <div className="grid grid-cols-2 gap-4 py-2">
             <div className="space-y-2">
-              <Label>Staff Member</Label>
-              <Select value={form.staffId} onValueChange={handleStaffSelect}>
-                <SelectTrigger><SelectValue placeholder="Select staff member" /></SelectTrigger>
-                <SelectContent>
-                  {allStaff.filter((s: any) => s.isActive !== false).map((s: any) => (
-                    <SelectItem key={s.id} value={s.id}>{s.name} — {s.department}</SelectItem>
-                  ))}
-                </SelectContent>
+              <Label>Month</Label>
+              <Select value={genMonth} onValueChange={setGenMonth}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{MONTHS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Month</Label>
-                <Select value={form.month} onValueChange={(v) => setForm((f) => ({ ...f, month: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{MONTHS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Year</Label>
-                <Input value={form.year} onChange={(e) => setForm((f) => ({ ...f, year: e.target.value }))} />
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Basic Salary</Label>
-                <Input type="number" value={form.basicSalary} onChange={(e) => setForm((f) => ({ ...f, basicSalary: Number(e.target.value) }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>TA</Label>
-                <Input type="number" value={form.ta} onChange={(e) => setForm((f) => ({ ...f, ta: Number(e.target.value) }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Conveyance</Label>
-                <Input type="number" value={form.conveyance} onChange={(e) => setForm((f) => ({ ...f, conveyance: Number(e.target.value) }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>HRA</Label>
-                <Input type="number" value={form.hra} onChange={(e) => setForm((f) => ({ ...f, hra: Number(e.target.value) }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Bonus</Label>
-                <Input type="number" value={form.bonus} onChange={(e) => setForm((f) => ({ ...f, bonus: Number(e.target.value) }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Other Deductions</Label>
-                <Input type="number" value={form.deductions} onChange={(e) => setForm((f) => ({ ...f, deductions: Number(e.target.value) }))} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>PF (Provident Fund)</Label>
-                <Input type="number" value={form.pf} onChange={(e) => setForm((f) => ({ ...f, pf: Number(e.target.value) }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>TDS (Tax Deducted at Source)</Label>
-                <Input type="number" value={form.tds} onChange={(e) => setForm((f) => ({ ...f, tds: Number(e.target.value) }))} />
-              </div>
-            </div>
-            <div className="bg-muted rounded-md p-3 text-center">
-              <span className="text-sm text-muted-foreground">Net Salary: </span>
-              <span className="text-lg font-bold">{formatCurrency(netSalary)}</span>
+            <div className="space-y-2">
+              <Label>Year</Label>
+              <Input value={genYear} onChange={(e) => setGenYear(e.target.value)} />
             </div>
           </div>
+          <div className="bg-muted rounded-md p-3 text-sm space-y-1">
+            <p><strong>Salary structure:</strong></p>
+            <p>Basic Salary + HRA (50%) + Other Allowance (47%)</p>
+            <p>Deductions: EPF Employee + Professional Tax + Leave Deductions</p>
+          </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={!form.staffId || createPayroll.isPending}>
-              {createPayroll.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-              Create Entry
+            <Button variant="outline" onClick={() => setShowGenerate(false)}>Cancel</Button>
+            <Button onClick={handleGenerate} disabled={generatePayroll.isPending}>
+              {generatePayroll.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Zap size={16} className="mr-1" />}
+              Generate
             </Button>
           </DialogFooter>
         </DialogContent>

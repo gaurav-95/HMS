@@ -1,13 +1,33 @@
 import { Router } from "express";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { db } from "../db/index";
-import { attendanceRecords } from "../db/schema";
-import { requireAuth, requirePermission } from "../middleware/auth";
+import { attendanceRecords, staff } from "../db/schema";
+import { requireAuth, requirePermission, AuthRequest } from "../middleware/auth";
 
 const router = Router();
 
-router.get("/", requireAuth, requirePermission("attendance:read"), (_req, res) => {
+router.get("/", requireAuth, requirePermission("attendance:read"), (req: AuthRequest, res) => {
+  const userRole = req.user!.role;
+  const userDept = req.user!.department;
+
+  // LEADER: only see attendance for staff in their department
+  if (userRole === "LEADER" && userDept) {
+    const deptStaffIds = db.select({ id: staff.id }).from(staff)
+      .where(eq(staff.department, userDept)).all().map((s) => s.id);
+    if (deptStaffIds.length === 0) return res.json([]);
+    return res.json(db.select().from(attendanceRecords).where(inArray(attendanceRecords.staffId, deptStaffIds)).all());
+  }
+
+  // STAFF: only see their own attendance (find staff linked to this user)
+  if (userRole === "STAFF") {
+    const linkedStaff = db.select({ id: staff.id }).from(staff)
+      .where(eq(staff.userId, req.user!.id)).get();
+    if (!linkedStaff) return res.json([]);
+    return res.json(db.select().from(attendanceRecords).where(eq(attendanceRecords.staffId, linkedStaff.id)).all());
+  }
+
+  // SUPER_ADMIN / ADMIN: see everything
   res.json(db.select().from(attendanceRecords).all());
 });
 

@@ -24,10 +24,29 @@ const sqlite = new Database(DB_PATH);
 sqlite.pragma("journal_mode = WAL");
 sqlite.pragma("foreign_keys = ON");
 
+export { sqlite };
 export const db = drizzle(sqlite, { schema });
 
 export function closeDatabase() {
   sqlite.close();
+}
+
+/** Delete all user/operational data from every table (keeps app_settings) */
+export function clearAllData() {
+  sqlite.pragma("foreign_keys = OFF");
+  const tables = [
+    "certifications", "kpis", "attendance_records", "leave_requests",
+    "payroll_records", "doctor_schedules", "performance_evaluations",
+    "patient_documents", "medicine_administrations",
+    "staff", "users", "patients", "tokens", "documents", "announcements",
+    "inventory_items", "prescriptions", "billing_records", "lab_tests",
+    "leave_types",
+  ];
+  for (const table of tables) {
+    sqlite.exec(`DELETE FROM ${table}`);
+  }
+  sqlite.pragma("foreign_keys = ON");
+  console.log("🗑️  All data cleared");
 }
 
 /** Create all tables if they don't exist (self-initializing for standalone app) */
@@ -300,6 +319,20 @@ export function setupDatabase() {
       file_data TEXT NOT NULL,
       uploaded_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS leave_types (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      created_by TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
   `);
 
   // ── Auto-migration: add missing columns to older databases ──
@@ -359,9 +392,57 @@ export function setupDatabase() {
     ["pf", "REAL DEFAULT 0"],
     ["tds", "REAL DEFAULT 0"],
     ["hra", "REAL DEFAULT 0"],
+    ["department", "TEXT"],
+    ["epf_employer", "REAL DEFAULT 0"],
+    ["other_allowance", "REAL DEFAULT 0"],
+    ["gross_salary", "REAL DEFAULT 0"],
+    ["professional_tax", "REAL DEFAULT 0"],
+    ["epf_employee", "REAL DEFAULT 0"],
+    ["leave_deductions", "REAL DEFAULT 0"],
+    ["total_shifts", "INTEGER DEFAULT 0"],
+    ["attended_shifts", "INTEGER DEFAULT 0"],
+    ["leaves_taken", "INTEGER DEFAULT 0"],
+    ["shift_rate", "REAL DEFAULT 0"],
   ];
   for (const [col, def] of payrollCols) {
     addColumnIfMissing("payroll_records", col, def);
+  }
+
+  // Users department column (for LEADER role)
+  addColumnIfMissing("users", "department", "TEXT");
+
+  // Seed default leave types if table is empty
+  const leaveTypeCount = sqlite.prepare("SELECT COUNT(*) as cnt FROM leave_types").get() as { cnt: number };
+  if (leaveTypeCount.cnt === 0) {
+    const now = new Date().toISOString();
+    sqlite.exec(`
+      INSERT INTO leave_types (id, name, is_active, created_by, created_at) VALUES
+        ('lt-casual', 'Casual Leave', 1, 'system', '${now}'),
+        ('lt-sick', 'Sick Leave', 1, 'system', '${now}');
+    `);
+  }
+
+  // Seed default settings if table is empty
+  const settingsCount = sqlite.prepare("SELECT COUNT(*) as cnt FROM app_settings").get() as { cnt: number };
+  if (settingsCount.cnt === 0) {
+    const now = new Date().toISOString();
+    sqlite.exec(`
+      INSERT INTO app_settings (key, value, updated_at) VALUES
+        ('workingDaysPerMonth', '26', '${now}');
+    `);
+  }
+
+  // Auto-migrate old roles to new simplified roles
+  const oldRoleMapping: Record<string, string> = {
+    CEO: "ADMIN", COO: "ADMIN", CMO: "ADMIN",
+    ACCOUNTANT: "ADMIN",
+    METRON: "LEADER",
+    DOCTOR: "STAFF", SR_NURSE: "STAFF", JR_NURSE: "STAFF",
+    NURSE: "STAFF", RECEPTIONIST: "STAFF", TECHNICIAN: "STAFF",
+    PHARMACIST: "STAFF",
+  };
+  for (const [oldRole, newRole] of Object.entries(oldRoleMapping)) {
+    sqlite.exec(`UPDATE users SET role = '${newRole}' WHERE role = '${oldRole}'`);
   }
 
   console.log("✓ Database tables initialized");

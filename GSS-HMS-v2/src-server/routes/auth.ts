@@ -35,6 +35,7 @@ router.post("/login", (req, res) => {
     email: user.email,
     name: user.name,
     role: user.role,
+    department: (user as any).department || undefined,
   });
 
   res.json({
@@ -44,6 +45,7 @@ router.post("/login", (req, res) => {
       email: user.email,
       name: user.name,
       role: user.role,
+      department: (user as any).department || null,
       isActive: user.isActive,
     },
   });
@@ -59,6 +61,7 @@ router.get("/me", requireAuth, (req: AuthRequest, res) => {
     email: user.email,
     name: user.name,
     role: user.role,
+    department: (user as any).department || null,
     isActive: user.isActive,
     lastLogin: user.lastLogin,
   });

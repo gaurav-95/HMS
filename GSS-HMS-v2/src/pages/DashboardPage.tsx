@@ -1,24 +1,20 @@
+﻿import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useAuth } from "@/context/AuthContext";
-import { useDashboardStats, usePatients, useLabTests, useInventory, useStaff } from "@/hooks/queries";
-import { Users, TestTubeDiagonal, AlertTriangle, ClipboardCheck, Megaphone, Clock, Loader2, TrendingUp, Package, ShieldAlert, Pill, IndianRupee, ArrowRight } from "lucide-react";
-import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { formatCurrency, formatDate } from "@/lib/utils";
-import { useNavigate } from "react-router-dom";
+import { useDashboardStats } from "@/hooks/queries";
+import { Users, UserX, ClipboardCheck, Calendar, Loader2 } from "lucide-react";
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 const CHART_COLORS = ["#0d9488", "#f59e0b", "#3b82f6", "#ef4444", "#8b5cf6", "#ec4899", "#10b981", "#f97316"];
+const PERIODS = [
+  { key: "monthly", label: "This Month" },
+  { key: "quarterly", label: "This Quarter" },
+  { key: "yearly", label: "This Year" },
+] as const;
 
 export default function DashboardPage() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const { data: stats, isLoading } = useDashboardStats();
-  const { data: patients = [] } = usePatients();
-  const { data: labTests = [] } = useLabTests();
-  const { data: inventory = [] } = useInventory();
-  const { data: staffData = [] } = useStaff();
+  const [period, setPeriod] = useState<string>("monthly");
+  const { data: stats, isLoading } = useDashboardStats(period);
 
   if (isLoading) {
     return (
@@ -29,389 +25,121 @@ export default function DashboardPage() {
   }
 
   const totalStaff = stats?.totalStaff ?? 0;
-  const pendingTests = stats?.pendingTests ?? 0;
-  const expiringDocs = stats?.expiringDocs ?? 0;
-  const todayAttendance = stats?.todayAttendance ?? 0;
-  const waitingTokens = stats?.waitingTokens ?? 0;
-  const activeAnnouncements = stats?.announcements ?? [];
-  const recentTests = stats?.recentTests ?? [];
-  const expiringCerts: any[] = stats?.expiringCerts ?? [];
-  const discrepancyCount: number = stats?.discrepancyCount ?? 0;
-  const penaltySummary: any[] = stats?.penaltySummary ?? [];
+  const terminatedStaff = stats?.terminatedStaff ?? 0;
+  const todayPresent = stats?.todayPresent ?? 0;
+  const pendingLeaves = stats?.pendingLeaves ?? 0;
+  const staffByDepartment: { department: string; count: number }[] = stats?.staffByDepartment ?? [];
+  const staffByRole: { role: string; count: number }[] = stats?.staffByRole ?? [];
+  const attendanceSummary: { status: string; count: number }[] = stats?.attendanceSummary ?? [];
+  const leaveSummary: { status: string; count: number }[] = stats?.leaveSummary ?? [];
 
-  // ─── Chart data ─────────────────────────────────────────
-  const allStaff = staffData as any[];
-  const allTests = labTests as any[];
-  const allInventory = inventory as any[];
-  const allPatients = patients as any[];
+  const attendancePct = totalStaff > 0 ? Math.round((todayPresent / totalStaff) * 100) : 0;
 
-  // Department-wise staff distribution
-  const deptMap: Record<string, number> = {};
-  allStaff.forEach((s: any) => { deptMap[s.department] = (deptMap[s.department] || 0) + 1; });
-  const deptChartData = Object.entries(deptMap).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([name, count]) => ({ name: name.length > 12 ? name.slice(0, 12) + "…" : name, count }));
+  const deptChartData = staffByDepartment
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8)
+    .map((d) => ({ name: d.department?.length > 14 ? d.department.slice(0, 14) + "\u2026" : (d.department || "Unassigned"), count: d.count }));
 
-  // Lab test status distribution (pie)
-  const testStatusMap: Record<string, number> = {};
-  allTests.forEach((t: any) => { testStatusMap[t.status] = (testStatusMap[t.status] || 0) + 1; });
-  const testPieData = Object.entries(testStatusMap).map(([name, value]) => ({ name, value }));
+  const roleChartData = staffByRole.map((r) => ({ name: r.role || "Unknown", value: r.count }));
 
-  // Inventory category distribution (pie)
-  const invCatMap: Record<string, number> = {};
-  allInventory.forEach((i: any) => { invCatMap[i.category] = (invCatMap[i.category] || 0) + 1; });
-  const invPieData = Object.entries(invCatMap).map(([name, value]) => ({ name, value }));
+  // Summarize period attendance
+  const attMap: Record<string, number> = {};
+  attendanceSummary.forEach((a) => { attMap[a.status] = a.count; });
+  const periodPresent = (attMap["Present"] || 0) + (attMap["Late"] || 0);
+  const periodAbsent = attMap["Absent"] || 0;
+  const periodLeave = attMap["OnLeave"] || 0;
 
-  // Patient registrations trend (last 7 months)
-  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const now = new Date();
-  const patientTrend = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth() - (6 - i), 1);
-    const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const count = allPatients.filter((p: any) => p.createdAt?.startsWith(monthKey)).length;
-    return { month: monthNames[d.getMonth()], patients: count };
-  });
+  // Summarize period leaves
+  const leaveMap: Record<string, number> = {};
+  leaveSummary.forEach((l) => { leaveMap[l.status] = l.count; });
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Hospital overview and key metrics</p>
+      {/* Period filter */}
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground">Hospital overview and key metrics</p>
+        </div>
+        <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+          {PERIODS.map(({ key, label }) => (
+            <Button key={key} variant={period === key ? "default" : "ghost"} size="sm" className="text-xs h-7" onClick={() => setPeriod(key)}>
+              {label}
+            </Button>
+          ))}
+        </div>
       </div>
-
-      {/* Compliance Alert Banner */}
-      {expiringDocs > 0 && (
-        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 cursor-pointer hover:bg-amber-100/80 transition-colors" onClick={() => navigate("/documents")} role="button">
-          <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
-          <div className="flex-1">
-            <h3 className="font-semibold text-amber-800">Compliance Alert</h3>
-            <p className="text-sm text-amber-700">
-              <span className="font-medium">{expiringDocs} certification(s)</span> expired or expiring soon — require immediate attention.
-            </p>
-          </div>
-          <ArrowRight className="h-4 w-4 text-amber-600 mt-1 shrink-0" />
-        </div>
-      )}
-
-      {/* Medicine Discrepancy Alert */}
-      {discrepancyCount > 0 && (
-        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 cursor-pointer hover:bg-red-100/80 transition-colors" onClick={() => navigate("/medicine-discrepancy")} role="button">
-          <Pill className="h-5 w-5 text-red-600 mt-0.5 shrink-0" />
-          <div className="flex-1">
-            <h3 className="font-semibold text-red-800">Medicine Discrepancy Alert</h3>
-            <p className="text-sm text-red-700">
-              <span className="font-medium">{discrepancyCount} flagged discrepanc{discrepancyCount === 1 ? "y" : "ies"}</span> — administered medicines don't match prescriptions. Review immediately.
-            </p>
-          </div>
-          <ArrowRight className="h-4 w-4 text-red-600 mt-1 shrink-0" />
-        </div>
-      )}
-
       {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/staff")}>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Staff</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{totalStaff}</div>
-            <p className="text-xs text-muted-foreground">Active employees</p>
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/laboratory")}>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pending Tests</CardTitle>
-            <TestTubeDiagonal className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{pendingTests}</div>
-            <p className="text-xs text-muted-foreground">Awaiting processing</p>
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/documents")}>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Doc Alerts</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-destructive">{expiringDocs}</div>
-            <p className="text-xs text-muted-foreground">Expired or expiring soon</p>
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/attendance")}>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Today's Attendance</CardTitle>
-            <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{todayAttendance}</div>
-            <p className="text-xs text-muted-foreground">Present today</p>
-          </CardContent>
-        </Card>
+        <KpiCard icon={Users} label="Current Employees" value={totalStaff} sub="Active staff" />
+        <KpiCard icon={UserX} label="Terminated" value={terminatedStaff} sub="Inactive records" />
+        <KpiCard icon={ClipboardCheck} label="Attendance Today" value={`${attendancePct}%`} sub={`${todayPresent} of ${totalStaff} present`} />
+        <KpiCard icon={Calendar} label="Pending Leaves" value={pendingLeaves} sub="Awaiting approval" accent={pendingLeaves > 0} />
       </div>
 
-      {/* OPD Queue + Announcements Row */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* OPD Queue Status */}
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/opd")}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              OPD Queue
-              <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-4">
-              <div className="text-4xl font-bold text-primary">{waitingTokens}</div>
-              <p className="text-sm text-muted-foreground mt-1">Patients waiting today</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Announcements */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Megaphone className="h-5 w-5" />
-              Announcements
-              <Button variant="ghost" size="sm" className="ml-auto gap-1 text-xs" onClick={() => navigate("/announcements")}>
-                View All <ArrowRight size={14} />
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {activeAnnouncements.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">No active announcements</p>
-            )}
-            {activeAnnouncements.slice(0, 3).map((a: any) => (
-              <div key={a.id} className="flex items-start gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => navigate("/announcements")}>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-semibold text-sm">{a.title}</h4>
-                    <Badge variant={a.type === "Penalty" ? "destructive" : a.type === "Policy" ? "warning" : "secondary"}>
-                      {a.type}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground line-clamp-2">{a.content}</p>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Lab Tests */}
+      {/* Period Summary */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Recent Lab Tests
-            <Button variant="ghost" size="sm" className="ml-auto gap-1 text-xs" onClick={() => navigate("/laboratory")}>
-              View All <ArrowRight size={14} />
-            </Button>
-          </CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Period Summary — {PERIODS.find(p => p.key === period)?.label}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {recentTests.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">No recent tests</p>
-            )}
-            {recentTests.map((test: any) => (
-              <div key={test.id} className="flex items-center justify-between rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => navigate("/laboratory")}>
-                <div>
-                  <p className="font-medium text-sm">{test.testName}</p>
-                  <p className="text-xs text-muted-foreground">{test.patientName} — {test.category}</p>
-                </div>
-                <Badge
-                  variant={test.status === "Completed" ? "success" : test.status === "InProgress" ? "info" : "warning"}
-                >
-                  {test.status}
-                </Badge>
-              </div>
-            ))}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+            <div><p className="text-xs text-muted-foreground">Present Days</p><p className="text-lg font-bold text-green-600">{periodPresent}</p></div>
+            <div><p className="text-xs text-muted-foreground">Absent Days</p><p className="text-lg font-bold text-red-600">{periodAbsent}</p></div>
+            <div><p className="text-xs text-muted-foreground">On Leave</p><p className="text-lg font-bold text-amber-600">{periodLeave}</p></div>
+            <div><p className="text-xs text-muted-foreground">Leaves Approved</p><p className="text-lg font-bold text-green-600">{leaveMap["Approved"] || 0}</p></div>
+            <div><p className="text-xs text-muted-foreground">Leaves Pending</p><p className="text-lg font-bold text-amber-600">{leaveMap["Pending"] || 0}</p></div>
+            <div><p className="text-xs text-muted-foreground">Leaves Rejected</p><p className="text-lg font-bold text-red-600">{leaveMap["Rejected"] || 0}</p></div>
           </div>
         </CardContent>
       </Card>
 
-      {/* License Expiration Details + Penalty Summary Row */}
+      {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* License Expiration Alert Detail */}
+        {/* Staff by Department */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShieldAlert className="h-5 w-5 text-amber-600" />
-              License / Certification Alerts
-              <Button variant="ghost" size="sm" className="ml-auto gap-1 text-xs" onClick={() => navigate("/documents")}>
-                View All <ArrowRight size={14} />
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {expiringCerts.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">All certifications are up-to-date</p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Staff</TableHead>
-                    <TableHead>Certification</TableHead>
-                    <TableHead>Expiry Date</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {expiringCerts.slice(0, 10).map((c: any, i: number) => (
-                    <TableRow key={i}>
-                      <TableCell className="font-medium text-sm">{c.staffName}</TableCell>
-                      <TableCell className="text-sm">{c.certName}</TableCell>
-                      <TableCell className="text-sm">{formatDate(c.expiryDate)}</TableCell>
-                      <TableCell>
-                        <Badge variant={c.status === "Expired" ? "destructive" : "warning"}>
-                          {c.status}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Penalty Auto-Calculation Summary */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <IndianRupee className="h-5 w-5 text-red-600" />
-              Absence Penalty Summary (This Month)
-              <Button variant="ghost" size="sm" className="ml-auto gap-1 text-xs" onClick={() => navigate("/payroll")}>
-                View All <ArrowRight size={14} />
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {penaltySummary.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">No penalties calculated this month</p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Staff</TableHead>
-                    <TableHead>Absences</TableHead>
-                    <TableHead>Penalty Rule</TableHead>
-                    <TableHead className="text-right">Deduction</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {penaltySummary.slice(0, 10).map((p: any, i: number) => (
-                    <TableRow key={i}>
-                      <TableCell className="font-medium text-sm">{p.staffName}</TableCell>
-                      <TableCell>
-                        <Badge variant={p.absences > (p.limit || 3) ? "destructive" : "secondary"}>
-                          {p.absences} day{p.absences !== 1 ? "s" : ""}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{p.penaltyRule || "Default"}</TableCell>
-                      <TableCell className="text-right font-bold text-red-600">{formatCurrency(p.deduction)}</TableCell>
-                    </TableRow>
-                  ))}
-                  {penaltySummary.length > 0 && (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-right font-bold">Total Deductions</TableCell>
-                      <TableCell className="text-right font-bold text-red-600">
-                        {formatCurrency(penaltySummary.reduce((s: number, p: any) => s + (p.deduction || 0), 0))}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* ─── Analytics Charts ──────────────────────────────── */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Staff by Department Bar Chart */}
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/staff")}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5" /> Staff by Department <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground" /></CardTitle>
+            <CardTitle className="text-base">Staff by Department</CardTitle>
           </CardHeader>
           <CardContent>
             {deptChartData.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">No staff data</p>
+              <p className="text-sm text-muted-foreground text-center py-8">No department data</p>
             ) : (
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={deptChartData} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                   <Tooltip />
-                  <Bar dataKey="count" fill="#0d9488" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="count" fill="#0d9488" radius={[8, 8, 0, 0]} barSize={36} />
                 </BarChart>
               </ResponsiveContainer>
             )}
           </CardContent>
         </Card>
 
-        {/* Patient Registration Trend Line Chart */}
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/patients")}>
+        {/* Staff by Role */}
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5" /> Patient Registrations (7 Months) <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground" /></CardTitle>
+            <CardTitle className="text-base">Staff by Role</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={patientTrend} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Line type="monotone" dataKey="patients" stroke="#0d9488" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Lab Test Status Pie Chart */}
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/laboratory")}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><TestTubeDiagonal className="h-5 w-5" /> Lab Test Status <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground" /></CardTitle>
-          </CardHeader>
-          <CardContent>
-            {testPieData.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">No test data</p>
+            {roleChartData.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No role data</p>
             ) : (
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={320}>
                 <PieChart>
-                  <Pie data={testPieData} cx="50%" cy="50%" innerRadius={55} outerRadius={100} paddingAngle={3} dataKey="value" label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}>
-                    {testPieData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                  <Pie data={roleChartData} cx="50%" cy="45%" innerRadius={50} outerRadius={90} paddingAngle={4} dataKey="value" isAnimationActive={false} label={({ cx, cy, midAngle, outerRadius, name, percent }: any) => {
+                    const RADIAN = Math.PI / 180;
+                    const radius = outerRadius + 28;
+                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                    return <text x={x} y={y} textAnchor={x > cx ? "start" : "end"} dominantBaseline="central" fontSize={11} fill="#555">{`${name} ${Math.round((percent ?? 0) * 100)}%`}</text>;
+                  }} labelLine={{ stroke: "#999", strokeWidth: 1 }}>
+                    {roleChartData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                   </Pie>
                   <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Inventory by Category Pie Chart */}
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/inventory")}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Package className="h-5 w-5" /> Inventory by Category <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground" /></CardTitle>
-          </CardHeader>
-          <CardContent>
-            {invPieData.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">No inventory data</p>
-            ) : (
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie data={invPieData} cx="50%" cy="50%" innerRadius={55} outerRadius={100} paddingAngle={3} dataKey="value" label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}>
-                    {invPieData.map((_, i) => <Cell key={i} fill={CHART_COLORS[(i + 3) % CHART_COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
+                  <Legend wrapperStyle={{ fontSize: 11, paddingTop: 12 }} />
                 </PieChart>
               </ResponsiveContainer>
             )}
@@ -419,5 +147,20 @@ export default function DashboardPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+function KpiCard({ icon: Icon, label, value, sub, accent }: { icon: any; label: string; value: string | number; sub: string; accent?: boolean }) {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
+        <Icon className="h-5 w-5 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className={`text-3xl font-bold ${accent ? "text-amber-600" : ""}`}>{value}</div>
+        <p className="text-xs text-muted-foreground mt-1">{sub}</p>
+      </CardContent>
+    </Card>
   );
 }

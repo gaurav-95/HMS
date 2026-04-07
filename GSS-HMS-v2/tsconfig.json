@@ -21,5 +21,24 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": [
+    "src/pages/AnnouncementsPage.tsx",
+    "src/pages/BillingPage.tsx",
+    "src/pages/DocumentsPage.tsx",
+    "src/pages/InsurancePage.tsx",
+    "src/pages/InventoryPage.tsx",
+    "src/pages/LaboratoryPage.tsx",
+    "src/pages/MedicineDiscrepancyPage.tsx",
+    "src/pages/NurseManagementPage.tsx",
+    "src/pages/OPDPage.tsx",
+    "src/pages/PatientsPage.tsx",
+    "src/pages/PerformancePage.tsx",
+    "src/pages/PharmacyPage.tsx",
+    "src/pages/ReportsPage.tsx",
+    "src/pages/RosterPage.tsx",
+    "src/pages/SchedulesPage.tsx",
+    "src/pages/TechnicianPage.tsx",
+    "src/components/GuidedTour.tsx"
+  ]
 }

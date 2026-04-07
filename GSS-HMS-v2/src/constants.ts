@@ -13,6 +13,7 @@ export const DEPARTMENTS = [
   "Ophthalmology",
   "Radiology",
   "Pathology",
+  "Surgery",
   "Laboratory",
   "Pharmacy",
   "Nursing",
@@ -49,26 +50,6 @@ export const STAFF_ROLES = [
   "Metron",
 ] as const;
 
-// ── Lab test categories ─────────────────────────────────────
-export const LAB_CATEGORIES = [
-  "Biochemistry",
-  "Hematology",
-  "Microbiology",
-  "Radiology",
-  "Pathology",
-  "Serology",
-  "Urinalysis",
-] as const;
-
-// ── Document / certification categories ─────────────────────
-export const DOC_CATEGORIES = [
-  "Clinical",
-  "Doctor's Documents",
-  "Staff Documents",
-  "Administrative",
-  "Regulatory",
-  "Training",
-] as const;
 // ── Staff categories (HR grouping) ─────────────────────
 export const STAFF_CATEGORIES = [
   "Admin",
@@ -76,16 +57,6 @@ export const STAFF_CATEGORIES = [
   "Receptionist",
   "Nurse",
   "Technical",
-] as const;
-
-// ── Performance evaluation criteria labels ────────────
-export const EVALUATION_CRITERIA = [
-  { key: "responsible", label: "Responsible" },
-  { key: "engaged", label: "Engaged" },
-  { key: "selfStarter", label: "Self Starter" },
-  { key: "teamPlayer", label: "Team Player" },
-  { key: "challenged", label: "Challenged" },
-  { key: "employeeOriented", label: "Employee Oriented" },
 ] as const;
 
 // ── Auto-derive staff category from role ───────────────

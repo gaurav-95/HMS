@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { settingsApi } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Building2, Clock, Shield, Database, Save, Lightbulb, Play } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { Settings, Building2, Clock, Shield, Database, Save, Lightbulb, Play, ArrowRightLeft, FlaskConical, UserCog, AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const HOSPITAL_DEFAULTS = {
@@ -29,11 +33,40 @@ const OPD_DEFAULTS = {
 
 export default function SettingsPage() {
   const { user, hasPermission } = useAuth();
-  const canWrite = hasPermission("settings:write") || user?.role === "SUPER_ADMIN" || user?.role === "CEO";
+  const canWrite = hasPermission("settings:write") || user?.role === "SUPER_ADMIN";
 
   const [hospital, setHospital] = useState(HOSPITAL_DEFAULTS);
   const [opd, setOpd] = useState(OPD_DEFAULTS);
   const [theme, setTheme] = useState("system");
+
+  // App mode state
+  const [appMode, setAppMode] = useState<"demo" | "user">("demo");
+  const [switchDialogOpen, setSwitchDialogOpen] = useState(false);
+  const [switching, setSwitching] = useState(false);
+
+  useEffect(() => {
+    settingsApi.getMode().then((r) => setAppMode(r.data.mode)).catch(() => {});
+  }, []);
+
+  const handleModeSwitch = async () => {
+    const target = appMode === "demo" ? "user" : "demo";
+    setSwitching(true);
+    try {
+      const res = await settingsApi.switchMode(target);
+      setAppMode(target);
+      setSwitchDialogOpen(false);
+      toast.success(res.data.message);
+      // Log the user out since all data was replaced
+      setTimeout(() => {
+        localStorage.removeItem("auth-token");
+        window.location.href = "/login";
+      }, 1500);
+    } catch {
+      toast.error("Failed to switch mode");
+    } finally {
+      setSwitching(false);
+    }
+  };
 
   const handleSaveHospital = () => {
     // In a real production app this would call an API
@@ -207,6 +240,37 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
+      {/* Data Mode */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <ArrowRightLeft className="h-5 w-5" />
+            <div>
+              <CardTitle>Data Mode</CardTitle>
+              <CardDescription>Switch between demo sample data and your own data</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {appMode === "demo" ? <FlaskConical size={20} className="text-primary" /> : <UserCog size={20} className="text-primary" />}
+              <div>
+                <p className="text-sm font-medium">Currently in {appMode === "demo" ? "Demo" : "User"} Mode</p>
+                <p className="text-xs text-muted-foreground">
+                  {appMode === "demo"
+                    ? "Using sample data — great for exploring features"
+                    : "Using your own data — real hospital operations"}
+                </p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setSwitchDialogOpen(true)}>
+              Switch to {appMode === "demo" ? "User" : "Demo"} Mode
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Help & Onboarding */}
       <Card>
         <CardHeader>
@@ -230,6 +294,31 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Mode Switch Confirmation Dialog */}
+      <Dialog open={switchDialogOpen} onOpenChange={setSwitchDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle size={20} className="text-amber-500" />
+              Switch to {appMode === "demo" ? "User" : "Demo"} Mode?
+            </DialogTitle>
+            <DialogDescription>
+              {appMode === "demo"
+                ? "This will clear all demo data and start fresh. You'll get a default admin account to begin setup."
+                : "This will replace all your data with sample demo data. Your data will be permanently deleted."}
+            </DialogDescription>
+          </DialogHeader>
+          <Separator />
+          <p className="text-sm text-muted-foreground">You will be logged out after switching.</p>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setSwitchDialogOpen(false)} disabled={switching}>Cancel</Button>
+            <Button onClick={handleModeSwitch} disabled={switching}>
+              {switching ? <><Loader2 size={16} className="animate-spin mr-1" /> Switching...</> : `Switch to ${appMode === "demo" ? "User" : "Demo"} Mode`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

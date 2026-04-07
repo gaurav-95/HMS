@@ -30070,27 +30070,27 @@ var require_router = __commonJS({
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
-    module2.exports = Router19;
+    module2.exports = Router9;
     module2.exports.Route = Route;
-    function Router19(options) {
-      if (!(this instanceof Router19)) {
-        return new Router19(options);
+    function Router9(options) {
+      if (!(this instanceof Router9)) {
+        return new Router9(options);
       }
       const opts = options || {};
-      function router19(req, res, next) {
-        router19.handle(req, res, next);
+      function router9(req, res, next) {
+        router9.handle(req, res, next);
       }
-      Object.setPrototypeOf(router19, this);
-      router19.caseSensitive = opts.caseSensitive;
-      router19.mergeParams = opts.mergeParams;
-      router19.params = {};
-      router19.strict = opts.strict;
-      router19.stack = [];
-      return router19;
+      Object.setPrototypeOf(router9, this);
+      router9.caseSensitive = opts.caseSensitive;
+      router9.mergeParams = opts.mergeParams;
+      router9.params = {};
+      router9.strict = opts.strict;
+      router9.stack = [];
+      return router9;
     }
-    Router19.prototype = function() {
+    Router9.prototype = function() {
     };
-    Router19.prototype.param = function param(name, fn) {
+    Router9.prototype.param = function param(name, fn) {
       if (!name) {
         throw new TypeError("argument name is required");
       }
@@ -30110,7 +30110,7 @@ var require_router = __commonJS({
       params.push(fn);
       return this;
     };
-    Router19.prototype.handle = function handle(req, res, callback) {
+    Router9.prototype.handle = function handle(req, res, callback) {
       if (!callback) {
         throw new TypeError("argument callback is required");
       }
@@ -30237,7 +30237,7 @@ var require_router = __commonJS({
         }
       }
     };
-    Router19.prototype.use = function use(handler) {
+    Router9.prototype.use = function use(handler) {
       let offset = 0;
       let path4 = "/";
       if (typeof handler !== "function") {
@@ -30270,7 +30270,7 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router19.prototype.route = function route(path4) {
+    Router9.prototype.route = function route(path4) {
       const route2 = new Route(path4);
       const layer = new Layer(path4, {
         sensitive: this.caseSensitive,
@@ -30285,7 +30285,7 @@ var require_router = __commonJS({
       return route2;
     };
     methods.concat("all").forEach(function(method) {
-      Router19.prototype[method] = function(path4) {
+      Router9.prototype[method] = function(path4) {
         const route = this.route(path4);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
@@ -30468,13 +30468,13 @@ var require_application = __commonJS({
     var compileTrust = require_utils3().compileTrust;
     var resolve = require("node:path").resolve;
     var once = require_once();
-    var Router19 = require_router();
+    var Router9 = require_router();
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var app2 = exports2 = module2.exports = {};
     var trustProxyDefaultSymbol = "@@symbol:trust_proxy_default";
     app2.init = function init() {
-      var router19 = null;
+      var router9 = null;
       this.cache = /* @__PURE__ */ Object.create(null);
       this.engines = /* @__PURE__ */ Object.create(null);
       this.settings = /* @__PURE__ */ Object.create(null);
@@ -30483,13 +30483,13 @@ var require_application = __commonJS({
         configurable: true,
         enumerable: true,
         get: function getrouter() {
-          if (router19 === null) {
-            router19 = new Router19({
+          if (router9 === null) {
+            router9 = new Router9({
               caseSensitive: this.enabled("case sensitive routing"),
               strict: this.enabled("strict routing")
             });
           }
-          return router19;
+          return router9;
         }
       });
     };
@@ -30560,15 +30560,15 @@ var require_application = __commonJS({
       if (fns.length === 0) {
         throw new TypeError("app.use() requires a middleware function");
       }
-      var router19 = this.router;
+      var router9 = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router19.use(path4, fn2);
+          return router9.use(path4, fn2);
         }
         debug(".use app under %s", path4);
         fn2.mountpath = path4;
         fn2.parent = this;
-        router19.use(path4, function mounted_app(req, res, next) {
+        router9.use(path4, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -52105,7 +52105,7 @@ var require_express = __commonJS({
     var EventEmitter = require("node:events").EventEmitter;
     var mixin = require_merge_descriptors();
     var proto = require_application();
-    var Router19 = require_router();
+    var Router9 = require_router();
     var req = require_request();
     var res = require_response();
     exports2 = module2.exports = createApplication;
@@ -52127,8 +52127,8 @@ var require_express = __commonJS({
     exports2.application = proto;
     exports2.request = req;
     exports2.response = res;
-    exports2.Route = Router19.Route;
-    exports2.Router = Router19;
+    exports2.Route = Router9.Route;
+    exports2.Router = Router9;
     exports2.json = bodyParser.json;
     exports2.raw = bodyParser.raw;
     exports2.static = require_serve_static();
@@ -72760,7 +72760,7 @@ var require_multer = __commonJS({
 });
 
 // src-server/index.ts
-var import_express19 = __toESM(require_express2(), 1);
+var import_express9 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
 var import_path3 = __toESM(require("path"), 1);
 var import_fs3 = __toESM(require("fs"), 1);
@@ -78123,6 +78123,7 @@ function drizzle(...params) {
 var schema_exports = {};
 __export(schema_exports, {
   announcements: () => announcements,
+  appSettings: () => appSettings,
   attendanceRecords: () => attendanceRecords,
   billingRecords: () => billingRecords,
   certifications: () => certifications,
@@ -78132,6 +78133,7 @@ __export(schema_exports, {
   kpis: () => kpis,
   labTests: () => labTests,
   leaveRequests: () => leaveRequests,
+  leaveTypes: () => leaveTypes,
   medicineAdministrations: () => medicineAdministrations,
   patientDocuments: () => patientDocuments,
   patients: () => patients,
@@ -78148,7 +78150,9 @@ var users = sqliteTable("users", {
   password: text("password").notNull(),
   name: text("name").notNull(),
   role: text("role").notNull(),
-  // UserRole enum value
+  // SUPER_ADMIN | ADMIN | LEADER | STAFF
+  department: text("department"),
+  // for LEADER role — department they lead
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   lastLogin: text("last_login"),
   createdAt: text("created_at").notNull(),
@@ -78283,20 +78287,27 @@ var payrollRecords = sqliteTable("payroll_records", {
   id: text("id").primaryKey(),
   staffId: text("staff_id").notNull().references(() => staff.id),
   staffName: text("staff_name").notNull(),
+  department: text("department"),
   month: text("month").notNull(),
   year: text("year"),
   baseSalary: real("base_salary").notNull(),
   basicSalary: real("basic_salary"),
-  ta: real("ta").default(0),
-  conveyance: real("conveyance").default(0),
-  pf: real("pf").default(0),
-  tds: real("tds").default(0),
   hra: real("hra").default(0),
+  epfEmployer: real("epf_employer").default(0),
+  otherAllowance: real("other_allowance").default(0),
+  grossSalary: real("gross_salary").default(0),
+  professionalTax: real("professional_tax").default(0),
+  epfEmployee: real("epf_employee").default(0),
+  leaveDeductions: real("leave_deductions").default(0),
+  totalShifts: integer("total_shifts").default(0),
+  attendedShifts: integer("attended_shifts").default(0),
+  leavesTaken: integer("leaves_taken").default(0),
+  shiftRate: real("shift_rate").default(0),
   deductions: real("deductions").notNull().default(0),
   bonus: real("bonus").notNull().default(0),
   netSalary: real("net_salary").notNull(),
   status: text("status").notNull()
-  // Draft | Processed | Paid
+  // Draft | Processed | Approved | Paid
 });
 var performanceEvaluations = sqliteTable("performance_evaluations", {
   id: text("id").primaryKey(),
@@ -78436,6 +78447,18 @@ var patientDocuments = sqliteTable("patient_documents", {
   // base64-encoded
   uploadedAt: text("uploaded_at").notNull()
 });
+var leaveTypes = sqliteTable("leave_types", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdBy: text("created_by").notNull(),
+  createdAt: text("created_at").notNull()
+});
+var appSettings = sqliteTable("app_settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: text("updated_at").notNull()
+});
 
 // src-server/db/index.ts
 var import_path = __toESM(require("path"), 1);
@@ -78453,6 +78476,36 @@ var sqlite = new import_better_sqlite32.default(DB_PATH);
 sqlite.pragma("journal_mode = WAL");
 sqlite.pragma("foreign_keys = ON");
 var db = drizzle(sqlite, { schema: schema_exports });
+function clearAllData() {
+  sqlite.pragma("foreign_keys = OFF");
+  const tables = [
+    "certifications",
+    "kpis",
+    "attendance_records",
+    "leave_requests",
+    "payroll_records",
+    "doctor_schedules",
+    "performance_evaluations",
+    "patient_documents",
+    "medicine_administrations",
+    "staff",
+    "users",
+    "patients",
+    "tokens",
+    "documents",
+    "announcements",
+    "inventory_items",
+    "prescriptions",
+    "billing_records",
+    "lab_tests",
+    "leave_types"
+  ];
+  for (const table of tables) {
+    sqlite.exec(`DELETE FROM ${table}`);
+  }
+  sqlite.pragma("foreign_keys = ON");
+  console.log("\u{1F5D1}\uFE0F  All data cleared");
+}
 function setupDatabase() {
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -78722,6 +78775,20 @@ function setupDatabase() {
       file_data TEXT NOT NULL,
       uploaded_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS leave_types (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      created_by TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
   `);
   const addColumnIfMissing = (table, column, def) => {
     const cols = sqlite.prepare(`PRAGMA table_info(${table})`).all();
@@ -78770,10 +78837,56 @@ function setupDatabase() {
     ["conveyance", "REAL DEFAULT 0"],
     ["pf", "REAL DEFAULT 0"],
     ["tds", "REAL DEFAULT 0"],
-    ["hra", "REAL DEFAULT 0"]
+    ["hra", "REAL DEFAULT 0"],
+    ["department", "TEXT"],
+    ["epf_employer", "REAL DEFAULT 0"],
+    ["other_allowance", "REAL DEFAULT 0"],
+    ["gross_salary", "REAL DEFAULT 0"],
+    ["professional_tax", "REAL DEFAULT 0"],
+    ["epf_employee", "REAL DEFAULT 0"],
+    ["leave_deductions", "REAL DEFAULT 0"],
+    ["total_shifts", "INTEGER DEFAULT 0"],
+    ["attended_shifts", "INTEGER DEFAULT 0"],
+    ["leaves_taken", "INTEGER DEFAULT 0"],
+    ["shift_rate", "REAL DEFAULT 0"]
   ];
   for (const [col, def] of payrollCols) {
     addColumnIfMissing("payroll_records", col, def);
+  }
+  addColumnIfMissing("users", "department", "TEXT");
+  const leaveTypeCount = sqlite.prepare("SELECT COUNT(*) as cnt FROM leave_types").get();
+  if (leaveTypeCount.cnt === 0) {
+    const now = (/* @__PURE__ */ new Date()).toISOString();
+    sqlite.exec(`
+      INSERT INTO leave_types (id, name, is_active, created_by, created_at) VALUES
+        ('lt-casual', 'Casual Leave', 1, 'system', '${now}'),
+        ('lt-sick', 'Sick Leave', 1, 'system', '${now}');
+    `);
+  }
+  const settingsCount = sqlite.prepare("SELECT COUNT(*) as cnt FROM app_settings").get();
+  if (settingsCount.cnt === 0) {
+    const now = (/* @__PURE__ */ new Date()).toISOString();
+    sqlite.exec(`
+      INSERT INTO app_settings (key, value, updated_at) VALUES
+        ('workingDaysPerMonth', '26', '${now}');
+    `);
+  }
+  const oldRoleMapping = {
+    CEO: "ADMIN",
+    COO: "ADMIN",
+    CMO: "ADMIN",
+    ACCOUNTANT: "ADMIN",
+    METRON: "LEADER",
+    DOCTOR: "STAFF",
+    SR_NURSE: "STAFF",
+    JR_NURSE: "STAFF",
+    NURSE: "STAFF",
+    RECEPTIONIST: "STAFF",
+    TECHNICIAN: "STAFF",
+    PHARMACIST: "STAFF"
+  };
+  for (const [oldRole, newRole] of Object.entries(oldRoleMapping)) {
+    sqlite.exec(`UPDATE users SET role = '${newRole}' WHERE role = '${oldRole}'`);
   }
   console.log("\u2713 Database tables initialized");
 }
@@ -78788,268 +78901,51 @@ var JWT_SECRET = "gss-hms-standalone-secret-2026";
 var JWT_EXPIRES_IN = "24h";
 var ROLE_PERMISSIONS = {
   SUPER_ADMIN: [
+    "dashboard:view",
     "staff:read",
     "staff:write",
     "staff:delete",
-    "patient:read",
-    "patient:write",
-    "patient:register",
-    "patient:delete",
-    "lab:read",
-    "lab:write",
-    "lab:delete",
-    "billing:read",
-    "billing:write",
-    "billing:delete",
     "payroll:read",
     "payroll:write",
     "payroll:approve",
-    "documents:read",
-    "documents:write",
-    "documents:delete",
-    "performance:read",
-    "performance:write",
-    "roster:read",
-    "roster:write",
     "users:read",
     "users:write",
     "users:delete",
-    "announcements:read",
-    "announcements:write",
-    "announcements:delete",
-    "attendance:read",
-    "attendance:write",
     "leave:apply",
     "leave:approve",
-    "insurance:read",
-    "insurance:write",
-    "inventory:read",
-    "inventory:write",
-    "inventory:delete",
-    "reports:read",
-    "reports:match",
-    "tokens:read",
-    "tokens:write",
-    "schedule:read",
-    "schedule:write",
-    "schedule:delete",
-    "settings:read",
-    "settings:write",
-    "medicine:administer",
-    "medicine:prescribe"
-  ],
-  CEO: [
-    "staff:read",
-    "staff:write",
-    "patient:read",
-    "billing:read",
-    "billing:write",
-    "payroll:read",
-    "payroll:write",
-    "payroll:approve",
-    "documents:read",
-    "documents:write",
-    "performance:read",
-    "performance:write",
-    "roster:read",
-    "users:read",
-    "users:write",
-    "announcements:read",
-    "announcements:write",
+    "leave:manage-types",
     "attendance:read",
-    "leave:approve",
-    "insurance:read",
-    "inventory:read",
-    "inventory:write",
-    "reports:read",
-    "tokens:read",
-    "schedule:read",
-    "schedule:write",
+    "attendance:write",
     "settings:read",
     "settings:write"
   ],
-  CMO: [
+  ADMIN: [
+    "dashboard:view",
     "staff:read",
     "staff:write",
-    "patient:read",
-    "patient:write",
-    "lab:read",
-    "lab:write",
-    "documents:read",
-    "documents:write",
-    "performance:read",
-    "performance:write",
-    "roster:read",
-    "roster:write",
-    "announcements:read",
-    "attendance:read",
-    "leave:approve",
-    "reports:read",
-    "reports:match",
-    "tokens:read",
-    "tokens:write",
-    "schedule:read",
-    "schedule:write",
-    "medicine:prescribe",
-    "medicine:administer"
-  ],
-  COO: [
-    "staff:read",
-    "staff:write",
-    "patient:read",
-    "billing:read",
     "payroll:read",
-    "payroll:write",
-    "documents:read",
-    "documents:write",
-    "performance:read",
-    "roster:read",
-    "roster:write",
-    "announcements:read",
-    "announcements:write",
+    "users:read",
+    "users:write",
+    "leave:apply",
+    "leave:approve",
     "attendance:read",
     "attendance:write",
-    "leave:approve",
-    "insurance:read",
-    "insurance:write",
-    "inventory:read",
-    "inventory:write",
-    "reports:read",
-    "tokens:read",
-    "schedule:read",
     "settings:read"
   ],
-  DOCTOR: [
-    "patient:read",
-    "patient:write",
-    "lab:read",
-    "lab:write",
-    "documents:read",
-    "performance:read",
-    "announcements:read",
-    "attendance:read",
-    "leave:apply",
-    "reports:read",
-    "reports:match",
-    "tokens:read",
-    "tokens:write",
-    "schedule:read",
-    "medicine:prescribe"
-  ],
-  METRON: [
+  LEADER: [
+    "dashboard:view",
     "staff:read",
-    "patient:read",
-    "patient:write",
-    "lab:read",
-    "documents:read",
-    "documents:write",
-    "roster:read",
-    "roster:write",
-    "announcements:read",
-    "announcements:write",
-    "attendance:read",
-    "attendance:write",
-    "leave:approve",
-    "inventory:read",
-    "inventory:write",
-    "tokens:read",
-    "schedule:read",
-    "schedule:write",
-    "medicine:administer",
-    "reports:read"
-  ],
-  ACCOUNTANT: [
-    "staff:read",
-    "billing:read",
-    "billing:write",
     "payroll:read",
-    "payroll:write",
-    "documents:read",
-    "documents:write",
-    "announcements:read",
-    "attendance:read",
     "leave:apply",
     "leave:approve",
-    "insurance:read",
-    "insurance:write",
-    "inventory:read",
-    "reports:read"
-  ],
-  SR_NURSE: [
-    "patient:read",
-    "patient:write",
-    "documents:read",
-    "documents:write",
-    "announcements:read",
-    "roster:read",
     "attendance:read",
-    "medicine:administer",
-    "reports:read",
-    "leave:apply"
-  ],
-  JR_NURSE: [
-    "patient:read",
-    "documents:read",
-    "announcements:read",
-    "roster:read",
-    "attendance:read",
-    "medicine:administer",
-    "leave:apply"
-  ],
-  NURSE: [
-    "patient:read",
-    "patient:write",
-    "lab:read",
-    "documents:read",
-    "announcements:read",
-    "attendance:read",
-    "leave:apply",
-    "inventory:read",
-    "tokens:read",
-    "schedule:read",
-    "medicine:administer"
-  ],
-  RECEPTIONIST: [
-    "patient:read",
-    "patient:write",
-    "patient:register",
-    "billing:read",
-    "lab:read",
-    "documents:read",
-    "announcements:read",
-    "attendance:read",
-    "leave:apply",
-    "tokens:read",
-    "tokens:write",
-    "schedule:read"
-  ],
-  TECHNICIAN: [
-    "lab:read",
-    "lab:write",
-    "documents:read",
-    "announcements:read",
-    "attendance:read",
-    "leave:apply",
-    "reports:read",
-    "reports:match"
-  ],
-  PHARMACIST: [
-    "patient:read",
-    "lab:read",
-    "documents:read",
-    "announcements:read",
-    "attendance:read",
-    "leave:apply",
-    "inventory:read",
-    "inventory:write",
-    "medicine:administer",
-    "medicine:prescribe"
+    "attendance:write"
   ],
   STAFF: [
-    "announcements:read",
+    "dashboard:view",
     "attendance:read",
     "leave:apply",
-    "documents:read"
+    "payroll:read"
   ]
 };
 function signToken(payload) {
@@ -79102,7 +78998,8 @@ router.post("/login", (req, res) => {
     id: user.id,
     email: user.email,
     name: user.name,
-    role: user.role
+    role: user.role,
+    department: user.department || void 0
   });
   res.json({
     token,
@@ -79111,6 +79008,7 @@ router.post("/login", (req, res) => {
       email: user.email,
       name: user.name,
       role: user.role,
+      department: user.department || null,
       isActive: user.isActive
     }
   });
@@ -79123,6 +79021,7 @@ router.get("/me", requireAuth, (req, res) => {
     email: user.email,
     name: user.name,
     role: user.role,
+    department: user.department || null,
     isActive: user.isActive,
     lastLogin: user.lastLogin
   });
@@ -79212,6 +79111,11 @@ router2.delete("/:id", requireAuth, requirePermission("staff:delete"), (req, res
   const staffId = String(req.params.id);
   const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
   if (permanent) {
+    db.delete(payrollRecords).where(eq(payrollRecords.staffId, staffId)).run();
+    db.delete(attendanceRecords).where(eq(attendanceRecords.staffId, staffId)).run();
+    db.delete(leaveRequests).where(eq(leaveRequests.staffId, staffId)).run();
+    db.delete(performanceEvaluations).where(eq(performanceEvaluations.staffId, staffId)).run();
+    db.delete(doctorSchedules).where(eq(doctorSchedules.doctorId, staffId)).run();
     db.delete(staff).where(eq(staff.id, staffId)).run();
   } else {
     db.update(staff).set({ isActive: false, updatedAt: (/* @__PURE__ */ new Date()).toISOString() }).where(eq(staff.id, staffId)).run();
@@ -79220,259 +79124,31 @@ router2.delete("/:id", requireAuth, requirePermission("staff:delete"), (req, res
 });
 var staff_default = router2;
 
-// src-server/routes/patients.ts
+// src-server/routes/attendance.ts
 var import_express3 = __toESM(require_express2(), 1);
 var import_crypto2 = require("crypto");
 var router3 = (0, import_express3.Router)();
-router3.get("/", requireAuth, requirePermission("patient:read"), (_req, res) => {
-  const all = db.select().from(patients).where(eq(patients.isActive, true)).all();
-  res.json(all);
-});
-router3.get("/:id", requireAuth, requirePermission("patient:read"), (req, res) => {
-  const p = db.select().from(patients).where(eq(patients.id, String(req.params.id))).get();
-  if (!p) return res.status(404).json({ error: "Patient not found" });
-  res.json(p);
-});
-router3.post("/", requireAuth, requirePermission("patient:write"), (req, res) => {
-  const now = (/* @__PURE__ */ new Date()).toISOString();
-  const id = (0, import_crypto2.randomUUID)();
-  db.insert(patients).values({ id, ...req.body, createdAt: now, updatedAt: now }).run();
-  res.status(201).json(db.select().from(patients).where(eq(patients.id, id)).get());
-});
-router3.put("/:id", requireAuth, requirePermission("patient:write"), (req, res) => {
-  const patId = String(req.params.id);
-  const { id: _id, createdAt: _ca, ...data } = req.body;
-  db.update(patients).set({ ...data, updatedAt: (/* @__PURE__ */ new Date()).toISOString() }).where(eq(patients.id, patId)).run();
-  const updated = db.select().from(patients).where(eq(patients.id, patId)).get();
-  if (!updated) return res.status(404).json({ error: "Patient not found" });
-  res.json(updated);
-});
-router3.delete("/:id", requireAuth, requirePermission("patient:delete"), (req, res) => {
-  const patId = String(req.params.id);
-  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
-  if (permanent) {
-    db.delete(patients).where(eq(patients.id, patId)).run();
-  } else {
-    db.update(patients).set({ isActive: false, updatedAt: (/* @__PURE__ */ new Date()).toISOString() }).where(eq(patients.id, patId)).run();
+router3.get("/", requireAuth, requirePermission("attendance:read"), (req, res) => {
+  const userRole = req.user.role;
+  const userDept = req.user.department;
+  if (userRole === "LEADER" && userDept) {
+    const deptStaffIds = db.select({ id: staff.id }).from(staff).where(eq(staff.department, userDept)).all().map((s) => s.id);
+    if (deptStaffIds.length === 0) return res.json([]);
+    return res.json(db.select().from(attendanceRecords).where(inArray(attendanceRecords.staffId, deptStaffIds)).all());
   }
-  res.status(204).send();
-});
-router3.get("/:id/documents", requireAuth, requirePermission("patient:read"), (req, res) => {
-  const docs = db.select().from(patientDocuments).where(eq(patientDocuments.patientId, String(req.params.id))).all();
-  res.json(docs);
-});
-router3.post("/:id/documents", requireAuth, requirePermission("patient:write"), (req, res) => {
-  const patId = String(req.params.id);
-  const { docType, fileName, mimeType, fileData } = req.body;
-  if (!docType || !fileName || !mimeType || !fileData) {
-    return res.status(400).json({ error: "docType, fileName, mimeType, and fileData are required" });
+  if (userRole === "STAFF") {
+    const linkedStaff = db.select({ id: staff.id }).from(staff).where(eq(staff.userId, req.user.id)).get();
+    if (!linkedStaff) return res.json([]);
+    return res.json(db.select().from(attendanceRecords).where(eq(attendanceRecords.staffId, linkedStaff.id)).all());
   }
-  const id = (0, import_crypto2.randomUUID)();
-  db.insert(patientDocuments).values({
-    id,
-    patientId: patId,
-    docType,
-    fileName,
-    mimeType,
-    fileData,
-    uploadedAt: (/* @__PURE__ */ new Date()).toISOString()
-  }).run();
-  const doc = db.select({
-    id: patientDocuments.id,
-    patientId: patientDocuments.patientId,
-    docType: patientDocuments.docType,
-    fileName: patientDocuments.fileName,
-    mimeType: patientDocuments.mimeType,
-    uploadedAt: patientDocuments.uploadedAt
-  }).from(patientDocuments).where(eq(patientDocuments.id, id)).get();
-  res.status(201).json(doc);
-});
-router3.get("/:id/documents/:docId/download", requireAuth, requirePermission("patient:read"), (req, res) => {
-  const doc = db.select().from(patientDocuments).where(and(eq(patientDocuments.id, String(req.params.docId)), eq(patientDocuments.patientId, String(req.params.id)))).get();
-  if (!doc) return res.status(404).json({ error: "Document not found" });
-  res.json(doc);
-});
-router3.delete("/:id/documents/:docId", requireAuth, requirePermission("patient:write"), (req, res) => {
-  db.delete(patientDocuments).where(and(eq(patientDocuments.id, String(req.params.docId)), eq(patientDocuments.patientId, String(req.params.id)))).run();
-  res.status(204).send();
-});
-var patients_default = router3;
-
-// src-server/routes/laboratory.ts
-var import_express4 = __toESM(require_express2(), 1);
-var import_crypto3 = require("crypto");
-var router4 = (0, import_express4.Router)();
-router4.get("/", requireAuth, requirePermission("lab:read"), (_req, res) => {
-  res.json(db.select().from(labTests).where(eq(labTests.isActive, true)).orderBy(desc(labTests.orderedDate)).all());
-});
-router4.get("/:id", requireAuth, requirePermission("lab:read"), (req, res) => {
-  const t = db.select().from(labTests).where(eq(labTests.id, String(req.params.id))).get();
-  if (!t) return res.status(404).json({ error: "Lab test not found" });
-  res.json(t);
-});
-router4.post("/", requireAuth, requirePermission("lab:write"), (req, res) => {
-  const id = (0, import_crypto3.randomUUID)();
-  const orderedDate = req.body.orderedDate || (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-  const status = req.body.status || "Pending";
-  const orderedBy = req.body.orderedBy || req.user?.name || "System";
-  db.insert(labTests).values({ id, ...req.body, orderedDate, status, orderedBy }).run();
-  res.status(201).json(db.select().from(labTests).where(eq(labTests.id, id)).get());
-});
-router4.put("/:id", requireAuth, requirePermission("lab:write"), (req, res) => {
-  const labId = String(req.params.id);
-  const { id: _id, ...data } = req.body;
-  db.update(labTests).set(data).where(eq(labTests.id, labId)).run();
-  const updated = db.select().from(labTests).where(eq(labTests.id, labId)).get();
-  if (!updated) return res.status(404).json({ error: "Lab test not found" });
-  res.json(updated);
-});
-router4.patch("/:id/status", requireAuth, requirePermission("lab:write"), (req, res) => {
-  const labId = String(req.params.id);
-  const { status, result, completedDate } = req.body;
-  db.update(labTests).set({ status, result, completedDate }).where(eq(labTests.id, labId)).run();
-  res.json(db.select().from(labTests).where(eq(labTests.id, labId)).get());
-});
-router4.delete("/:id", requireAuth, requirePermission("lab:delete"), (req, res) => {
-  const labId = String(req.params.id);
-  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
-  if (permanent) {
-    db.delete(labTests).where(eq(labTests.id, labId)).run();
-  } else {
-    db.update(labTests).set({ isActive: false }).where(eq(labTests.id, labId)).run();
-  }
-  res.status(204).send();
-});
-var laboratory_default = router4;
-
-// src-server/routes/opd.ts
-var import_express5 = __toESM(require_express2(), 1);
-var import_crypto4 = require("crypto");
-var router5 = (0, import_express5.Router)();
-router5.get("/", requireAuth, requirePermission("tokens:read"), (_req, res) => {
-  res.json(db.select().from(tokens).orderBy(desc(tokens.createdAt)).all());
-});
-router5.post("/", requireAuth, requirePermission("tokens:write"), (req, res) => {
-  const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-  const lastToken = db.select({ max: sql`MAX(token_number)` }).from(tokens).where(sql`date(created_at) = ${today}`).get();
-  const tokenNumber = (lastToken?.max ?? 0) + 1;
-  const id = (0, import_crypto4.randomUUID)();
-  db.insert(tokens).values({ id, tokenNumber, ...req.body, status: "Waiting", createdAt: (/* @__PURE__ */ new Date()).toISOString() }).run();
-  res.status(201).json(db.select().from(tokens).where(eq(tokens.id, id)).get());
-});
-router5.patch("/:id/status", requireAuth, requirePermission("tokens:write"), (req, res) => {
-  const tokenId = String(req.params.id);
-  db.update(tokens).set({ status: req.body.status }).where(eq(tokens.id, tokenId)).run();
-  res.json(db.select().from(tokens).where(eq(tokens.id, tokenId)).get());
-});
-var opd_default = router5;
-
-// src-server/routes/documents.ts
-var import_express6 = __toESM(require_express2(), 1);
-var import_crypto5 = require("crypto");
-var router6 = (0, import_express6.Router)();
-router6.get("/", requireAuth, requirePermission("documents:read"), (_req, res) => {
-  res.json(db.select().from(documents).where(eq(documents.isActive, true)).all());
-});
-router6.post("/", requireAuth, requirePermission("documents:write"), (req, res) => {
-  const id = (0, import_crypto5.randomUUID)();
-  db.insert(documents).values({ id, ...req.body }).run();
-  res.status(201).json(db.select().from(documents).where(eq(documents.id, id)).get());
-});
-router6.delete("/:id", requireAuth, requirePermission("documents:delete"), (req, res) => {
-  const docId = String(req.params.id);
-  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
-  if (permanent) {
-    db.delete(documents).where(eq(documents.id, docId)).run();
-  } else {
-    db.update(documents).set({ isActive: false }).where(eq(documents.id, docId)).run();
-  }
-  res.status(204).send();
-});
-var documents_default = router6;
-
-// src-server/routes/announcements.ts
-var import_express7 = __toESM(require_express2(), 1);
-var import_crypto6 = require("crypto");
-var router7 = (0, import_express7.Router)();
-router7.get("/", requireAuth, requirePermission("announcements:read"), (_req, res) => {
-  res.json(db.select().from(announcements).where(eq(announcements.isActive, true)).all());
-});
-router7.post("/", requireAuth, requirePermission("announcements:write"), (req, res) => {
-  const id = (0, import_crypto6.randomUUID)();
-  const body = { ...req.body };
-  if (body.body && !body.content) {
-    body.content = body.body;
-    delete body.body;
-  }
-  if (body.createdBy && !body.postedBy) {
-    body.postedBy = body.createdBy;
-    delete body.createdBy;
-  }
-  if (!body.postedDate) {
-    body.postedDate = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-  }
-  if (!body.type) {
-    body.type = "General";
-  }
-  delete body.targetRoles;
-  if (body.penaltyConfig && typeof body.penaltyConfig === "object") {
-    body.penaltyConfig = JSON.stringify(body.penaltyConfig);
-  }
-  db.insert(announcements).values({ id, ...body }).run();
-  const created = db.select().from(announcements).where(eq(announcements.id, id)).get();
-  res.status(201).json({
-    ...created,
-    penaltyConfig: created?.penaltyConfig ? JSON.parse(created.penaltyConfig) : null
-  });
-});
-router7.put("/:id", requireAuth, requirePermission("announcements:write"), (req, res) => {
-  const annId = String(req.params.id);
-  const { id: _id, ...data } = req.body;
-  if (data.body && !data.content) {
-    data.content = data.body;
-    delete data.body;
-  }
-  if (data.createdBy && !data.postedBy) {
-    data.postedBy = data.createdBy;
-    delete data.createdBy;
-  }
-  delete data.targetRoles;
-  if (data.penaltyConfig && typeof data.penaltyConfig === "object") {
-    data.penaltyConfig = JSON.stringify(data.penaltyConfig);
-  }
-  db.update(announcements).set(data).where(eq(announcements.id, annId)).run();
-  const updated = db.select().from(announcements).where(eq(announcements.id, annId)).get();
-  if (!updated) return res.status(404).json({ error: "Announcement not found" });
-  res.json({
-    ...updated,
-    penaltyConfig: updated.penaltyConfig ? JSON.parse(updated.penaltyConfig) : null
-  });
-});
-router7.delete("/:id", requireAuth, requirePermission("announcements:delete"), (req, res) => {
-  const annId = String(req.params.id);
-  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
-  if (permanent) {
-    db.delete(announcements).where(eq(announcements.id, annId)).run();
-  } else {
-    db.update(announcements).set({ isActive: false }).where(eq(announcements.id, annId)).run();
-  }
-  res.status(204).send();
-});
-var announcements_default = router7;
-
-// src-server/routes/attendance.ts
-var import_express8 = __toESM(require_express2(), 1);
-var import_crypto7 = require("crypto");
-var router8 = (0, import_express8.Router)();
-router8.get("/", requireAuth, requirePermission("attendance:read"), (_req, res) => {
   res.json(db.select().from(attendanceRecords).all());
 });
-router8.post("/", requireAuth, requirePermission("attendance:write"), (req, res) => {
-  const id = (0, import_crypto7.randomUUID)();
+router3.post("/", requireAuth, requirePermission("attendance:write"), (req, res) => {
+  const id = (0, import_crypto2.randomUUID)();
   db.insert(attendanceRecords).values({ id, ...req.body }).run();
   res.status(201).json(db.select().from(attendanceRecords).where(eq(attendanceRecords.id, id)).get());
 });
-router8.put("/:id", requireAuth, requirePermission("attendance:write"), (req, res) => {
+router3.put("/:id", requireAuth, requirePermission("attendance:write"), (req, res) => {
   const attId = String(req.params.id);
   const { id: _id, ...data } = req.body;
   db.update(attendanceRecords).set(data).where(eq(attendanceRecords.id, attId)).run();
@@ -79480,27 +79156,53 @@ router8.put("/:id", requireAuth, requirePermission("attendance:write"), (req, re
   if (!updated) return res.status(404).json({ error: "Record not found" });
   res.json(updated);
 });
-var attendance_default = router8;
+var attendance_default = router3;
 
 // src-server/routes/leave.ts
-var import_express9 = __toESM(require_express2(), 1);
-var import_crypto8 = require("crypto");
-var router9 = (0, import_express9.Router)();
-router9.get("/", requireAuth, requirePermission("leave:apply"), (_req, res) => {
+var import_express4 = __toESM(require_express2(), 1);
+var import_crypto3 = require("crypto");
+var router4 = (0, import_express4.Router)();
+router4.get("/", requireAuth, requirePermission("leave:apply"), (req, res) => {
+  const userRole = req.user.role;
+  const userDept = req.user.department;
+  if (userRole === "LEADER" && userDept) {
+    const deptStaffIds = db.select({ id: staff.id }).from(staff).where(eq(staff.department, userDept)).all().map((s) => s.id);
+    if (deptStaffIds.length === 0) return res.json([]);
+    return res.json(db.select().from(leaveRequests).where(inArray(leaveRequests.staffId, deptStaffIds)).all());
+  }
+  if (userRole === "STAFF") {
+    const linkedStaff = db.select({ id: staff.id }).from(staff).where(eq(staff.userId, req.user.id)).get();
+    if (!linkedStaff) return res.json([]);
+    return res.json(db.select().from(leaveRequests).where(eq(leaveRequests.staffId, linkedStaff.id)).all());
+  }
   res.json(db.select().from(leaveRequests).all());
 });
-router9.post("/", requireAuth, requirePermission("leave:apply"), (req, res) => {
-  const id = (0, import_crypto8.randomUUID)();
+router4.get("/types", requireAuth, (_req, res) => {
+  res.json(db.select().from(leaveTypes).where(eq(leaveTypes.isActive, true)).all());
+});
+router4.post("/types", requireAuth, requirePermission("settings:write"), (req, res) => {
+  const id = (0, import_crypto3.randomUUID)();
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: "Name is required" });
+  db.insert(leaveTypes).values({ id, name, createdBy: req.user.name, createdAt: (/* @__PURE__ */ new Date()).toISOString() }).run();
+  res.status(201).json(db.select().from(leaveTypes).where(eq(leaveTypes.id, id)).get());
+});
+router4.delete("/types/:id", requireAuth, requirePermission("settings:write"), (req, res) => {
+  db.update(leaveTypes).set({ isActive: false }).where(eq(leaveTypes.id, String(req.params.id))).run();
+  res.status(204).send();
+});
+router4.post("/", requireAuth, requirePermission("leave:apply"), (req, res) => {
+  const id = (0, import_crypto3.randomUUID)();
   db.insert(leaveRequests).values({ id, ...req.body, status: "Pending", appliedDate: (/* @__PURE__ */ new Date()).toISOString() }).run();
   res.status(201).json(db.select().from(leaveRequests).where(eq(leaveRequests.id, id)).get());
 });
-router9.patch("/:id/status", requireAuth, requirePermission("leave:approve"), (req, res) => {
+router4.patch("/:id/status", requireAuth, requirePermission("leave:approve"), (req, res) => {
   const leaveId = String(req.params.id);
   const { status } = req.body;
   db.update(leaveRequests).set({ status, approvedBy: req.user.name }).where(eq(leaveRequests.id, leaveId)).run();
   res.json(db.select().from(leaveRequests).where(eq(leaveRequests.id, leaveId)).get());
 });
-router9.patch("/:id/cancel", requireAuth, requirePermission("leave:apply"), (req, res) => {
+router4.patch("/:id/cancel", requireAuth, requirePermission("leave:apply"), (req, res) => {
   const leaveId = String(req.params.id);
   const record = db.select().from(leaveRequests).where(eq(leaveRequests.id, leaveId)).get();
   if (!record) return res.status(404).json({ error: "Leave request not found" });
@@ -79508,53 +79210,134 @@ router9.patch("/:id/cancel", requireAuth, requirePermission("leave:apply"), (req
   db.update(leaveRequests).set({ status: "Cancelled" }).where(eq(leaveRequests.id, leaveId)).run();
   res.json(db.select().from(leaveRequests).where(eq(leaveRequests.id, leaveId)).get());
 });
-var leave_default = router9;
+var leave_default = router4;
 
 // src-server/routes/payroll.ts
-var import_express10 = __toESM(require_express2(), 1);
-var import_crypto9 = require("crypto");
-var router10 = (0, import_express10.Router)();
-router10.get("/", requireAuth, requirePermission("payroll:read"), (_req, res) => {
+var import_express5 = __toESM(require_express2(), 1);
+var import_crypto4 = require("crypto");
+var router5 = (0, import_express5.Router)();
+router5.get("/", requireAuth, requirePermission("payroll:read"), (req, res) => {
+  const userRole = req.user.role;
+  const userDept = req.user.department;
+  if (userRole === "LEADER" && userDept) {
+    const deptStaffIds = db.select({ id: staff.id }).from(staff).where(eq(staff.department, userDept)).all().map((s) => s.id);
+    if (deptStaffIds.length === 0) return res.json([]);
+    return res.json(db.select().from(payrollRecords).where(inArray(payrollRecords.staffId, deptStaffIds)).all());
+  }
+  if (userRole === "STAFF") {
+    const linkedStaff = db.select({ id: staff.id }).from(staff).where(eq(staff.userId, req.user.id)).get();
+    if (!linkedStaff) return res.json([]);
+    return res.json(db.select().from(payrollRecords).where(eq(payrollRecords.staffId, linkedStaff.id)).all());
+  }
   res.json(db.select().from(payrollRecords).all());
 });
-router10.post("/", requireAuth, requirePermission("payroll:write"), (req, res) => {
-  const id = (0, import_crypto9.randomUUID)();
+router5.post("/generate", requireAuth, requirePermission("payroll:write"), (req, res) => {
+  try {
+    const { month, year } = req.body;
+    if (!month || !year) return res.status(400).json({ error: "month and year required" });
+    const settingsRow = db.select().from(appSettings).where(eq(appSettings.key, "workingDaysPerMonth")).get();
+    const workingDays = settingsRow ? Number(settingsRow.value) : 26;
+    const activeStaff = db.select().from(staff).all().filter((s) => s.isActive !== 0 && s.isActive !== false);
+    const existing = db.select().from(payrollRecords).where(and(eq(payrollRecords.month, month), eq(payrollRecords.year, year))).all();
+    const existingStaffIds = new Set(existing.map((r) => r.staffId));
+    const datePrefix = `${year}-${String("January,February,March,April,May,June,July,August,September,October,November,December".split(",").indexOf(month) + 1).padStart(2, "0")}`;
+    const created = [];
+    for (const s of activeStaff) {
+      if (existingStaffIds.has(s.id)) continue;
+      const attendanceRows = db.select().from(attendanceRecords).where(and(eq(attendanceRecords.staffId, s.id), like(attendanceRecords.date, `${datePrefix}%`))).all();
+      const present = attendanceRows.filter((a) => ["Present", "Late"].includes(a.status)).length;
+      const halfDays = attendanceRows.filter((a) => a.status === "HalfDay").length;
+      const attendedShifts = present + halfDays * 0.5;
+      const leavesTaken = attendanceRows.filter((a) => a.status === "OnLeave").length;
+      const basicSalary = s.baseSalary || 6e4;
+      const hra = Math.round(basicSalary * 0.5);
+      const epfEmployer = 1800;
+      const otherAllowance = Math.round(basicSalary * 0.47);
+      const grossSalary = basicSalary + hra + otherAllowance;
+      const professionalTax = 200;
+      const epfEmployee = 1800;
+      const shiftRate = grossSalary / workingDays;
+      const leaveDeductions = Math.round((workingDays - attendedShifts) * shiftRate);
+      const netSalary = grossSalary - professionalTax - epfEmployee - (leaveDeductions > 0 ? leaveDeductions : 0);
+      const id = (0, import_crypto4.randomUUID)();
+      db.insert(payrollRecords).values({
+        id,
+        staffId: s.id,
+        staffName: s.name,
+        department: s.department,
+        month,
+        year,
+        baseSalary: basicSalary,
+        basicSalary,
+        hra,
+        epfEmployer,
+        otherAllowance,
+        grossSalary,
+        professionalTax,
+        epfEmployee,
+        leaveDeductions: leaveDeductions > 0 ? leaveDeductions : 0,
+        totalShifts: workingDays,
+        attendedShifts,
+        leavesTaken,
+        shiftRate: Math.round(shiftRate),
+        deductions: professionalTax + epfEmployee + (leaveDeductions > 0 ? leaveDeductions : 0),
+        bonus: 0,
+        netSalary: Math.round(netSalary),
+        status: "Draft"
+      }).run();
+      created.push(db.select().from(payrollRecords).where(eq(payrollRecords.id, id)).get());
+    }
+    res.status(201).json({ generated: created.length, records: created });
+  } catch (err) {
+    console.error("Payroll generate error:", err);
+    res.status(500).json({ error: "Failed to generate payroll: " + (err.message || err) });
+  }
+});
+router5.post("/", requireAuth, requirePermission("payroll:write"), (req, res) => {
+  const id = (0, import_crypto4.randomUUID)();
   const data = req.body;
   const basicSalary = data.basicSalary ?? data.baseSalary ?? 0;
-  const ta = data.ta ?? 0;
-  const conveyance = data.conveyance ?? 0;
   const hra = data.hra ?? 0;
-  const bonus = data.bonus ?? 0;
-  const pf = data.pf ?? 0;
-  const tds = data.tds ?? 0;
-  const deductions = data.deductions ?? 0;
-  const netSalary = basicSalary + ta + conveyance + hra + bonus - pf - tds - deductions;
+  const epfEmployer = data.epfEmployer ?? 1800;
+  const otherAllowance = data.otherAllowance ?? 0;
+  const grossSalary = basicSalary + hra + otherAllowance;
+  const professionalTax = data.professionalTax ?? 200;
+  const epfEmployee = data.epfEmployee ?? 1800;
+  const leaveDeductions = data.leaveDeductions ?? 0;
+  const netSalary = grossSalary - professionalTax - epfEmployee - leaveDeductions;
   db.insert(payrollRecords).values({
     id,
     staffId: data.staffId,
     staffName: data.staffName,
+    department: data.department,
     month: data.month,
     year: data.year,
-    baseSalary: data.baseSalary ?? basicSalary,
+    baseSalary: basicSalary,
     basicSalary,
-    ta,
-    conveyance,
     hra,
-    pf,
-    tds,
-    bonus,
-    deductions,
-    netSalary,
-    status: data.status
+    epfEmployer,
+    otherAllowance,
+    grossSalary,
+    professionalTax,
+    epfEmployee,
+    leaveDeductions,
+    totalShifts: data.totalShifts ?? 0,
+    attendedShifts: data.attendedShifts ?? 0,
+    leavesTaken: data.leavesTaken ?? 0,
+    shiftRate: data.shiftRate ?? 0,
+    deductions: professionalTax + epfEmployee + leaveDeductions,
+    bonus: data.bonus ?? 0,
+    netSalary: Math.round(netSalary),
+    status: data.status || "Draft"
   }).run();
   res.status(201).json(db.select().from(payrollRecords).where(eq(payrollRecords.id, id)).get());
 });
-router10.patch("/:id/status", requireAuth, requirePermission("payroll:approve"), (req, res) => {
+router5.patch("/:id/status", requireAuth, requirePermission("payroll:approve"), (req, res) => {
   const payId = String(req.params.id);
   db.update(payrollRecords).set({ status: req.body.status }).where(eq(payrollRecords.id, payId)).run();
   res.json(db.select().from(payrollRecords).where(eq(payrollRecords.id, payId)).get());
 });
-router10.delete("/:id", requireAuth, requirePermission("payroll:write"), (req, res) => {
+router5.delete("/:id", requireAuth, requirePermission("payroll:write"), (req, res) => {
   const payId = String(req.params.id);
   const record = db.select().from(payrollRecords).where(eq(payrollRecords.id, payId)).get();
   if (!record) return res.status(404).json({ error: "Payroll record not found" });
@@ -79562,58 +79345,32 @@ router10.delete("/:id", requireAuth, requirePermission("payroll:write"), (req, r
   db.delete(payrollRecords).where(eq(payrollRecords.id, payId)).run();
   res.json({ success: true });
 });
-var payroll_default = router10;
-
-// src-server/routes/inventory.ts
-var import_express11 = __toESM(require_express2(), 1);
-var import_crypto10 = require("crypto");
-var router11 = (0, import_express11.Router)();
-router11.get("/", requireAuth, requirePermission("inventory:read"), (_req, res) => {
-  res.json(db.select().from(inventoryItems).all());
-});
-router11.get("/:id", requireAuth, requirePermission("inventory:read"), (req, res) => {
-  const item = db.select().from(inventoryItems).where(eq(inventoryItems.id, String(req.params.id))).get();
-  if (!item) return res.status(404).json({ error: "Item not found" });
-  res.json(item);
-});
-router11.post("/", requireAuth, requirePermission("inventory:write"), (req, res) => {
-  const id = (0, import_crypto10.randomUUID)();
-  db.insert(inventoryItems).values({ id, ...req.body }).run();
-  res.status(201).json(db.select().from(inventoryItems).where(eq(inventoryItems.id, id)).get());
-});
-router11.put("/:id", requireAuth, requirePermission("inventory:write"), (req, res) => {
-  const itemId = String(req.params.id);
-  const { id: _id, ...data } = req.body;
-  db.update(inventoryItems).set(data).where(eq(inventoryItems.id, itemId)).run();
-  const updated = db.select().from(inventoryItems).where(eq(inventoryItems.id, itemId)).get();
-  if (!updated) return res.status(404).json({ error: "Item not found" });
-  res.json(updated);
-});
-router11.delete("/:id", requireAuth, requirePermission("inventory:delete"), (req, res) => {
-  db.delete(inventoryItems).where(eq(inventoryItems.id, String(req.params.id))).run();
-  res.status(204).send();
-});
-var inventory_default = router11;
+var payroll_default = router5;
 
 // src-server/routes/users.ts
-var import_express12 = __toESM(require_express2(), 1);
-var import_crypto11 = require("crypto");
+var import_express6 = __toESM(require_express2(), 1);
+var import_crypto5 = require("crypto");
 var import_bcryptjs2 = __toESM(require("bcryptjs"), 1);
-var router12 = (0, import_express12.Router)();
-router12.get("/", requireAuth, requirePermission("users:read"), (_req, res) => {
+var router6 = (0, import_express6.Router)();
+router6.get("/", requireAuth, requirePermission("users:read"), (_req, res) => {
   const allUsers = db.select({
     id: users.id,
     email: users.email,
     name: users.name,
     role: users.role,
+    department: users.department,
     isActive: users.isActive,
     lastLogin: users.lastLogin,
     createdAt: users.createdAt
-  }).from(users).where(eq(users.isActive, true)).all();
-  res.json(allUsers);
+  }).from(users).all();
+  const result = allUsers.map((u) => {
+    const linked = db.select({ photoPath: staff.photoPath, avatar: staff.avatar }).from(staff).where(eq(staff.userId, u.id)).get();
+    return { ...u, photoPath: linked?.photoPath || null, avatar: linked?.avatar || null };
+  });
+  res.json(result);
 });
-router12.post("/", requireAuth, requirePermission("users:write"), (req, res) => {
-  const id = (0, import_crypto11.randomUUID)();
+router6.post("/", requireAuth, requirePermission("users:write"), (req, res) => {
+  const id = (0, import_crypto5.randomUUID)();
   const now = (/* @__PURE__ */ new Date()).toISOString();
   const hashed = import_bcryptjs2.default.hashSync(req.body.password || "password123", 10);
   db.insert(users).values({
@@ -79621,6 +79378,7 @@ router12.post("/", requireAuth, requirePermission("users:write"), (req, res) => 
     email: req.body.email,
     name: req.body.name,
     role: req.body.role,
+    department: req.body.department || null,
     password: hashed,
     isActive: req.body.isActive ?? true,
     createdAt: now,
@@ -79631,17 +79389,19 @@ router12.post("/", requireAuth, requirePermission("users:write"), (req, res) => 
     email: users.email,
     name: users.name,
     role: users.role,
+    department: users.department,
     isActive: users.isActive,
     createdAt: users.createdAt
   }).from(users).where(eq(users.id, id)).get();
   res.status(201).json(created);
 });
-router12.put("/:id", requireAuth, requirePermission("users:write"), (req, res) => {
+router6.put("/:id", requireAuth, requirePermission("users:write"), (req, res) => {
   const userId = String(req.params.id);
   const data = {
     name: req.body.name,
     email: req.body.email,
     role: req.body.role,
+    department: req.body.department ?? null,
     isActive: req.body.isActive,
     updatedAt: (/* @__PURE__ */ new Date()).toISOString()
   };
@@ -79654,357 +79414,601 @@ router12.put("/:id", requireAuth, requirePermission("users:write"), (req, res) =
     email: users.email,
     name: users.name,
     role: users.role,
+    department: users.department,
     isActive: users.isActive,
     createdAt: users.createdAt
   }).from(users).where(eq(users.id, userId)).get();
   if (!updated) return res.status(404).json({ error: "User not found" });
   res.json(updated);
 });
-router12.delete("/:id", requireAuth, requirePermission("users:delete"), (req, res) => {
+router6.delete("/:id", requireAuth, requirePermission("users:delete"), (req, res) => {
   const userId = String(req.params.id);
   const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
   if (permanent) {
+    db.update(staff).set({ userId: null }).where(eq(staff.userId, userId)).run();
     db.delete(users).where(eq(users.id, userId)).run();
   } else {
     db.update(users).set({ isActive: false, updatedAt: (/* @__PURE__ */ new Date()).toISOString() }).where(eq(users.id, userId)).run();
   }
   res.status(204).send();
 });
-var users_default = router12;
-
-// src-server/routes/schedules.ts
-var import_express13 = __toESM(require_express2(), 1);
-var import_crypto12 = require("crypto");
-var router13 = (0, import_express13.Router)();
-router13.get("/", requireAuth, requirePermission("schedule:read"), (_req, res) => {
-  res.json(db.select().from(doctorSchedules).where(eq(doctorSchedules.isActive, true)).all());
-});
-router13.post("/", requireAuth, requirePermission("schedule:write"), (req, res) => {
-  const id = (0, import_crypto12.randomUUID)();
-  db.insert(doctorSchedules).values({ id, ...req.body }).run();
-  res.status(201).json(db.select().from(doctorSchedules).where(eq(doctorSchedules.id, id)).get());
-});
-router13.put("/:id", requireAuth, requirePermission("schedule:write"), (req, res) => {
-  const schedId = String(req.params.id);
-  const { id: _id, ...data } = req.body;
-  db.update(doctorSchedules).set(data).where(eq(doctorSchedules.id, schedId)).run();
-  const updated = db.select().from(doctorSchedules).where(eq(doctorSchedules.id, schedId)).get();
-  if (!updated) return res.status(404).json({ error: "Schedule not found" });
-  res.json(updated);
-});
-router13.delete("/:id", requireAuth, requirePermission("schedule:delete"), (req, res) => {
-  const schedId = String(req.params.id);
-  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
-  if (permanent) {
-    db.delete(doctorSchedules).where(eq(doctorSchedules.id, schedId)).run();
-  } else {
-    db.update(doctorSchedules).set({ isActive: false }).where(eq(doctorSchedules.id, schedId)).run();
-  }
-  res.status(204).send();
-});
-var schedules_default = router13;
+var users_default = router6;
 
 // src-server/routes/dashboard.ts
-var import_express14 = __toESM(require_express2(), 1);
-var router14 = (0, import_express14.Router)();
-router14.get("/stats", requireAuth, (_req, res) => {
-  const totalStaff = db.select({ count: sql`COUNT(*)` }).from(staff).get()?.count ?? 0;
-  const totalPatients = db.select({ count: sql`COUNT(*)` }).from(patients).get()?.count ?? 0;
-  const pendingTests = db.select({ count: sql`COUNT(*)` }).from(labTests).where(sql`status IN ('Pending', 'InProgress')`).get()?.count ?? 0;
+var import_express7 = __toESM(require_express2(), 1);
+var router7 = (0, import_express7.Router)();
+router7.get("/stats", requireAuth, (req, res) => {
+  const totalStaff = db.select({ count: sql`COUNT(*)` }).from(staff).where(sql`is_active = 1`).get()?.count ?? 0;
+  const terminatedStaff = db.select({ count: sql`COUNT(*)` }).from(staff).where(sql`is_active = 0`).get()?.count ?? 0;
   const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-  const todayAttendance = db.select({ count: sql`COUNT(*)` }).from(attendanceRecords).where(sql`date = ${today} AND status = 'Present'`).get()?.count ?? 0;
-  const expiringDocs = db.select({ count: sql`COUNT(*)` }).from(certifications).where(sql`status IN ('Expiring', 'Expired')`).get()?.count ?? 0;
-  const activeAnnouncements = db.select().from(announcements).where(sql`is_active = 1`).all();
-  const recentTests = db.select().from(labTests).orderBy(sql`ordered_date DESC`).limit(5).all();
-  const waitingTokens = db.select({ count: sql`COUNT(*)` }).from(tokens).where(sql`status = 'Waiting' AND date(created_at) = ${today}`).get()?.count ?? 0;
-  const pendingPrescriptions = db.select({ count: sql`COUNT(*)` }).from(prescriptions).where(sql`status = 'Pending'`).get()?.count ?? 0;
-  const unpaidBills = db.select({ count: sql`COUNT(*)` }).from(billingRecords).where(sql`status IN ('Unpaid', 'Partial')`).get()?.count ?? 0;
-  const expiringCerts = db.select().from(certifications).where(sql`status IN ('Expiring', 'Expired')`).all();
-  const discrepancyCount = db.select({ count: sql`COUNT(*)` }).from(medicineAdministrations).where(sql`has_discrepancy = 1 AND status = 'Flagged'`).get()?.count ?? 0;
-  const penaltyAnnouncements = db.select().from(announcements).where(sql`is_active = 1 AND type = 'Penalty'`).all();
-  const currentMonth = (/* @__PURE__ */ new Date()).toISOString().slice(0, 7);
-  const monthAbsences = db.select({
-    staffId: attendanceRecords.staffId,
-    staffName: attendanceRecords.staffName,
-    absences: sql`COUNT(*)`
-  }).from(attendanceRecords).where(sql`date LIKE ${currentMonth + "%"} AND status = 'Absent'`).groupBy(attendanceRecords.staffId, attendanceRecords.staffName).all();
-  const penaltySummary = monthAbsences.map((a) => {
-    let totalDeduction = 0;
-    for (const pa of penaltyAnnouncements) {
-      if (pa.penaltyConfig) {
-        try {
-          const cfg = JSON.parse(pa.penaltyConfig);
-          const limit = cfg.absenceLimit || 0;
-          const deduction = cfg.deductionAmount || 0;
-          const excessAbsences = Math.max(0, a.absences - limit);
-          totalDeduction += excessAbsences * deduction;
-        } catch {
-        }
-      }
-    }
-    return { staffId: a.staffId, staffName: a.staffName, absences: a.absences, totalDeduction };
-  }).filter((p) => p.totalDeduction > 0);
+  const todayPresent = db.select({ count: sql`COUNT(*)` }).from(attendanceRecords).where(sql`date = ${today} AND status IN ('Present', 'Late', 'HalfDay')`).get()?.count ?? 0;
+  const pendingLeaves = db.select({ count: sql`COUNT(*)` }).from(leaveRequests).where(sql`status = 'Pending'`).get()?.count ?? 0;
+  const deptRows = db.select({
+    department: staff.department,
+    count: sql`COUNT(*)`
+  }).from(staff).where(sql`is_active = 1`).groupBy(staff.department).all();
+  const roleRows = db.select({
+    role: staff.role,
+    count: sql`COUNT(*)`
+  }).from(staff).where(sql`is_active = 1`).groupBy(staff.role).all();
+  const period = req.query.period || "monthly";
+  const now = /* @__PURE__ */ new Date();
+  let dateFrom;
+  if (period === "yearly") {
+    dateFrom = `${now.getFullYear()}-01-01`;
+  } else if (period === "quarterly") {
+    const qMonth = Math.floor(now.getMonth() / 3) * 3;
+    dateFrom = `${now.getFullYear()}-${String(qMonth + 1).padStart(2, "0")}-01`;
+  } else {
+    dateFrom = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  }
+  const attendanceSummary = db.select({
+    status: attendanceRecords.status,
+    count: sql`COUNT(*)`
+  }).from(attendanceRecords).where(sql`date >= ${dateFrom}`).groupBy(attendanceRecords.status).all();
+  const leaveSummary = db.select({
+    status: leaveRequests.status,
+    count: sql`COUNT(*)`
+  }).from(leaveRequests).where(sql`applied_date >= ${dateFrom}`).groupBy(leaveRequests.status).all();
   res.json({
     totalStaff,
-    totalPatients,
-    pendingTests,
-    todayAttendance,
-    expiringDocs,
-    waitingTokens,
-    pendingPrescriptions,
-    unpaidBills,
-    discrepancyCount,
-    expiringCerts,
-    penaltySummary,
-    announcements: activeAnnouncements,
-    recentTests
+    terminatedStaff,
+    todayPresent,
+    pendingLeaves,
+    staffByDepartment: deptRows,
+    staffByRole: roleRows,
+    attendanceSummary,
+    leaveSummary,
+    period
   });
 });
-var dashboard_default = router14;
+var dashboard_default = router7;
 
-// src-server/routes/pharmacy.ts
-var import_express15 = __toESM(require_express2(), 1);
-var import_crypto13 = require("crypto");
-var router15 = (0, import_express15.Router)();
-router15.get("/", requireAuth, requirePermission("patient:read"), (_req, res) => {
-  res.json(db.select().from(prescriptions).all());
-});
-router15.get("/:id", requireAuth, requirePermission("patient:read"), (req, res) => {
-  const row = db.select().from(prescriptions).where(eq(prescriptions.id, String(req.params.id))).get();
-  if (!row) return res.status(404).json({ error: "Prescription not found" });
-  res.json(row);
-});
-router15.post("/", requireAuth, requirePermission("lab:write"), (req, res) => {
-  const id = (0, import_crypto13.randomUUID)();
-  db.insert(prescriptions).values({ id, ...req.body }).run();
-  res.status(201).json(db.select().from(prescriptions).where(eq(prescriptions.id, id)).get());
-});
-router15.put("/:id", requireAuth, requirePermission("lab:write"), (req, res) => {
-  const rxId = String(req.params.id);
-  const { id: _id, ...data } = req.body;
-  db.update(prescriptions).set(data).where(eq(prescriptions.id, rxId)).run();
-  const updated = db.select().from(prescriptions).where(eq(prescriptions.id, rxId)).get();
-  if (!updated) return res.status(404).json({ error: "Prescription not found" });
-  res.json(updated);
-});
-router15.patch("/:id/dispense", requireAuth, requirePermission("inventory:write"), (req, res) => {
-  const rxId = String(req.params.id);
-  const { dispensedBy } = req.body;
-  db.update(prescriptions).set({
-    status: "Dispensed",
-    dispensedDate: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
-    dispensedBy: dispensedBy || "Pharmacy"
-  }).where(eq(prescriptions.id, rxId)).run();
-  const updated = db.select().from(prescriptions).where(eq(prescriptions.id, rxId)).get();
-  if (!updated) return res.status(404).json({ error: "Prescription not found" });
-  res.json(updated);
-});
-router15.delete("/:id", requireAuth, requirePermission("lab:delete"), (req, res) => {
-  const rxId = String(req.params.id);
-  const exists2 = db.select().from(prescriptions).where(eq(prescriptions.id, rxId)).get();
-  if (!exists2) return res.status(404).json({ error: "Prescription not found" });
-  db.delete(prescriptions).where(eq(prescriptions.id, rxId)).run();
-  res.json({ success: true });
-});
-var pharmacy_default = router15;
+// src-server/routes/settings.ts
+var import_express8 = __toESM(require_express2(), 1);
+var import_bcryptjs4 = __toESM(require("bcryptjs"), 1);
+var import_crypto7 = require("crypto");
 
-// src-server/routes/billing.ts
-var import_express16 = __toESM(require_express2(), 1);
-var import_crypto14 = require("crypto");
-var router16 = (0, import_express16.Router)();
-router16.get("/", requireAuth, requirePermission("billing:read", "payroll:read"), (_req, res) => {
-  res.json(db.select().from(billingRecords).where(eq(billingRecords.isActive, true)).all());
-});
-router16.get("/:id", requireAuth, requirePermission("billing:read", "payroll:read"), (req, res) => {
-  const row = db.select().from(billingRecords).where(eq(billingRecords.id, String(req.params.id))).get();
-  if (!row) return res.status(404).json({ error: "Billing record not found" });
-  res.json(row);
-});
-router16.post("/", requireAuth, requirePermission("billing:write", "payroll:write"), (req, res) => {
-  const id = (0, import_crypto14.randomUUID)();
-  const count = db.select().from(billingRecords).all().length;
-  const invoiceNumber = req.body.invoiceNumber || `INV-${String(count + 1).padStart(5, "0")}`;
-  const createdDate = req.body.createdDate || (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-  const items = typeof req.body.items === "object" ? JSON.stringify(req.body.items) : req.body.items;
-  const subtotal = req.body.subtotal ?? req.body.totalAmount ?? 0;
-  db.insert(billingRecords).values({ id, ...req.body, invoiceNumber, createdDate, items, subtotal }).run();
-  res.status(201).json(db.select().from(billingRecords).where(eq(billingRecords.id, id)).get());
-});
-router16.put("/:id", requireAuth, requirePermission("billing:write", "payroll:write"), (req, res) => {
-  const billId = String(req.params.id);
-  const { id: _id, ...data } = req.body;
-  db.update(billingRecords).set(data).where(eq(billingRecords.id, billId)).run();
-  const updated = db.select().from(billingRecords).where(eq(billingRecords.id, billId)).get();
-  if (!updated) return res.status(404).json({ error: "Billing record not found" });
-  res.json(updated);
-});
-router16.patch("/:id/pay", requireAuth, requirePermission("billing:write", "payroll:write"), (req, res) => {
-  const billId = String(req.params.id);
-  const existing = db.select().from(billingRecords).where(eq(billingRecords.id, billId)).get();
-  if (!existing) return res.status(404).json({ error: "Billing record not found" });
-  const paidAmount = Number(req.body.paidAmount) || existing.paidAmount;
-  const status = paidAmount >= existing.totalAmount ? "Paid" : paidAmount > 0 ? "Partial" : "Unpaid";
-  db.update(billingRecords).set({
-    paidAmount,
-    paymentMethod: req.body.paymentMethod || existing.paymentMethod,
-    status,
-    paidDate: status === "Paid" ? (/* @__PURE__ */ new Date()).toISOString().split("T")[0] : null
-  }).where(eq(billingRecords.id, billId)).run();
-  res.json(db.select().from(billingRecords).where(eq(billingRecords.id, billId)).get());
-});
-router16.delete("/:id", requireAuth, requirePermission("billing:delete", "payroll:write"), (req, res) => {
-  const billId = String(req.params.id);
-  const exists2 = db.select().from(billingRecords).where(eq(billingRecords.id, billId)).get();
-  if (!exists2) return res.status(404).json({ error: "Billing record not found" });
-  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
-  if (permanent) {
-    db.delete(billingRecords).where(eq(billingRecords.id, billId)).run();
-  } else {
-    db.update(billingRecords).set({ isActive: false }).where(eq(billingRecords.id, billId)).run();
+// src-server/db/seed.ts
+var import_bcryptjs3 = __toESM(require("bcryptjs"), 1);
+var import_crypto6 = require("crypto");
+function seedDemoData() {
+  const hash = (pw) => import_bcryptjs3.default.hashSync(pw, 10);
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const uuid = () => (0, import_crypto6.randomUUID)();
+  console.log("\u{1F331} Seeding database...\n");
+  const userRecords = [
+    { id: uuid(), email: "superadmin@gsshospital.com", password: hash("password123"), name: "Rajesh Kumar", role: "SUPER_ADMIN", department: null, isActive: true, createdAt: now, updatedAt: now },
+    { id: uuid(), email: "admin@gsshospital.com", password: hash("password123"), name: "Priya Sharma", role: "ADMIN", department: null, isActive: true, createdAt: now, updatedAt: now },
+    { id: uuid(), email: "leader@gsshospital.com", password: hash("password123"), name: "Dr. Anil Mehta", role: "LEADER", department: "General Medicine", isActive: true, createdAt: now, updatedAt: now },
+    { id: uuid(), email: "staff@gsshospital.com", password: hash("password123"), name: "Sita Devi", role: "STAFF", department: null, isActive: true, createdAt: now, updatedAt: now },
+    { id: uuid(), email: "leader2@gsshospital.com", password: hash("password123"), name: "Dr. Sunita Rao", role: "LEADER", department: "Surgery", isActive: true, createdAt: now, updatedAt: now },
+    { id: uuid(), email: "staff2@gsshospital.com", password: hash("password123"), name: "Ramesh Gupta", role: "STAFF", department: null, isActive: true, createdAt: now, updatedAt: now }
+  ];
+  for (const u of userRecords) db.insert(users).values(u).run();
+  console.log(`  \u2713 ${userRecords.length} users`);
+  const S = {
+    rajesh: uuid(),
+    priya: uuid(),
+    anil: uuid(),
+    sita: uuid(),
+    sunita: uuid(),
+    ramesh: uuid(),
+    kavita: uuid(),
+    deepak: uuid(),
+    amit: uuid(),
+    neha: uuid(),
+    mohan: uuid(),
+    vikram: uuid()
+  };
+  const staffRecords = [
+    // ── Linked to user accounts ──
+    { id: S.rajesh, userId: userRecords[0].id, name: "Rajesh Kumar", role: "Administrative", department: "Administration", phone: "9876543210", email: "superadmin@gsshospital.com", joiningDate: "2018-03-15", salaryType: "Monthly", baseSalary: 12e4, isActive: true, createdAt: now, updatedAt: now },
+    { id: S.priya, userId: userRecords[1].id, name: "Priya Sharma", role: "Administrative", department: "Administration", phone: "9876543220", email: "admin@gsshospital.com", joiningDate: "2019-07-01", salaryType: "Monthly", baseSalary: 1e5, isActive: true, createdAt: now, updatedAt: now },
+    { id: S.anil, userId: userRecords[2].id, name: "Dr. Anil Mehta", role: "Doctor", department: "General Medicine", phone: "9876543221", email: "leader@gsshospital.com", joiningDate: "2020-01-10", salaryType: "Monthly", baseSalary: 13e4, isActive: true, createdAt: now, updatedAt: now },
+    { id: S.sita, userId: userRecords[3].id, name: "Sita Devi", role: "Nurse", department: "General Medicine", phone: "9876543211", email: "staff@gsshospital.com", joiningDate: "2021-06-01", salaryType: "Monthly", baseSalary: 45e3, nursingClassification: "GNM", isActive: true, createdAt: now, updatedAt: now },
+    { id: S.sunita, userId: userRecords[4].id, name: "Dr. Sunita Rao", role: "Doctor", department: "Surgery", phone: "9876543222", email: "leader2@gsshospital.com", joiningDate: "2019-04-01", salaryType: "Monthly", baseSalary: 135e3, isActive: true, createdAt: now, updatedAt: now },
+    { id: S.ramesh, userId: userRecords[5].id, name: "Ramesh Gupta", role: "Technician", department: "Laboratory", phone: "9876543226", email: "staff2@gsshospital.com", joiningDate: "2022-01-01", salaryType: "Monthly", baseSalary: 38e3, isActive: true, createdAt: now, updatedAt: now },
+    // ── Staff without user accounts ──
+    { id: S.kavita, name: "Kavita Nair", role: "Nurse", department: "Surgery", phone: "9876543223", email: "kavita@gsshospital.com", joiningDate: "2023-01-15", salaryType: "Monthly", baseSalary: 4e4, nursingClassification: "ANM", isActive: true, createdAt: now, updatedAt: now },
+    { id: S.deepak, name: "Deepak Joshi", role: "Pharmacist", department: "Pharmacy", phone: "9876543224", email: "deepak@gsshospital.com", joiningDate: "2021-08-15", salaryType: "Monthly", baseSalary: 42e3, isActive: true, createdAt: now, updatedAt: now },
+    { id: S.amit, name: "Amit Verma", role: "Technician", department: "Laboratory", phone: "9876543212", email: "amit@gsshospital.com", joiningDate: "2022-01-10", salaryType: "Monthly", baseSalary: 35e3, isActive: true, createdAt: now, updatedAt: now },
+    { id: S.neha, name: "Neha Kapoor", role: "Receptionist", department: "Front Desk", phone: "9876543214", email: "neha@gsshospital.com", joiningDate: "2023-02-15", salaryType: "Monthly", baseSalary: 3e4, isActive: true, createdAt: now, updatedAt: now },
+    { id: S.mohan, name: "Mohan Das", role: "Security", department: "Security", phone: "9876543225", email: "mohan@gsshospital.com", joiningDate: "2020-01-01", salaryType: "Monthly", baseSalary: 22e3, isActive: true, createdAt: now, updatedAt: now },
+    { id: S.vikram, name: "Vikram Singh", role: "Nurse", department: "General Medicine", phone: "9876543227", email: "vikram@gsshospital.com", joiningDate: "2022-03-01", salaryType: "Monthly", baseSalary: 48e3, nursingClassification: "BSc", isActive: true, createdAt: now, updatedAt: now }
+  ];
+  for (const s of staffRecords) db.insert(staff).values(s).run();
+  console.log(`  \u2713 ${staffRecords.length} staff`);
+  const certRecords = [
+    { id: uuid(), staffId: S.anil, name: "Medical License", expiryDate: "2026-03-15", status: "Valid" },
+    { id: uuid(), staffId: S.anil, name: "BLS Certification", expiryDate: "2026-02-28", status: "Expiring" },
+    { id: uuid(), staffId: S.vikram, name: "Medical License", expiryDate: "2027-07-01", status: "Valid" },
+    { id: uuid(), staffId: S.sunita, name: "ATLS Certification", expiryDate: "2026-04-15", status: "Valid" },
+    { id: uuid(), staffId: S.anil, name: "Medical License", expiryDate: "2026-02-15", status: "Expiring" },
+    { id: uuid(), staffId: S.anil, name: "Pediatric Life Support", expiryDate: "2025-11-30", status: "Expired" },
+    { id: uuid(), staffId: S.sita, name: "Nursing License", expiryDate: "2025-12-31", status: "Expired" },
+    { id: uuid(), staffId: S.sita, name: "ACLS Certification", expiryDate: "2026-06-30", status: "Valid" },
+    { id: uuid(), staffId: S.vikram, name: "Nursing License", expiryDate: "2026-12-31", status: "Valid" },
+    { id: uuid(), staffId: S.ramesh, name: "Lab Tech Certificate", expiryDate: "2027-01-01", status: "Valid" }
+  ];
+  for (const c of certRecords) db.insert(certifications).values(c).run();
+  console.log(`  \u2713 ${certRecords.length} certifications`);
+  const kpiRecords = [
+    { id: uuid(), staffId: S.anil, name: "Patient Satisfaction", value: 92, target: 100 },
+    { id: uuid(), staffId: S.anil, name: "Cases Handled", value: 145, target: 150 },
+    { id: uuid(), staffId: S.sunita, name: "Patient Satisfaction", value: 85, target: 100 },
+    { id: uuid(), staffId: S.sunita, name: "Surgeries Completed", value: 32, target: 40 },
+    { id: uuid(), staffId: S.priya, name: "Patient Satisfaction", value: 97, target: 100 },
+    { id: uuid(), staffId: S.priya, name: "Cases Handled", value: 120, target: 130 },
+    { id: uuid(), staffId: S.sita, name: "Attendance", value: 96, target: 100 },
+    { id: uuid(), staffId: S.sita, name: "Patient Care Score", value: 88, target: 100 },
+    { id: uuid(), staffId: S.vikram, name: "Attendance", value: 100, target: 100 },
+    { id: uuid(), staffId: S.vikram, name: "Patient Care Score", value: 94, target: 100 },
+    { id: uuid(), staffId: S.amit, name: "Tests Completed", value: 320, target: 350 },
+    { id: uuid(), staffId: S.amit, name: "Accuracy Rate", value: 98, target: 100 }
+  ];
+  for (const k of kpiRecords) db.insert(kpis).values(k).run();
+  console.log(`  \u2713 ${kpiRecords.length} KPIs`);
+  const patientRecords = [
+    { id: uuid(), name: "Suresh Mehta", age: 45, gender: "Male", phone: "9988776655", address: "12 MG Road, Mumbai", bloodGroup: "O+", emergencyContact: "9988776600", createdAt: now, updatedAt: now },
+    { id: uuid(), name: "Priya Desai", age: 32, gender: "Female", phone: "9988776656", address: "45 Park Street, Kolkata", bloodGroup: "B+", insuranceId: "STAR-MED-20251", createdAt: now, updatedAt: now },
+    { id: uuid(), name: "Ravi Shankar", age: 58, gender: "Male", phone: "9988776657", address: "78 Nehru Nagar, Delhi", bloodGroup: "A-", emergencyContact: "9988776601", createdAt: now, updatedAt: now },
+    { id: uuid(), name: "Anita Kumari", age: 28, gender: "Female", phone: "9988776658", address: "23 Gandhi Bazaar, Bangalore", bloodGroup: "AB+", createdAt: now, updatedAt: now },
+    { id: uuid(), name: "Mohd. Irfan", age: 65, gender: "Male", phone: "9988776659", address: "56 Civil Lines, Lucknow", bloodGroup: "O-", emergencyContact: "9988776602", insuranceId: "NIVA-BUPA-30412", createdAt: now, updatedAt: now },
+    { id: uuid(), name: "Lakshmi Reddy", age: 40, gender: "Female", phone: "9988776660", address: "9 Tank Bund Road, Hyderabad", bloodGroup: "A+", insuranceId: "HDFC-ERGO-72810", createdAt: now, updatedAt: now },
+    { id: uuid(), name: "Arun Gupta", age: 52, gender: "Male", phone: "9988776661", address: "34 Mall Road, Shimla", bloodGroup: "B-", createdAt: now, updatedAt: now },
+    { id: uuid(), name: "Fatima Begum", age: 35, gender: "Female", phone: "9988776662", address: "67 Charbagh, Lucknow", bloodGroup: "O+", emergencyContact: "9988776603", createdAt: now, updatedAt: now },
+    { id: uuid(), name: "Dinesh Tiwari", age: 72, gender: "Male", phone: "9988776663", address: "11 Hazratganj, Lucknow", bloodGroup: "AB-", emergencyContact: "9988776604", insuranceId: "ICICI-LOM-55120", createdAt: now, updatedAt: now },
+    { id: uuid(), name: "Sneha Patil", age: 24, gender: "Female", phone: "9988776664", address: "88 FC Road, Pune", bloodGroup: "B+", createdAt: now, updatedAt: now }
+  ];
+  for (const p of patientRecords) db.insert(patients).values(p).run();
+  console.log(`  \u2713 ${patientRecords.length} patients`);
+  const labRecords = [
+    { id: uuid(), patientName: "Suresh Mehta", testName: "Complete Blood Count", category: "Hematology", priority: "Normal", status: "Completed", result: "Normal ranges", orderedBy: "Dr. Anjali Sharma", orderedDate: "2026-02-01", completedDate: "2026-02-02" },
+    { id: uuid(), patientName: "Priya Desai", testName: "Thyroid Panel", category: "Biochemistry", priority: "Normal", status: "Completed", result: "TSH elevated", orderedBy: "Dr. Anjali Sharma", orderedDate: "2026-02-01", completedDate: "2026-02-03" },
+    { id: uuid(), patientName: "Ravi Shankar", testName: "Liver Function Test", category: "Biochemistry", priority: "Urgent", status: "InProgress", orderedBy: "Dr. Anjali Sharma", orderedDate: "2026-02-05" },
+    { id: uuid(), patientName: "Anita Kumari", testName: "Urine Routine", category: "Clinical Pathology", priority: "Normal", status: "Pending", orderedBy: "Dr. Meena Iyer", orderedDate: "2026-02-06" },
+    { id: uuid(), patientName: "Mohd. Irfan", testName: "ECG", category: "Cardiology", priority: "Urgent", status: "Pending", orderedBy: "Dr. Anjali Sharma", orderedDate: "2026-02-07" },
+    { id: uuid(), patientName: "Suresh Mehta", testName: "Blood Glucose Fasting", category: "Biochemistry", priority: "Normal", status: "Completed", result: "126 mg/dL \u2014 Pre-diabetic", orderedBy: "Dr. Anjali Sharma", orderedDate: "2026-02-01", completedDate: "2026-02-01" },
+    { id: uuid(), patientName: "Ravi Shankar", testName: "Chest X-Ray", category: "Radiology", priority: "Normal", status: "InProgress", orderedBy: "Dr. Vikram Rao", orderedDate: "2026-02-06" },
+    { id: uuid(), patientName: "Priya Desai", testName: "Blood Culture", category: "Microbiology", priority: "Urgent", status: "Pending", orderedBy: "Dr. Anjali Sharma", orderedDate: "2026-02-07" },
+    { id: uuid(), patientName: "Lakshmi Reddy", testName: "Lipid Profile", category: "Biochemistry", priority: "Normal", status: "Completed", result: "LDL slightly high", orderedBy: "Dr. Vikram Rao", orderedDate: "2026-02-03", completedDate: "2026-02-04" },
+    { id: uuid(), patientName: "Arun Gupta", testName: "HbA1c", category: "Hematology", priority: "Normal", status: "Completed", result: "7.2% \u2014 Diabetic", orderedBy: "Dr. Anjali Sharma", orderedDate: "2026-02-02", completedDate: "2026-02-03" },
+    { id: uuid(), patientName: "Sneha Patil", testName: "Vitamin D Level", category: "Biochemistry", priority: "Normal", status: "Pending", orderedBy: "Dr. Meena Iyer", orderedDate: "2026-02-07" },
+    { id: uuid(), patientName: "Dinesh Tiwari", testName: "Kidney Function Test", category: "Biochemistry", priority: "Urgent", status: "InProgress", orderedBy: "Dr. Vikram Rao", orderedDate: "2026-02-06" }
+  ];
+  for (const l of labRecords) db.insert(labTests).values(l).run();
+  console.log(`  \u2713 ${labRecords.length} lab tests`);
+  const tokenRecords = [
+    { id: uuid(), tokenNumber: 1, patientName: "Suresh Mehta", doctorName: "Dr. Anjali Sharma", department: "General Medicine", status: "Completed", createdAt: now },
+    { id: uuid(), tokenNumber: 2, patientName: "Priya Desai", doctorName: "Dr. Anjali Sharma", department: "General Medicine", status: "InProgress", createdAt: now },
+    { id: uuid(), tokenNumber: 3, patientName: "Ravi Shankar", doctorName: "Dr. Anjali Sharma", department: "General Medicine", status: "Waiting", createdAt: now },
+    { id: uuid(), tokenNumber: 4, patientName: "Anita Kumari", doctorName: "Dr. Meena Iyer", department: "Pediatrics", status: "Waiting", createdAt: now },
+    { id: uuid(), tokenNumber: 1, patientName: "Arun Gupta", doctorName: "Dr. Vikram Rao", department: "Orthopedics", status: "Completed", createdAt: now },
+    { id: uuid(), tokenNumber: 2, patientName: "Lakshmi Reddy", doctorName: "Dr. Vikram Rao", department: "Orthopedics", status: "InProgress", createdAt: now },
+    { id: uuid(), tokenNumber: 5, patientName: "Fatima Begum", doctorName: "Dr. Meena Iyer", department: "Pediatrics", status: "Waiting", createdAt: now },
+    { id: uuid(), tokenNumber: 6, patientName: "Sneha Patil", doctorName: "Dr. Anjali Sharma", department: "General Medicine", status: "Waiting", createdAt: now }
+  ];
+  for (const t of tokenRecords) db.insert(tokens).values(t).run();
+  console.log(`  \u2713 ${tokenRecords.length} OPD tokens`);
+  const docRecords = [
+    { id: uuid(), name: "Hospital License 2026", category: "License", uploadedBy: "Admin", uploadDate: "2026-01-15", expiryDate: "2027-01-15", fileSize: "2.4 MB" },
+    { id: uuid(), name: "Fire Safety Certificate", category: "License", uploadedBy: "Admin", uploadDate: "2025-06-01", expiryDate: "2026-06-01", fileSize: "1.1 MB" },
+    { id: uuid(), name: "Staff Handbook v3", category: "Policy", uploadedBy: "HR Dept", uploadDate: "2025-12-01", fileSize: "5.2 MB" },
+    { id: uuid(), name: "NABH Accreditation", category: "License", uploadedBy: "Admin", uploadDate: "2024-03-01", expiryDate: "2026-03-01", fileSize: "3.8 MB" },
+    { id: uuid(), name: "Waste Management Protocol", category: "Policy", uploadedBy: "COO Office", uploadDate: "2025-11-15", fileSize: "1.5 MB" },
+    { id: uuid(), name: "Bio-Medical Waste Compliance", category: "Compliance", uploadedBy: "Admin", uploadDate: "2025-10-01", expiryDate: "2026-10-01", fileSize: "890 KB" },
+    { id: uuid(), name: "Drug License", category: "License", uploadedBy: "Pharmacy", uploadDate: "2025-08-01", expiryDate: "2026-08-01", fileSize: "1.2 MB" },
+    { id: uuid(), name: "Annual Audit Report 2025", category: "Report", uploadedBy: "Accounts", uploadDate: "2026-01-31", fileSize: "8.7 MB" }
+  ];
+  for (const d of docRecords) db.insert(documents).values(d).run();
+  console.log(`  \u2713 ${docRecords.length} documents`);
+  const announcementRecords = [
+    {
+      id: uuid(),
+      title: "Annual Health Checkup Camp",
+      content: "Free health checkup camp for all staff members on Feb 15, 2026. Please register at HR.",
+      type: "General",
+      postedBy: "Admin",
+      postedDate: "2026-02-01",
+      isActive: true
+    },
+    {
+      id: uuid(),
+      title: "Attendance Penalty Policy",
+      content: "Effective immediately: More than 3 unexcused absences per month will result in \u20B9500 deduction per extra absence.",
+      type: "Penalty",
+      postedBy: "COO Office",
+      postedDate: "2026-01-20",
+      isActive: true,
+      penaltyConfig: JSON.stringify({ absenceLimit: 3, deductionAmount: 500, applicableFrom: "2026-02-01" })
+    },
+    {
+      id: uuid(),
+      title: "New OPD Timings",
+      content: "OPD timings changed to 9:00 AM \u2013 5:00 PM starting March 1. Saturday half-day: 9:00 AM \u2013 1:00 PM.",
+      type: "Policy",
+      postedBy: "CMO Office",
+      postedDate: "2026-02-05",
+      isActive: true
+    },
+    {
+      id: uuid(),
+      title: "\u26A0\uFE0F Water Supply Disruption",
+      content: "Municipal water supply will be interrupted on Feb 10. Tanker water arranged as backup.",
+      type: "Urgent",
+      postedBy: "Admin",
+      postedDate: "2026-02-07",
+      isActive: true
+    },
+    {
+      id: uuid(),
+      title: "Staff ID Card Renewal",
+      content: "All staff must renew their ID cards before March 31, 2026. Visit the HR office with updated passport-size photo.",
+      type: "General",
+      postedBy: "HR Dept",
+      postedDate: "2026-02-03",
+      isActive: true
+    }
+  ];
+  for (const a of announcementRecords) db.insert(announcements).values(a).run();
+  console.log(`  \u2713 ${announcementRecords.length} announcements`);
+  const allStaff = [
+    { id: S.rajesh, name: "Rajesh Kumar" },
+    { id: S.priya, name: "Priya Sharma" },
+    { id: S.anil, name: "Dr. Anil Mehta" },
+    { id: S.sita, name: "Sita Devi" },
+    { id: S.sunita, name: "Dr. Sunita Rao" },
+    { id: S.ramesh, name: "Ramesh Gupta" },
+    { id: S.kavita, name: "Kavita Nair" },
+    { id: S.deepak, name: "Deepak Joshi" },
+    { id: S.amit, name: "Amit Verma" },
+    { id: S.neha, name: "Neha Kapoor" },
+    { id: S.mohan, name: "Mohan Das" },
+    { id: S.vikram, name: "Vikram Singh" }
+  ];
+  const attPatterns = {
+    [S.rajesh]: ["Present", "Present", "Present", "Present", "Present", "Present", "Present", "Present", "Absent", "Present"],
+    [S.priya]: ["Present", "Present", "Present", "Present", "Present", "Present", "Present", "Present", "Present", "Present"],
+    [S.anil]: ["Present", "Present", "Present", "Present", "Present", "Present", "Present", "Late", "Present", "Present"],
+    [S.sita]: ["Present", "Present", "Present", "HalfDay", "Present", "Present", "Present", "Present", "OnLeave", "Present"],
+    [S.sunita]: ["Present", "Present", "Late", "Present", "Present", "Absent", "Present", "Present", "Present", "Present"],
+    [S.ramesh]: ["Present", "Present", "Present", "Present", "Absent", "Present", "Present", "Present", "Present", "Late"],
+    [S.kavita]: ["Present", "Late", "Present", "Absent", "Present", "Present", "Present", "Absent", "Present", "Present"],
+    [S.deepak]: ["Present", "Present", "Present", "Present", "Present", "Present", "Late", "Present", "Present", "Present"],
+    [S.amit]: ["Absent", "Present", "Present", "Present", "Absent", "Present", "Present", "Present", "Absent", "Present"],
+    [S.neha]: ["Present", "Present", "Late", "Present", "Present", "Present", "Present", "Late", "Present", "Present"],
+    [S.mohan]: ["Present", "Present", "Present", "Present", "Present", "Present", "Present", "Present", "Present", "Present"],
+    [S.vikram]: ["Present", "Present", "Present", "Present", "Present", "Present", "Present", "Present", "Present", "OnLeave"]
+  };
+  function getWeekdays(startStr, endStr) {
+    const dates = [];
+    const cur = new Date(startStr);
+    const end = new Date(endStr);
+    while (cur <= end) {
+      const day = cur.getDay();
+      if (day !== 0 && day !== 6) {
+        dates.push(cur.toISOString().slice(0, 10));
+      }
+      cur.setDate(cur.getDate() + 1);
+    }
+    return dates;
   }
-  res.json({ success: true });
-});
-var billing_default = router16;
+  const attDates = getWeekdays("2026-01-01", "2026-04-07");
+  let attCount = 0;
+  for (const s of allStaff) {
+    const pattern = attPatterns[s.id] || ["Present", "Present", "Present", "Present", "Present", "Present", "Present", "Present", "Present", "Present"];
+    for (let i = 0; i < attDates.length; i++) {
+      const status = pattern[i % pattern.length];
+      const checkIn = status === "Present" ? "08:45" : status === "Late" ? "09:35" : status === "HalfDay" ? "08:50" : void 0;
+      const checkOut = status === "Present" ? "17:15" : status === "Late" ? "17:30" : status === "HalfDay" ? "13:00" : void 0;
+      db.insert(attendanceRecords).values({
+        id: uuid(),
+        staffId: s.id,
+        staffName: s.name,
+        date: attDates[i],
+        status,
+        checkIn,
+        checkOut
+      }).run();
+      attCount++;
+    }
+  }
+  console.log(`  \u2713 ${attCount} attendance records (${attDates.length} weekdays \xD7 ${allStaff.length} staff)`);
+  const leaveRecords = [
+    { id: uuid(), staffId: S.sita, staffName: "Sita Devi", type: "Sick Leave", startDate: "2026-02-10", endDate: "2026-02-11", reason: "Fever", status: "Pending", appliedDate: "2026-02-06" },
+    { id: uuid(), staffId: S.anil, staffName: "Dr. Anil Mehta", type: "Casual Leave", startDate: "2026-02-15", endDate: "2026-02-15", reason: "Personal work", status: "Approved", appliedDate: "2026-02-01", approvedBy: "Rajesh Kumar" },
+    { id: uuid(), staffId: S.amit, staffName: "Amit Verma", type: "Casual Leave", startDate: "2026-02-20", endDate: "2026-02-22", reason: "Family function", status: "Pending", appliedDate: "2026-02-05" },
+    { id: uuid(), staffId: S.kavita, staffName: "Kavita Nair", type: "Sick Leave", startDate: "2026-03-01", endDate: "2026-03-05", reason: "Surgery recovery", status: "Approved", appliedDate: "2026-02-15", approvedBy: "Dr. Sunita Rao" },
+    { id: uuid(), staffId: S.vikram, staffName: "Vikram Singh", type: "Casual Leave", startDate: "2026-02-08", endDate: "2026-02-08", reason: "Doctor appointment", status: "Rejected", appliedDate: "2026-02-06", approvedBy: "Dr. Anil Mehta" },
+    { id: uuid(), staffId: S.deepak, staffName: "Deepak Joshi", type: "Sick Leave", startDate: "2026-01-25", endDate: "2026-01-26", reason: "Migraine", status: "Approved", appliedDate: "2026-01-24", approvedBy: "Rajesh Kumar" },
+    { id: uuid(), staffId: S.mohan, staffName: "Mohan Das", type: "Casual Leave", startDate: "2026-02-12", endDate: "2026-02-14", reason: "Village emergency", status: "Pending", appliedDate: "2026-02-07" }
+  ];
+  for (const l of leaveRecords) db.insert(leaveRequests).values(l).run();
+  console.log(`  \u2713 ${leaveRecords.length} leave requests`);
+  const payMonthsData = [
+    { month: "December", year: "2025", statuses: ["Paid", "Paid", "Paid", "Paid", "Paid", "Paid", "Paid", "Paid", "Paid", "Paid", "Paid", "Paid"] },
+    { month: "January", year: "2026", statuses: ["Paid", "Paid", "Paid", "Paid", "Paid", "Paid", "Paid", "Paid", "Paid", "Paid", "Paid", "Paid"] },
+    { month: "February", year: "2026", statuses: ["Processed", "Processed", "Draft", "Draft", "Draft", "Draft", "Draft", "Draft", "Draft", "Draft", "Draft", "Draft"] }
+  ];
+  const workingDays = 26;
+  let payCount = 0;
+  for (const pm of payMonthsData) {
+    for (let i = 0; i < staffRecords.length; i++) {
+      const s = staffRecords[i];
+      const basicSalary = s.baseSalary;
+      const hra = Math.round(basicSalary * 0.5);
+      const epfEmployer = 1800;
+      const otherAllowance = Math.round(basicSalary * 0.47);
+      const grossSalary = basicSalary + hra + otherAllowance;
+      const professionalTax = 200;
+      const epfEmployee = 1800;
+      const leaveDeductions = 0;
+      const bonus = pm.month === "December" ? Math.round(basicSalary * 0.05) : 0;
+      const netSalary = grossSalary - professionalTax - epfEmployee - leaveDeductions + bonus;
+      db.insert(payrollRecords).values({
+        id: uuid(),
+        staffId: s.id,
+        staffName: s.name,
+        department: s.department,
+        month: pm.month,
+        year: pm.year,
+        baseSalary: basicSalary,
+        basicSalary,
+        hra,
+        epfEmployer,
+        otherAllowance,
+        grossSalary,
+        professionalTax,
+        epfEmployee,
+        leaveDeductions,
+        totalShifts: workingDays,
+        attendedShifts: workingDays,
+        leavesTaken: 0,
+        shiftRate: Math.round(grossSalary / workingDays),
+        deductions: professionalTax + epfEmployee,
+        bonus,
+        netSalary: Math.round(netSalary),
+        status: pm.statuses[i]
+      }).run();
+      payCount++;
+    }
+  }
+  console.log(`  \u2713 ${payCount} payroll records (3 months)`);
+  const invRecords = [
+    // ── Medicines ──
+    { id: uuid(), name: "Paracetamol 500mg", category: "Medicine", assetType: "Recurring", quantity: 500, unit: "Tablets", minStock: 100, maxStock: 1e3, location: "Pharmacy Store A", supplier: "Sun Pharma", unitCost: 1.5, lastRestocked: "2026-01-20", expiryDate: "2027-06-01", purchaseDate: "2026-01-20", billReference: "BILL-2026-0042", status: "InStock" },
+    { id: uuid(), name: "Amoxicillin 250mg", category: "Medicine", assetType: "Recurring", quantity: 300, unit: "Capsules", minStock: 100, maxStock: 800, location: "Pharmacy Store A", supplier: "Cipla", unitCost: 3.2, lastRestocked: "2026-01-25", expiryDate: "2025-12-01", purchaseDate: "2025-06-10", status: "Expired" },
+    { id: uuid(), name: "IV Saline 500ml", category: "Medicine", assetType: "Recurring", quantity: 200, unit: "Bottles", minStock: 50, maxStock: 500, location: "Ward Store", supplier: "Baxter India", unitCost: 42, lastRestocked: "2026-02-01", expiryDate: "2027-12-01", purchaseDate: "2026-02-01", status: "InStock" },
+    { id: uuid(), name: "Omeprazole 20mg", category: "Medicine", assetType: "Recurring", quantity: 80, unit: "Strips", minStock: 50, maxStock: 300, location: "Pharmacy Store B", supplier: "Dr. Reddy's", unitCost: 12, lastRestocked: "2026-01-18", expiryDate: "2027-03-01", purchaseDate: "2026-01-18", status: "InStock" },
+    // ── Consumables ──
+    { id: uuid(), name: "Surgical Gloves (M)", category: "Consumable", assetType: "Recurring", quantity: 45, unit: "Boxes", minStock: 50, maxStock: 200, location: "OT Store", supplier: "MedSupply Co", unitCost: 180, lastRestocked: "2026-01-10", status: "LowStock" },
+    { id: uuid(), name: "Syringe 5ml", category: "Consumable", assetType: "Recurring", quantity: 0, unit: "Boxes", minStock: 30, maxStock: 150, location: "Ward Store", supplier: "BD Medical", unitCost: 95, status: "OutOfStock" },
+    { id: uuid(), name: "Cotton Roll 500g", category: "Consumable", assetType: "Recurring", quantity: 60, unit: "Rolls", minStock: 20, maxStock: 100, location: "Dressing Room", supplier: "MedSupply Co", unitCost: 120, lastRestocked: "2026-01-28", status: "InStock" },
+    // ── Equipment ──
+    { id: uuid(), name: "Oxygen Cylinder (B-Type)", category: "Equipment", assetType: "Fixed", quantity: 8, unit: "Units", minStock: 5, maxStock: 20, location: "Emergency Bay", supplier: "Linde Gas", unitCost: 8500, lastRestocked: "2026-01-15", purchaseDate: "2023-06-01", warrantyExpiry: "2026-06-01", warrantyDoc: "WD-OXY-2023", status: "InStock" },
+    { id: uuid(), name: "Blood Pressure Monitor", category: "Equipment", assetType: "Fixed", quantity: 12, unit: "Units", minStock: 5, maxStock: 25, location: "OPD Room 1", supplier: "Omron Healthcare", unitCost: 2200, lastRestocked: "2025-11-01", purchaseDate: "2024-01-15", warrantyExpiry: "2027-01-15", warrantyDoc: "WD-BPM-2024", status: "InStock" },
+    { id: uuid(), name: "Pulse Oximeter", category: "Equipment", assetType: "Fixed", quantity: 6, unit: "Units", minStock: 3, maxStock: 15, location: "ICU", supplier: "Masimo", unitCost: 15e3, purchaseDate: "2022-03-01", warrantyExpiry: "2025-03-01", status: "InStock" },
+    // ── Bed / Linen ──
+    { id: uuid(), name: "Hospital Bed (Manual)", category: "Bed", assetType: "Fixed", quantity: 30, assignedQty: 22, unit: "Units", minStock: 5, maxStock: 50, location: "Ward A & B", supplier: "HospEquip Pvt", unitCost: 25e3, purchaseDate: "2021-06-01", warrantyExpiry: "2026-06-01", status: "InStock" },
+    { id: uuid(), name: "Bed Sheet (White)", category: "Linen", assetType: "Recurring", quantity: 100, disposableQty: 15, unit: "Pcs", minStock: 30, maxStock: 200, location: "Laundry", supplier: "Linen House", unitCost: 350, lastRestocked: "2026-01-05", status: "InStock" },
+    // ── Damaged / Disposed examples ──
+    { id: uuid(), name: "Nebulizer (Portable)", category: "Nebulizer", assetType: "Fixed", quantity: 1, unit: "Units", minStock: 2, maxStock: 10, location: "Pediatrics", supplier: "Philips", unitCost: 3500, purchaseDate: "2022-09-01", damageStatus: "Declared", photoEvidence: "DMG-NEB-001.jpg", status: "Damaged" },
+    { id: uuid(), name: "Wheelchair (Old)", category: "Furniture", assetType: "Fixed", quantity: 0, unit: "Units", minStock: 2, maxStock: 10, location: "Disposed", supplier: "N/A", unitCost: 6e3, purchaseDate: "2018-01-01", disposalStatus: "Disposed", disposalType: "Charitable", disposalDate: "2025-12-15", status: "Disposed" }
+  ];
+  for (const i of invRecords) db.insert(inventoryItems).values(i).run();
+  console.log(`  \u2713 ${invRecords.length} inventory items`);
+  const schedRecords = [
+    // Dr. Anil — Gen Med — Mon/Wed/Fri
+    { id: uuid(), doctorId: S.anil, doctorName: "Dr. Anil Mehta", department: "General Medicine", dayOfWeek: "Monday", startTime: "09:00", endTime: "17:00", maxPatients: 30, isActive: true },
+    { id: uuid(), doctorId: S.anil, doctorName: "Dr. Anil Mehta", department: "General Medicine", dayOfWeek: "Wednesday", startTime: "09:00", endTime: "17:00", maxPatients: 30, isActive: true },
+    { id: uuid(), doctorId: S.anil, doctorName: "Dr. Anil Mehta", department: "General Medicine", dayOfWeek: "Friday", startTime: "09:00", endTime: "13:00", maxPatients: 15, isActive: true },
+    // Dr. Sunita — Surgery — Tue/Thu/Sat
+    { id: uuid(), doctorId: S.sunita, doctorName: "Dr. Sunita Rao", department: "Surgery", dayOfWeek: "Tuesday", startTime: "10:00", endTime: "18:00", maxPatients: 25, isActive: true },
+    { id: uuid(), doctorId: S.sunita, doctorName: "Dr. Sunita Rao", department: "Surgery", dayOfWeek: "Thursday", startTime: "10:00", endTime: "18:00", maxPatients: 25, isActive: true },
+    { id: uuid(), doctorId: S.sunita, doctorName: "Dr. Sunita Rao", department: "Surgery", dayOfWeek: "Saturday", startTime: "10:00", endTime: "14:00", maxPatients: 15, isActive: true },
+    // Dr. Anil (covering Pediatrics too) — Mon/Tue/Thu
+    { id: uuid(), doctorId: S.anil, doctorName: "Dr. Anil Mehta", department: "General Medicine", dayOfWeek: "Tuesday", startTime: "14:00", endTime: "17:00", maxPatients: 20, isActive: true },
+    { id: uuid(), doctorId: S.anil, doctorName: "Dr. Anil Mehta", department: "General Medicine", dayOfWeek: "Thursday", startTime: "14:00", endTime: "17:00", maxPatients: 20, isActive: true },
+    { id: uuid(), doctorId: S.sunita, doctorName: "Dr. Sunita Rao", department: "Surgery", dayOfWeek: "Monday", startTime: "09:00", endTime: "15:00", maxPatients: 20, isActive: true }
+  ];
+  for (const s of schedRecords) db.insert(doctorSchedules).values(s).run();
+  console.log(`  \u2713 ${schedRecords.length} doctor schedules`);
+  const rxIds = { rx1: uuid(), rx2: uuid(), rx3: uuid(), rx4: uuid(), rx5: uuid(), rx6: uuid(), rx7: uuid(), rx8: uuid(), rx9: uuid(), rx10: uuid() };
+  const rxRecords = [
+    { id: rxIds.rx1, patientName: "Suresh Mehta", doctorName: "Dr. Anjali Sharma", medicineName: "Paracetamol 500mg", dosage: "500mg", frequency: "TDS", duration: "5 days", quantity: 15, status: "Dispensed", notes: "After food", prescribedDate: "2026-02-01", dispensedDate: "2026-02-01", dispensedBy: "Deepak Joshi" },
+    { id: rxIds.rx2, patientName: "Priya Desai", doctorName: "Dr. Anjali Sharma", medicineName: "Amoxicillin 250mg", dosage: "250mg", frequency: "BD", duration: "7 days", quantity: 14, status: "Pending", prescribedDate: "2026-02-05" },
+    { id: rxIds.rx3, patientName: "Ravi Shankar", doctorName: "Dr. Anjali Sharma", medicineName: "Omeprazole 20mg", dosage: "20mg", frequency: "OD", duration: "14 days", quantity: 14, status: "Dispensed", notes: "Before breakfast", prescribedDate: "2026-02-03", dispensedDate: "2026-02-03", dispensedBy: "Deepak Joshi" },
+    { id: rxIds.rx4, patientName: "Anita Kumari", doctorName: "Dr. Meena Iyer", medicineName: "Paracetamol 500mg", dosage: "250mg", frequency: "BD", duration: "3 days", quantity: 6, status: "Dispensed", notes: "Pediatric dose", prescribedDate: "2026-02-04", dispensedDate: "2026-02-04", dispensedBy: "Deepak Joshi" },
+    { id: rxIds.rx5, patientName: "Arun Gupta", doctorName: "Dr. Anjali Sharma", medicineName: "Metformin 500mg", dosage: "500mg", frequency: "BD", duration: "30 days", quantity: 60, status: "Dispensed", prescribedDate: "2026-02-02", dispensedDate: "2026-02-02", dispensedBy: "Deepak Joshi" },
+    { id: rxIds.rx6, patientName: "Lakshmi Reddy", doctorName: "Dr. Vikram Rao", medicineName: "Diclofenac 50mg", dosage: "50mg", frequency: "BD", duration: "5 days", quantity: 10, status: "Pending", notes: "After food, for knee pain", prescribedDate: "2026-02-06" },
+    { id: rxIds.rx7, patientName: "Fatima Begum", doctorName: "Dr. Meena Iyer", medicineName: "Azithromycin 500mg", dosage: "500mg", frequency: "OD", duration: "3 days", quantity: 3, status: "Pending", prescribedDate: "2026-02-07" },
+    { id: rxIds.rx8, patientName: "Mohd. Irfan", doctorName: "Dr. Anjali Sharma", medicineName: "Atorvastatin 10mg", dosage: "10mg", frequency: "OD", duration: "30 days", quantity: 30, status: "Dispensed", notes: "At bedtime", prescribedDate: "2026-01-20", dispensedDate: "2026-01-20", dispensedBy: "Deepak Joshi" },
+    { id: rxIds.rx9, patientName: "Dinesh Tiwari", doctorName: "Dr. Vikram Rao", medicineName: "Calcium + Vit D3", dosage: "1 tab", frequency: "OD", duration: "60 days", quantity: 60, status: "Pending", prescribedDate: "2026-02-06" },
+    { id: rxIds.rx10, patientName: "Sneha Patil", doctorName: "Dr. Meena Iyer", medicineName: "Cetirizine 10mg", dosage: "10mg", frequency: "OD", duration: "7 days", quantity: 7, status: "Cancelled", notes: "Patient allergic \u2014 switched", prescribedDate: "2026-02-05" }
+  ];
+  for (const rx of rxRecords) db.insert(prescriptions).values(rx).run();
+  console.log(`  \u2713 ${rxRecords.length} prescriptions`);
+  const medAdminRecords = [
+    // Normal administrations (no discrepancy)
+    { id: uuid(), prescriptionId: rxIds.rx1, patientName: "Suresh Mehta", doctorName: "Dr. Anjali Sharma", prescribedMedicine: "Paracetamol 500mg", prescribedDosage: "500mg", administeredMedicine: "Paracetamol 500mg", administeredDosage: "500mg", administeredBy: "Sunita Yadav", administeredByRole: "SR_NURSE", administeredDate: "2026-02-01T10:30:00Z", hasDiscrepancy: false, status: "Administered" },
+    { id: uuid(), prescriptionId: rxIds.rx3, patientName: "Ravi Shankar", doctorName: "Dr. Anjali Sharma", prescribedMedicine: "Omeprazole 20mg", prescribedDosage: "20mg", administeredMedicine: "Omeprazole 20mg", administeredDosage: "20mg", administeredBy: "Rajesh Kumar", administeredByRole: "JR_NURSE", administeredDate: "2026-02-03T08:00:00Z", hasDiscrepancy: false, status: "Administered" },
+    { id: uuid(), prescriptionId: rxIds.rx5, patientName: "Arun Gupta", doctorName: "Dr. Anjali Sharma", prescribedMedicine: "Metformin 500mg", prescribedDosage: "500mg", administeredMedicine: "Metformin 500mg", administeredDosage: "500mg", administeredBy: "Sunita Yadav", administeredByRole: "SR_NURSE", administeredDate: "2026-02-02T09:15:00Z", hasDiscrepancy: false, status: "Administered" },
+    // ── Discrepancies — wrong dosage ──
+    { id: uuid(), prescriptionId: rxIds.rx4, patientName: "Anita Kumari", doctorName: "Dr. Meena Iyer", prescribedMedicine: "Paracetamol 500mg", prescribedDosage: "250mg", administeredMedicine: "Paracetamol 500mg", administeredDosage: "500mg", administeredBy: "Kavita Nair", administeredByRole: "JR_NURSE", administeredDate: "2026-02-04T11:00:00Z", hasDiscrepancy: true, discrepancyNotes: "Administered adult dose (500mg) instead of prescribed pediatric dose (250mg)", status: "Flagged" },
+    // ── Discrepancy — wrong medicine ──
+    { id: uuid(), prescriptionId: rxIds.rx8, patientName: "Mohd. Irfan", doctorName: "Dr. Anjali Sharma", prescribedMedicine: "Atorvastatin 10mg", prescribedDosage: "10mg", administeredMedicine: "Rosuvastatin 10mg", administeredDosage: "10mg", administeredBy: "Rajesh Kumar", administeredByRole: "JR_NURSE", administeredDate: "2026-01-20T21:00:00Z", hasDiscrepancy: true, discrepancyNotes: "Administered Rosuvastatin instead of prescribed Atorvastatin \u2014 similar but different drug", status: "Flagged" },
+    // ── Resolved discrepancy ──
+    { id: uuid(), prescriptionId: rxIds.rx1, patientName: "Suresh Mehta", doctorName: "Dr. Anjali Sharma", prescribedMedicine: "Paracetamol 500mg", prescribedDosage: "500mg", administeredMedicine: "Paracetamol 650mg", administeredDosage: "650mg", administeredBy: "Kavita Nair", administeredByRole: "JR_NURSE", administeredDate: "2026-02-02T10:30:00Z", hasDiscrepancy: true, discrepancyNotes: "Gave 650mg instead of 500mg. Doctor reviewed \u2014 no harm, patient weight appropriate.", status: "Resolved" },
+    // More normal ones
+    { id: uuid(), prescriptionId: rxIds.rx1, patientName: "Suresh Mehta", doctorName: "Dr. Anjali Sharma", prescribedMedicine: "Paracetamol 500mg", prescribedDosage: "500mg", administeredMedicine: "Paracetamol 500mg", administeredDosage: "500mg", administeredBy: "Sunita Yadav", administeredByRole: "SR_NURSE", administeredDate: "2026-02-03T10:30:00Z", hasDiscrepancy: false, status: "Administered" },
+    { id: uuid(), prescriptionId: rxIds.rx5, patientName: "Arun Gupta", doctorName: "Dr. Anjali Sharma", prescribedMedicine: "Metformin 500mg", prescribedDosage: "500mg", administeredMedicine: "Metformin 500mg", administeredDosage: "500mg", administeredBy: "Rajesh Kumar", administeredByRole: "JR_NURSE", administeredDate: "2026-02-03T09:15:00Z", hasDiscrepancy: false, status: "Administered" }
+  ];
+  for (const ma of medAdminRecords) db.insert(medicineAdministrations).values(ma).run();
+  console.log(`  \u2713 ${medAdminRecords.length} medicine administrations (${medAdminRecords.filter((m) => m.hasDiscrepancy).length} discrepancies)`);
+  const billRecords = [
+    { id: uuid(), patientName: "Suresh Mehta", invoiceNumber: "INV-2026-001", items: JSON.stringify([{ description: "OPD Consultation", amount: 200 }, { description: "Blood Test (CBC)", amount: 500 }, { description: "Blood Glucose", amount: 300 }]), subtotal: 1e3, discount: 0, tax: 0, totalAmount: 1e3, paidAmount: 1e3, paymentMethod: "Cash", status: "Paid", createdDate: "2026-02-01", paidDate: "2026-02-01", createdBy: "Neha Kapoor" },
+    { id: uuid(), patientName: "Priya Desai", invoiceNumber: "INV-2026-002", items: JSON.stringify([{ description: "OPD Consultation", amount: 200 }, { description: "Thyroid Panel", amount: 800 }, { description: "Medicines", amount: 350 }]), subtotal: 1350, discount: 100, tax: 0, totalAmount: 1250, paidAmount: 0, paymentMethod: "Insurance", status: "Unpaid", createdDate: "2026-02-03", createdBy: "Neha Kapoor" },
+    { id: uuid(), patientName: "Ravi Shankar", invoiceNumber: "INV-2026-003", items: JSON.stringify([{ description: "OPD Consultation", amount: 200 }, { description: "LFT", amount: 600 }, { description: "Chest X-Ray", amount: 400 }]), subtotal: 1200, discount: 0, tax: 0, totalAmount: 1200, paidAmount: 1200, paymentMethod: "UPI", status: "Paid", createdDate: "2026-02-05", paidDate: "2026-02-05", createdBy: "Neha Kapoor" },
+    { id: uuid(), patientName: "Lakshmi Reddy", invoiceNumber: "INV-2026-004", items: JSON.stringify([{ description: "Ortho Consultation", amount: 300 }, { description: "Knee X-Ray", amount: 500 }, { description: "Medicines", amount: 450 }, { description: "Physiotherapy (3 sessions)", amount: 1500 }]), subtotal: 2750, discount: 250, tax: 0, totalAmount: 2500, paidAmount: 1e3, paymentMethod: "Card", status: "Partial", createdDate: "2026-02-04", createdBy: "Neha Kapoor" },
+    { id: uuid(), patientName: "Arun Gupta", invoiceNumber: "INV-2026-005", items: JSON.stringify([{ description: "OPD Consultation", amount: 200 }, { description: "HbA1c Test", amount: 500 }, { description: "Medicines (Metformin)", amount: 180 }]), subtotal: 880, discount: 0, tax: 0, totalAmount: 880, paidAmount: 880, paymentMethod: "UPI", status: "Paid", createdDate: "2026-02-02", paidDate: "2026-02-02", createdBy: "Neha Kapoor" },
+    { id: uuid(), patientName: "Mohd. Irfan", invoiceNumber: "INV-2026-006", items: JSON.stringify([{ description: "OPD Consultation", amount: 200 }, { description: "ECG", amount: 600 }, { description: "Medicines", amount: 320 }]), subtotal: 1120, discount: 0, tax: 0, totalAmount: 1120, paidAmount: 0, paymentMethod: "Cash", status: "Unpaid", createdDate: "2026-02-07", createdBy: "Neha Kapoor" },
+    { id: uuid(), patientName: "Dinesh Tiwari", invoiceNumber: "INV-2026-007", items: JSON.stringify([{ description: "Ortho Consultation", amount: 300 }, { description: "KFT", amount: 700 }, { description: "Calcium + Vit D3", amount: 250 }]), subtotal: 1250, discount: 0, tax: 0, totalAmount: 1250, paidAmount: 500, paymentMethod: "Cash", status: "Partial", createdDate: "2026-02-06", createdBy: "Ramesh Gupta" },
+    { id: uuid(), patientName: "Sneha Patil", invoiceNumber: "INV-2026-008", items: JSON.stringify([{ description: "Pediatric Consultation", amount: 200 }, { description: "Medicines (returned)", amount: 150 }]), subtotal: 350, discount: 0, tax: 0, totalAmount: 350, paidAmount: -350, paymentMethod: "UPI", status: "Refunded", createdDate: "2026-02-05", paidDate: "2026-02-06", createdBy: "Neha Kapoor" }
+  ];
+  for (const b of billRecords) db.insert(billingRecords).values(b).run();
+  console.log(`  \u2713 ${billRecords.length} billing records`);
+  const existingTypes = db.select().from(leaveTypes).all();
+  if (existingTypes.length === 0) {
+    const leaveTypeRecords = [
+      { id: "lt-casual", name: "Casual Leave", isActive: true, createdBy: "system", createdAt: now },
+      { id: "lt-sick", name: "Sick Leave", isActive: true, createdBy: "system", createdAt: now }
+    ];
+    for (const lt2 of leaveTypeRecords) db.insert(leaveTypes).values(lt2).run();
+    console.log(`  \u2713 ${leaveTypeRecords.length} leave types`);
+  } else {
+    console.log(`  \u2713 ${existingTypes.length} leave types (already present)`);
+  }
+  const existingSettings = db.select().from(appSettings).all();
+  if (existingSettings.length === 0) {
+    const settingsRecords = [
+      { key: "workingDaysPerMonth", value: "26", updatedAt: now }
+    ];
+    for (const s of settingsRecords) db.insert(appSettings).values(s).run();
+    console.log(`  \u2713 ${settingsRecords.length} settings`);
+  } else {
+    console.log(`  \u2713 ${existingSettings.length} settings (already present)`);
+  }
+  console.log("\n\u2705 Database seeded successfully!\n");
+  console.log("Demo credentials (all use password: password123):");
+  console.log("  Super Admin  : superadmin@gsshospital.com");
+  console.log("  Admin        : admin@gsshospital.com");
+  console.log("  Leader (GM)  : leader@gsshospital.com");
+  console.log("  Staff        : staff@gsshospital.com");
+  console.log("  Leader (Surg): leader2@gsshospital.com");
+  console.log("  Staff 2      : staff2@gsshospital.com");
+}
+var isDirectRun = process.argv[1]?.replace(/\\/g, "/").includes("seed");
+if (isDirectRun) {
+  setupDatabase();
+  seedDemoData();
+}
 
-// src-server/routes/medicine-admin.ts
-var import_express17 = __toESM(require_express2(), 1);
-var import_crypto15 = require("crypto");
-var router17 = (0, import_express17.Router)();
-router17.get("/", requireAuth, requirePermission("medicine:administer"), (_req, res) => {
-  res.json(db.select().from(medicineAdministrations).all());
+// src-server/routes/settings.ts
+var router8 = (0, import_express8.Router)();
+router8.get("/mode", (_req, res) => {
+  const setting = db.select().from(appSettings).where(eq(appSettings.key, "appMode")).get();
+  res.json({ mode: setting?.value || "demo" });
 });
-router17.get("/discrepancies", requireAuth, requirePermission("reports:read"), (_req, res) => {
-  const flagged = db.select().from(medicineAdministrations).where(sql`has_discrepancy = 1`).all();
-  res.json(flagged);
+router8.post("/mode", (req, res) => {
+  const { mode } = req.body;
+  if (!mode || !["demo", "user"].includes(mode)) {
+    return res.status(400).json({ error: "Invalid mode. Use 'demo' or 'user'." });
+  }
+  try {
+    clearAllData();
+    if (mode === "demo") {
+      seedDemoData();
+    } else {
+      const now2 = (/* @__PURE__ */ new Date()).toISOString();
+      db.insert(users).values({
+        id: (0, import_crypto7.randomUUID)(),
+        email: "admin@hospital.com",
+        password: import_bcryptjs4.default.hashSync("admin123", 10),
+        name: "Administrator",
+        role: "SUPER_ADMIN",
+        isActive: true,
+        createdAt: now2,
+        updatedAt: now2
+      }).run();
+      db.insert(leaveTypes).values({ id: "lt-casual", name: "Casual Leave", isActive: true, createdBy: "system", createdAt: now2 }).run();
+      db.insert(leaveTypes).values({ id: "lt-sick", name: "Sick Leave", isActive: true, createdBy: "system", createdAt: now2 }).run();
+    }
+    const now = (/* @__PURE__ */ new Date()).toISOString();
+    const existing = db.select().from(appSettings).where(eq(appSettings.key, "appMode")).get();
+    if (existing) {
+      db.update(appSettings).set({ value: mode, updatedAt: now }).where(eq(appSettings.key, "appMode")).run();
+    } else {
+      db.insert(appSettings).values({ key: "appMode", value: mode, updatedAt: now }).run();
+    }
+    const info = mode === "demo" ? {
+      message: "Demo mode activated \u2014 sample data loaded",
+      credentials: [
+        { role: "Super Admin", email: "superadmin@gsshospital.com", password: "password123" },
+        { role: "Admin", email: "admin@gsshospital.com", password: "password123" },
+        { role: "Leader", email: "leader@gsshospital.com", password: "password123" },
+        { role: "Staff", email: "staff@gsshospital.com", password: "password123" }
+      ]
+    } : {
+      message: "User mode activated \u2014 start fresh",
+      credentials: [{ role: "Super Admin", email: "admin@hospital.com", password: "admin123" }]
+    };
+    res.json({ mode, ...info });
+  } catch (err) {
+    console.error("Mode switch error:", err);
+    res.status(500).json({ error: "Failed to switch mode: " + (err.message || err) });
+  }
 });
-router17.get("/:id", requireAuth, (req, res) => {
-  const record = db.select().from(medicineAdministrations).where(eq(medicineAdministrations.id, String(req.params.id))).get();
-  if (!record) return res.status(404).json({ error: "Record not found" });
-  res.json(record);
-});
-router17.post("/", requireAuth, requirePermission("medicine:administer"), (req, res) => {
-  const id = (0, import_crypto15.randomUUID)();
-  const {
-    prescriptionId,
-    patientName,
-    doctorName,
-    prescribedMedicine,
-    prescribedDosage,
-    administeredMedicine,
-    administeredDosage,
-    administeredBy,
-    administeredByRole
-  } = req.body;
-  const hasDiscrepancy = prescribedMedicine?.toLowerCase().trim() !== administeredMedicine?.toLowerCase().trim() || prescribedDosage?.toLowerCase().trim() !== administeredDosage?.toLowerCase().trim();
-  const discrepancyNotes = hasDiscrepancy ? `Prescribed: ${prescribedMedicine} ${prescribedDosage} | Administered: ${administeredMedicine} ${administeredDosage}` : null;
-  db.insert(medicineAdministrations).values({
-    id,
-    prescriptionId: prescriptionId || null,
-    patientName,
-    doctorName,
-    prescribedMedicine,
-    prescribedDosage,
-    administeredMedicine,
-    administeredDosage,
-    administeredBy,
-    administeredByRole,
-    administeredDate: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10),
-    hasDiscrepancy,
-    discrepancyNotes,
-    status: hasDiscrepancy ? "Flagged" : "Administered"
-  }).run();
-  res.status(201).json(db.select().from(medicineAdministrations).where(eq(medicineAdministrations.id, id)).get());
-});
-router17.patch("/:id/resolve", requireAuth, requirePermission("reports:match"), (req, res) => {
-  const medId = String(req.params.id);
-  const { notes } = req.body;
-  db.update(medicineAdministrations).set({ status: "Resolved", discrepancyNotes: notes || "Resolved by reviewer" }).where(eq(medicineAdministrations.id, medId)).run();
-  const updated = db.select().from(medicineAdministrations).where(eq(medicineAdministrations.id, medId)).get();
-  if (!updated) return res.status(404).json({ error: "Record not found" });
-  res.json(updated);
-});
-router17.delete("/:id", requireAuth, requirePermission("medicine:administer"), (req, res) => {
-  db.delete(medicineAdministrations).where(eq(medicineAdministrations.id, String(req.params.id))).run();
-  res.status(204).send();
-});
-var medicine_admin_default = router17;
-
-// src-server/routes/performance.ts
-var import_express18 = __toESM(require_express2(), 1);
-var import_crypto16 = require("crypto");
-var router18 = (0, import_express18.Router)();
-router18.get("/", requireAuth, requirePermission("performance:read"), (_req, res) => {
-  res.json(db.select().from(performanceEvaluations).all());
-});
-router18.post("/", requireAuth, requirePermission("performance:write"), (req, res) => {
-  const id = (0, import_crypto16.randomUUID)();
-  const { responsible, engaged, selfStarter, teamPlayer, challenged, employeeOriented } = req.body;
-  const overallScore = (responsible + engaged + selfStarter + teamPlayer + challenged + employeeOriented) / 6;
-  db.insert(performanceEvaluations).values({
-    id,
-    ...req.body,
-    overallScore: Math.round(overallScore * 100) / 100,
-    evaluationDate: req.body.evaluationDate || (/* @__PURE__ */ new Date()).toISOString().split("T")[0]
-  }).run();
-  res.status(201).json(db.select().from(performanceEvaluations).where(eq(performanceEvaluations.id, id)).get());
-});
-router18.put("/:id", requireAuth, requirePermission("performance:write"), (req, res) => {
-  const evalId = String(req.params.id);
-  const { id: _id, ...data } = req.body;
-  const { responsible, engaged, selfStarter, teamPlayer, challenged, employeeOriented } = data;
-  const overallScore = (responsible + engaged + selfStarter + teamPlayer + challenged + employeeOriented) / 6;
-  db.update(performanceEvaluations).set({ ...data, overallScore: Math.round(overallScore * 100) / 100 }).where(eq(performanceEvaluations.id, evalId)).run();
-  const updated = db.select().from(performanceEvaluations).where(eq(performanceEvaluations.id, evalId)).get();
-  if (!updated) return res.status(404).json({ error: "Evaluation not found" });
-  res.json(updated);
-});
-router18.delete("/:id", requireAuth, requirePermission("performance:write"), (req, res) => {
-  db.delete(performanceEvaluations).where(eq(performanceEvaluations.id, String(req.params.id))).run();
-  res.status(204).send();
-});
-var performance_default = router18;
+var settings_default = router8;
 
 // src-server/index.ts
 var import_meta3 = {};
 var __filename_esm3 = typeof __filename !== "undefined" ? __filename : (0, import_url3.fileURLToPath)(import_meta3.url);
 var __dirname_esm3 = typeof __dirname !== "undefined" ? __dirname : import_path3.default.dirname(__filename_esm3);
-var app = (0, import_express19.default)();
+var app = (0, import_express9.default)();
 var PORT = Number(process.env.PORT) || 3001;
 app.use((0, import_cors.default)());
-app.use(import_express19.default.json({ limit: "10mb" }));
+app.use(import_express9.default.json({ limit: "10mb" }));
 setupDatabase();
 app.use("/api/auth", auth_default);
 app.use("/api/staff", staff_default);
-app.use("/api/patients", patients_default);
-app.use("/api/lab-tests", laboratory_default);
-app.use("/api/tokens", opd_default);
-app.use("/api/documents", documents_default);
-app.use("/api/announcements", announcements_default);
 app.use("/api/attendance", attendance_default);
 app.use("/api/leave", leave_default);
 app.use("/api/payroll", payroll_default);
-app.use("/api/inventory", inventory_default);
 app.use("/api/users", users_default);
-app.use("/api/schedules", schedules_default);
 app.use("/api/dashboard", dashboard_default);
-app.use("/api/pharmacy", pharmacy_default);
-app.use("/api/billing", billing_default);
-app.use("/api/medicine-admin", medicine_admin_default);
-app.use("/api/performance-evaluations", performance_default);
+app.use("/api/settings", settings_default);
 var UPLOADS_DIR2 = import_path3.default.resolve(__dirname_esm3, "..", "data", "uploads");
 if (!import_fs3.default.existsSync(UPLOADS_DIR2)) {
   import_fs3.default.mkdirSync(UPLOADS_DIR2, { recursive: true });
 }
-app.use("/uploads", import_express19.default.static(UPLOADS_DIR2));
+app.use("/uploads", import_express9.default.static(UPLOADS_DIR2));
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: (/* @__PURE__ */ new Date()).toISOString() });
 });
-var DIST_DIR = import_path3.default.resolve(__dirname_esm3, "..", "resources", "app", "dist");
-var DIST_DIR_ALT = import_path3.default.resolve(__dirname_esm3, "..", "dist");
-var DIST_DIR_RES = import_path3.default.resolve(__dirname_esm3, "..", "resources", "dist");
-var frontendDir = import_fs3.default.existsSync(DIST_DIR) ? DIST_DIR : import_fs3.default.existsSync(DIST_DIR_RES) ? DIST_DIR_RES : import_fs3.default.existsSync(DIST_DIR_ALT) ? DIST_DIR_ALT : null;
+var candidateDirs = [
+  import_path3.default.resolve(__dirname_esm3, "..", "resources", "app"),
+  // standalone: server/../resources/app
+  import_path3.default.resolve(__dirname_esm3, "..", "resources", "app", "dist"),
+  import_path3.default.resolve(__dirname_esm3, "..", "dist"),
+  // dev build: dist-server/../dist
+  import_path3.default.resolve(__dirname_esm3, "..", "resources", "dist")
+];
+var frontendDir = candidateDirs.find(
+  (d) => import_fs3.default.existsSync(d) && import_fs3.default.existsSync(import_path3.default.join(d, "index.html"))
+) ?? null;
 if (frontendDir) {
-  app.use(import_express19.default.static(frontendDir, {
+  app.use(import_express9.default.static(frontendDir, {
     // Ensure correct MIME types for all static assets
     setHeaders: (res, filePath) => {
       if (filePath.endsWith(".css")) {

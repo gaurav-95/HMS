@@ -2,134 +2,97 @@ import { Router } from "express";
 import { sql } from "drizzle-orm";
 import { db } from "../db/index";
 import {
-  staff, patients, labTests, tokens, documents,
-  announcements, attendanceRecords, certifications,
-  prescriptions, billingRecords, medicineAdministrations,
+  staff, attendanceRecords, leaveRequests,
 } from "../db/schema";
 import { requireAuth } from "../middleware/auth";
 
 const router = Router();
 
-/** GET /api/dashboard/stats */
-router.get("/stats", requireAuth, (_req, res) => {
-  const totalStaff = db.select({ count: sql<number>`COUNT(*)` }).from(staff).get()?.count ?? 0;
-  const totalPatients = db.select({ count: sql<number>`COUNT(*)` }).from(patients).get()?.count ?? 0;
-
-  const pendingTests = db
-    .select({ count: sql<number>`COUNT(*)` })
-    .from(labTests)
-    .where(sql`status IN ('Pending', 'InProgress')`)
-    .get()?.count ?? 0;
+/** GET /api/dashboard/stats?period=monthly|quarterly|yearly */
+router.get("/stats", requireAuth, (req, res) => {
+  const totalStaff = db.select({ count: sql<number>`COUNT(*)` }).from(staff).where(sql`is_active = 1`).get()?.count ?? 0;
+  const terminatedStaff = db.select({ count: sql<number>`COUNT(*)` }).from(staff).where(sql`is_active = 0`).get()?.count ?? 0;
 
   const today = new Date().toISOString().slice(0, 10);
-  const todayAttendance = db
+  const todayPresent = db
     .select({ count: sql<number>`COUNT(*)` })
     .from(attendanceRecords)
-    .where(sql`date = ${today} AND status = 'Present'`)
+    .where(sql`date = ${today} AND status IN ('Present', 'Late', 'HalfDay')`)
     .get()?.count ?? 0;
 
-  const expiringDocs = db
+  const pendingLeaves = db
     .select({ count: sql<number>`COUNT(*)` })
-    .from(certifications)
-    .where(sql`status IN ('Expiring', 'Expired')`)
-    .get()?.count ?? 0;
-
-  const activeAnnouncements = db
-    .select()
-    .from(announcements)
-    .where(sql`is_active = 1`)
-    .all();
-
-  const recentTests = db
-    .select()
-    .from(labTests)
-    .orderBy(sql`ordered_date DESC`)
-    .limit(5)
-    .all();
-
-  const waitingTokens = db
-    .select({ count: sql<number>`COUNT(*)` })
-    .from(tokens)
-    .where(sql`status = 'Waiting' AND date(created_at) = ${today}`)
-    .get()?.count ?? 0;
-
-  const pendingPrescriptions = db
-    .select({ count: sql<number>`COUNT(*)` })
-    .from(prescriptions)
+    .from(leaveRequests)
     .where(sql`status = 'Pending'`)
     .get()?.count ?? 0;
 
-  const unpaidBills = db
-    .select({ count: sql<number>`COUNT(*)` })
-    .from(billingRecords)
-    .where(sql`status IN ('Unpaid', 'Partial')`)
-    .get()?.count ?? 0;
-
-  // License expiration details
-  const expiringCerts = db
-    .select()
-    .from(certifications)
-    .where(sql`status IN ('Expiring', 'Expired')`)
-    .all();
-
-  // Medicine discrepancy count
-  const discrepancyCount = db
-    .select({ count: sql<number>`COUNT(*)` })
-    .from(medicineAdministrations)
-    .where(sql`has_discrepancy = 1 AND status = 'Flagged'`)
-    .get()?.count ?? 0;
-
-  // Penalty announcements (active penalties)
-  const penaltyAnnouncements = db
-    .select()
-    .from(announcements)
-    .where(sql`is_active = 1 AND type = 'Penalty'`)
-    .all();
-
-  // Attendance-based penalty computation
-  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
-  const monthAbsences = db
+  // Staff by department
+  const deptRows = db
     .select({
-      staffId: attendanceRecords.staffId,
-      staffName: attendanceRecords.staffName,
-      absences: sql<number>`COUNT(*)`,
+      department: staff.department,
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(staff)
+    .where(sql`is_active = 1`)
+    .groupBy(staff.department)
+    .all();
+
+  // Staff by role
+  const roleRows = db
+    .select({
+      role: staff.role,
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(staff)
+    .where(sql`is_active = 1`)
+    .groupBy(staff.role)
+    .all();
+
+  // Attendance summary by period
+  const period = (req.query.period as string) || "monthly";
+  const now = new Date();
+  let dateFrom: string;
+
+  if (period === "yearly") {
+    dateFrom = `${now.getFullYear()}-01-01`;
+  } else if (period === "quarterly") {
+    const qMonth = Math.floor(now.getMonth() / 3) * 3;
+    dateFrom = `${now.getFullYear()}-${String(qMonth + 1).padStart(2, "0")}-01`;
+  } else {
+    // monthly
+    dateFrom = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  }
+
+  const attendanceSummary = db
+    .select({
+      status: attendanceRecords.status,
+      count: sql<number>`COUNT(*)`,
     })
     .from(attendanceRecords)
-    .where(sql`date LIKE ${currentMonth + '%'} AND status = 'Absent'`)
-    .groupBy(attendanceRecords.staffId, attendanceRecords.staffName)
+    .where(sql`date >= ${dateFrom}`)
+    .groupBy(attendanceRecords.status)
     .all();
 
-  // Calculate penalty amounts per staff based on penalty announcements
-  const penaltySummary = monthAbsences.map((a: any) => {
-    let totalDeduction = 0;
-    for (const pa of penaltyAnnouncements) {
-      if (pa.penaltyConfig) {
-        try {
-          const cfg = JSON.parse(pa.penaltyConfig);
-          const limit = cfg.absenceLimit || 0;
-          const deduction = cfg.deductionAmount || 0;
-          const excessAbsences = Math.max(0, a.absences - limit);
-          totalDeduction += excessAbsences * deduction;
-        } catch {}
-      }
-    }
-    return { staffId: a.staffId, staffName: a.staffName, absences: a.absences, totalDeduction };
-  }).filter((p: any) => p.totalDeduction > 0);
+  const leaveSummary = db
+    .select({
+      status: leaveRequests.status,
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(leaveRequests)
+    .where(sql`applied_date >= ${dateFrom}`)
+    .groupBy(leaveRequests.status)
+    .all();
 
   res.json({
     totalStaff,
-    totalPatients,
-    pendingTests,
-    todayAttendance,
-    expiringDocs,
-    waitingTokens,
-    pendingPrescriptions,
-    unpaidBills,
-    discrepancyCount,
-    expiringCerts,
-    penaltySummary,
-    announcements: activeAnnouncements,
-    recentTests,
+    terminatedStaff,
+    todayPresent,
+    pendingLeaves,
+    staffByDepartment: deptRows,
+    staffByRole: roleRows,
+    attendanceSummary,
+    leaveSummary,
+    period,
   });
 });
 

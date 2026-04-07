@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useLeaveRequests, useApplyLeave, useUpdateLeaveStatus, useCancelLeave, useStaff } from "@/hooks/queries";
+import { useLeaveRequests, useApplyLeave, useUpdateLeaveStatus, useCancelLeave, useStaff, useLeaveTypes, useCreateLeaveType, useDeleteLeaveType } from "@/hooks/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,10 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Plus, Loader2, Search, Filter, XCircle } from "lucide-react";
+import { Calendar, Plus, Loader2, Search, Filter, XCircle, Trash2, Settings } from "lucide-react";
 import { ExportButtons } from "@/components/ExportButtons";
-
-const LEAVE_TYPES = ["Casual", "Sick", "Earned", "Unpaid", "Maternity", "Paternity"] as const;
 
 const blankForm = {
   staffId: "",
@@ -25,13 +23,22 @@ const blankForm = {
 };
 
 export default function LeavePage() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
   const { data: leaves = [], isLoading } = useLeaveRequests();
   const { data: staffList = [] } = useStaff();
+  const { data: leaveTypesData = [] } = useLeaveTypes();
   const applyLeave = useApplyLeave();
   const updateLeaveStatus = useUpdateLeaveStatus();
   const cancelLeave = useCancelLeave();
+  const createLeaveType = useCreateLeaveType();
+  const deleteLeaveType = useDeleteLeaveType();
   const canApprove = hasPermission("leave:approve");
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+  const isAdmin = user?.role === "ADMIN";
+  const isLeader = user?.role === "LEADER";
+  const isStaff = user?.role === "STAFF";
+
+  const leaveTypeNames = (leaveTypesData as any[]).map((t: any) => t.name as string);
 
   const allLeaves = leaves as any[];
   const allStaff = staffList as any[];
@@ -40,6 +47,8 @@ export default function LeavePage() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterType, setFilterType] = useState<string>("all");
   const [showApply, setShowApply] = useState(false);
+  const [showTypeManager, setShowTypeManager] = useState(false);
+  const [newTypeName, setNewTypeName] = useState("");
   const [form, setForm] = useState(blankForm);
 
   const filtered = useMemo(() => {
@@ -125,9 +134,14 @@ export default function LeavePage() {
           <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Types</SelectItem>
-            {LEAVE_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+            {leaveTypeNames.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
           </SelectContent>
         </Select>
+        {isSuperAdmin && (
+          <Button variant="outline" size="sm" onClick={() => setShowTypeManager(true)} className="gap-1.5">
+            <Settings size={14} /> Manage Types
+          </Button>
+        )}
       </div>
 
       {/* Summary cards */}
@@ -209,21 +223,44 @@ export default function LeavePage() {
           <div className="grid gap-4 py-2">
             <div className="space-y-2">
               <Label>Staff Member</Label>
-              <Select value={form.staffId} onValueChange={handleStaffSelect}>
-                <SelectTrigger><SelectValue placeholder="Select staff member" /></SelectTrigger>
-                <SelectContent>
-                  {allStaff.filter((s: any) => s.isActive !== false).map((s: any) => (
-                    <SelectItem key={s.id} value={s.id}>{s.name} — {s.department}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {(isAdmin || isStaff) ? (
+                // Admin and Staff can only apply leave for themselves
+                <Select value={form.staffId} onValueChange={handleStaffSelect}>
+                  <SelectTrigger><SelectValue placeholder="Select staff member" /></SelectTrigger>
+                  <SelectContent>
+                    {allStaff.filter((s: any) => s.userId === user?.id && s.isActive !== false).map((s: any) => (
+                      <SelectItem key={s.id} value={s.id}>{s.name} — {s.department}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : isLeader ? (
+                // Leader can apply for staff in their department
+                <Select value={form.staffId} onValueChange={handleStaffSelect}>
+                  <SelectTrigger><SelectValue placeholder="Select staff member" /></SelectTrigger>
+                  <SelectContent>
+                    {allStaff.filter((s: any) => s.isActive !== false && s.department === user?.department).map((s: any) => (
+                      <SelectItem key={s.id} value={s.id}>{s.name} — {s.department}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                // Super Admin can apply for anyone
+                <Select value={form.staffId} onValueChange={handleStaffSelect}>
+                  <SelectTrigger><SelectValue placeholder="Select staff member" /></SelectTrigger>
+                  <SelectContent>
+                    {allStaff.filter((s: any) => s.isActive !== false).map((s: any) => (
+                      <SelectItem key={s.id} value={s.id}>{s.name} — {s.department}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Leave Type</Label>
               <Select value={form.type} onValueChange={(v) => setForm((f) => ({ ...f, type: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {LEAVE_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  {leaveTypeNames.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -252,6 +289,34 @@ export default function LeavePage() {
               Submit Application
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Leave Type Manager (Super Admin) */}
+      <Dialog open={showTypeManager} onOpenChange={setShowTypeManager}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Manage Leave Types</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="flex gap-2">
+              <Input placeholder="New leave type name" value={newTypeName} onChange={(e) => setNewTypeName(e.target.value)} />
+              <Button onClick={() => { if (newTypeName.trim()) { createLeaveType.mutate({ name: newTypeName.trim() }); setNewTypeName(""); } }} disabled={!newTypeName.trim()}>
+                <Plus size={16} className="mr-1" /> Add
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {(leaveTypesData as any[]).map((t: any) => (
+                <div key={t.id} className="flex items-center justify-between rounded-lg border p-3">
+                  <span className="font-medium">{t.name}</span>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteLeaveType.mutate(t.id)}>
+                    <Trash2 size={14} />
+                  </Button>
+                </div>
+              ))}
+              {(leaveTypesData as any[]).length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">No leave types configured</p>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

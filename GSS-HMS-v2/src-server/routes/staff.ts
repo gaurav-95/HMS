@@ -6,7 +6,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { db } from "../db/index";
-import { staff, certifications, kpis } from "../db/schema";
+import { staff, certifications, kpis, attendanceRecords, leaveRequests, payrollRecords, performanceEvaluations, doctorSchedules } from "../db/schema";
 import { requireAuth, requirePermission } from "../middleware/auth";
 
 const __filename_esm = typeof __filename !== "undefined" ? __filename : fileURLToPath(import.meta.url);
@@ -115,6 +115,13 @@ router.delete("/:id", requireAuth, requirePermission("staff:delete"), (req: any,
   const staffId = String(req.params.id);
   const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
   if (permanent) {
+    // Delete related records first (FK constraints — no cascade on these tables)
+    db.delete(payrollRecords).where(eq(payrollRecords.staffId, staffId)).run();
+    db.delete(attendanceRecords).where(eq(attendanceRecords.staffId, staffId)).run();
+    db.delete(leaveRequests).where(eq(leaveRequests.staffId, staffId)).run();
+    db.delete(performanceEvaluations).where(eq(performanceEvaluations.staffId, staffId)).run();
+    db.delete(doctorSchedules).where(eq(doctorSchedules.doctorId, staffId)).run();
+    // certifications and kpis cascade automatically
     db.delete(staff).where(eq(staff.id, staffId)).run();
   } else {
     db.update(staff).set({ isActive: false, updatedAt: new Date().toISOString() }).where(eq(staff.id, staffId)).run();

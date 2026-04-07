@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ClipboardCheck, Loader2, Plus, Search, Filter, Pencil } from "lucide-react";
+import { ClipboardCheck, Loader2, Plus, Search, Filter, Pencil, Layers } from "lucide-react";
 import { ExportButtons } from "@/components/ExportButtons";
 import { useSearchParams } from "react-router-dom";
 
@@ -54,6 +54,7 @@ export default function AttendancePage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(blankRecord);
   const [editingRecord, setEditingRecord] = useState<any | null>(null);
+  const [groupByDept, setGroupByDept] = useState(false);
 
   // Build staff lookup for department info
   const staffMap = useMemo(() => {
@@ -79,6 +80,18 @@ export default function AttendancePage() {
   const present = filtered.filter((a: any) => a.status === "Present").length;
   const absent = filtered.filter((a: any) => a.status === "Absent").length;
   const late = filtered.filter((a: any) => a.status === "Late").length;
+
+  // Group attendance by department for the "Group by Department" view
+  const groupedByDept = useMemo(() => {
+    if (!groupByDept) return null;
+    const groups: Record<string, any[]> = {};
+    filtered.forEach((a: any) => {
+      const dept = staffMap[a.staffId]?.department || "Unassigned";
+      if (!groups[dept]) groups[dept] = [];
+      groups[dept].push(a);
+    });
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+  }, [filtered, groupByDept, staffMap]);
 
   // Monthly summary: aggregate attendance per staff member across all records
   const [summaryMonth, setSummaryMonth] = useState(() => {
@@ -179,6 +192,9 @@ export default function AttendancePage() {
             {uniqueDepts.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Button variant={groupByDept ? "default" : "outline"} size="sm" onClick={() => setGroupByDept(!groupByDept)} className="gap-1.5">
+          <Layers size={14} /> Group by Dept
+        </Button>
       </div>
 
       {/* Summary cards */}
@@ -253,7 +269,39 @@ export default function AttendancePage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((a: any) => {
+              {groupByDept && groupedByDept ? (
+                groupedByDept.map(([dept, records]) => (
+                  <>
+                    <TableRow key={`dept-${dept}`}>
+                      <TableCell colSpan={hasPermission("attendance:write") ? 7 : 6} className="bg-muted/50 font-semibold text-sm py-2">
+                        {dept} <span className="font-normal text-muted-foreground ml-1">({records.length} records)</span>
+                      </TableCell>
+                    </TableRow>
+                    {records.map((a: any) => (
+                      <TableRow key={a.id}>
+                        <TableCell className="font-medium pl-6">{a.staffName}</TableCell>
+                        <TableCell className="text-muted-foreground">{dept}</TableCell>
+                        <TableCell className="text-muted-foreground">{a.date}</TableCell>
+                        <TableCell>{a.checkIn || "—"}</TableCell>
+                        <TableCell>{a.checkOut || "—"}</TableCell>
+                        <TableCell>
+                          <Badge variant={a.status === "Present" ? "success" : a.status === "Late" ? "warning" : a.status === "HalfDay" ? "info" : "destructive"}>
+                            {STATUS_LABELS[a.status] || a.status}
+                          </Badge>
+                        </TableCell>
+                        {hasPermission("attendance:write") && (
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(a)}>
+                              <Pencil size={14} />
+                            </Button>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
+                  </>
+                ))
+              ) : (
+              filtered.map((a: any) => {
                 const dept = staffMap[a.staffId]?.department || "—";
                 return (
                   <TableRow key={a.id}>
@@ -276,7 +324,8 @@ export default function AttendancePage() {
                     )}
                   </TableRow>
                 );
-              })}
+              })
+              )}
               {filtered.length === 0 && (
                 <TableRow><TableCell colSpan={hasPermission("attendance:write") ? 7 : 6} className="text-center py-8 text-muted-foreground">No attendance records match filters</TableCell></TableRow>
               )}
