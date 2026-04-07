@@ -30,12 +30,14 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "payroll:read",
     "leave:apply","leave:approve",
     "attendance:read","attendance:write",
+    "settings:read",
   ],
   STAFF: [
     "dashboard:view",
     "attendance:read",
     "leave:apply",
     "payroll:read",
+    "settings:read",
   ],
 };
 
@@ -71,6 +73,12 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
   } catch {
     return res.status(401).json({ error: "Invalid or expired token" });
   }
+}
+
+/** Check if a user role has a specific permission */
+export function hasPermission(role: string, permission: string): boolean {
+  const perms = ROLE_PERMISSIONS[role] || [];
+  return perms.includes(permission);
 }
 
 /** Middleware factory: require specific permission */

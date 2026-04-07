@@ -72,11 +72,11 @@ router.post("/generate", requireAuth, requirePermission("payroll:write"), (req, 
     const epfEmployer = 1800;
     const otherAllowance = Math.round(basicSalary * 0.47);
     const grossSalary = basicSalary + hra + otherAllowance;
-    const professionalTax = 200;
+    const professionalTax = grossSalary <= 5000 ? 0 : grossSalary <= 10000 ? 150 : 200;
     const epfEmployee = 1800;
     const shiftRate = grossSalary / workingDays;
-    const leaveDeductions = Math.round((workingDays - attendedShifts) * shiftRate);
-    const netSalary = grossSalary - professionalTax - epfEmployee - (leaveDeductions > 0 ? leaveDeductions : 0);
+    const leaveDeductions = Math.max(0, Math.round((workingDays - attendedShifts) * shiftRate));
+    const netSalary = grossSalary - professionalTax - epfEmployee - leaveDeductions;
 
     const id = randomUUID();
     db.insert(payrollRecords).values({
@@ -94,12 +94,12 @@ router.post("/generate", requireAuth, requirePermission("payroll:write"), (req, 
       grossSalary,
       professionalTax,
       epfEmployee,
-      leaveDeductions: leaveDeductions > 0 ? leaveDeductions : 0,
+      leaveDeductions,
       totalShifts: workingDays,
       attendedShifts,
       leavesTaken,
       shiftRate: Math.round(shiftRate),
-      deductions: professionalTax + epfEmployee + (leaveDeductions > 0 ? leaveDeductions : 0),
+      deductions: professionalTax + epfEmployee + leaveDeductions,
       bonus: 0,
       netSalary: Math.round(netSalary),
       status: "Draft",
@@ -158,9 +158,26 @@ router.post("/", requireAuth, requirePermission("payroll:write"), (req, res) => 
 });
 
 /** PATCH /api/payroll/:id/status – mark as processed / paid */
-router.patch("/:id/status", requireAuth, requirePermission("payroll:approve"), (req, res) => {
+router.patch("/:id/status", requireAuth, requirePermission("payroll:approve"), (req: AuthRequest, res) => {
   const payId = String(req.params.id);
-  db.update(payrollRecords).set({ status: req.body.status }).where(eq(payrollRecords.id, payId)).run();
+  const record = db.select().from(payrollRecords).where(eq(payrollRecords.id, payId)).get() as any;
+  if (!record) return res.status(404).json({ error: "Payroll record not found" });
+
+  const { status } = req.body;
+  const VALID_TRANSITIONS: Record<string, string[]> = {
+    Draft: ["Processed"],
+    Processed: ["Approved"],
+    Approved: ["Paid"],
+  };
+  const allowed = VALID_TRANSITIONS[record.status] || [];
+  if (!allowed.includes(status)) {
+    // Only SUPER_ADMIN can revert or skip status steps
+    if (req.user!.role !== "SUPER_ADMIN") {
+      return res.status(400).json({ error: `Cannot change status from ${record.status} to ${status}` });
+    }
+  }
+
+  db.update(payrollRecords).set({ status }).where(eq(payrollRecords.id, payId)).run();
   res.json(db.select().from(payrollRecords).where(eq(payrollRecords.id, payId)).get());
 });
 

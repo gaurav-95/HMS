@@ -30,7 +30,15 @@ router.get("/", requireAuth, requirePermission("users:read"), (_req, res) => {
   res.json(result);
 });
 
-router.post("/", requireAuth, requirePermission("users:write"), (req, res) => {
+router.post("/", requireAuth, requirePermission("users:write"), (req: any, res) => {
+  // Prevent role escalation: only SUPER_ADMIN can create SUPER_ADMIN users
+  if (req.body.role === "SUPER_ADMIN" && req.user?.role !== "SUPER_ADMIN") {
+    return res.status(403).json({ error: "Only Super Admin can create Super Admin accounts" });
+  }
+  // LEADER role requires a department
+  if (req.body.role === "LEADER" && !req.body.department) {
+    return res.status(400).json({ error: "Department is required for Leader role" });
+  }
   const id = randomUUID();
   const now = new Date().toISOString();
   const hashed = bcrypt.hashSync(req.body.password || "password123", 10);
@@ -53,7 +61,14 @@ router.post("/", requireAuth, requirePermission("users:write"), (req, res) => {
   res.status(201).json(created);
 });
 
-router.put("/:id", requireAuth, requirePermission("users:write"), (req, res) => {
+router.put("/:id", requireAuth, requirePermission("users:write"), (req: any, res) => {
+  // Prevent role escalation: only SUPER_ADMIN can assign SUPER_ADMIN role
+  if (req.body.role === "SUPER_ADMIN" && req.user?.role !== "SUPER_ADMIN") {
+    return res.status(403).json({ error: "Only Super Admin can assign Super Admin role" });
+  }
+  if (req.body.role === "LEADER" && !req.body.department) {
+    return res.status(400).json({ error: "Department is required for Leader role" });
+  }
   const userId = String(req.params.id);
   const data: Record<string, unknown> = {
     name: req.body.name,
@@ -78,6 +93,9 @@ router.put("/:id", requireAuth, requirePermission("users:write"), (req, res) => 
 
 router.delete("/:id", requireAuth, requirePermission("users:delete"), (req: any, res) => {
   const userId = String(req.params.id);
+  if (userId === req.user?.id) {
+    return res.status(400).json({ error: "Cannot delete your own account" });
+  }
   const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
   if (permanent) {
     // Unlink any staff referencing this user before deleting

@@ -155,7 +155,7 @@ export default function UserManagementPage() {
         )}
       </div>
 
-      <UserFormModal open={showAddModal} onClose={() => setShowAddModal(false)} onSubmit={handleAddUser} title="Add System User" />
+      <UserFormModal open={showAddModal} onClose={() => setShowAddModal(false)} onSubmit={handleAddUser} title="Add System User" isSuperAdmin={isSuperAdmin} />
 
       {editingUser && (
         <UserFormModal
@@ -164,6 +164,7 @@ export default function UserManagementPage() {
           onSubmit={handleUpdateUser}
           title="Edit User"
           defaultValues={editingUser}
+          isSuperAdmin={isSuperAdmin}
         />
       )}
 
@@ -182,13 +183,14 @@ export default function UserManagementPage() {
 }
 
 function UserFormModal({
-  open, onClose, onSubmit, title, defaultValues,
+  open, onClose, onSubmit, title, defaultValues, isSuperAdmin,
 }: {
   open: boolean;
   onClose: () => void;
   onSubmit: (data: Record<string, unknown>) => void;
   title: string;
   defaultValues?: any;
+  isSuperAdmin?: boolean;
 }) {
   const [name, setName] = useState(defaultValues?.name || "");
   const [email, setEmail] = useState(defaultValues?.email || "");
@@ -215,7 +217,7 @@ function UserFormModal({
             <Select value={role} onValueChange={(v) => setRole(v as UserRole)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {ALL_ROLES.map(([key, label]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
+                {ALL_ROLES.filter(([key]) => isSuperAdmin || key !== "SUPER_ADMIN").map(([key, label]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

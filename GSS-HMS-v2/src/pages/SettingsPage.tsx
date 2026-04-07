@@ -286,7 +286,7 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium">Guided Demo Tour</p>
-              <p className="text-xs text-muted-foreground">Step-by-step walkthrough of all {23} pages and features</p>
+              <p className="text-xs text-muted-foreground">Step-by-step walkthrough of all 7 pages and features</p>
             </div>
             <Button variant="default" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent("gss-start-tour")); }}>
               <Play className="h-4 w-4 mr-1" /> Start Tour

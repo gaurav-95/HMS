@@ -79364,13 +79364,15 @@ var ROLE_PERMISSIONS = {
     "leave:apply",
     "leave:approve",
     "attendance:read",
-    "attendance:write"
+    "attendance:write",
+    "settings:read"
   ],
   STAFF: [
     "dashboard:view",
     "attendance:read",
     "leave:apply",
-    "payroll:read"
+    "payroll:read",
+    "settings:read"
   ]
 };
 function signToken(payload) {
@@ -79390,6 +79392,10 @@ function requireAuth(req, res, next) {
   } catch {
     return res.status(401).json({ error: "Invalid or expired token" });
   }
+}
+function hasPermission(role, permission) {
+  const perms = ROLE_PERMISSIONS[role] || [];
+  return perms.includes(permission);
 }
 function requirePermission(...permissions) {
   return (req, res, next) => {
@@ -79474,8 +79480,13 @@ var storage = import_multer.default.diskStorage({
 });
 var upload = (0, import_multer.default)({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 var router2 = (0, import_express2.Router)();
-router2.get("/", requireAuth, requirePermission("staff:read"), (_req, res) => {
-  const allStaff = db.select().from(staff).where(eq(staff.isActive, true)).all();
+router2.get("/", requireAuth, requirePermission("staff:read"), (req, res) => {
+  let allStaff;
+  if (req.user.role === "LEADER" && req.user.department) {
+    allStaff = db.select().from(staff).where(and(eq(staff.isActive, true), eq(staff.department, req.user.department))).all();
+  } else {
+    allStaff = db.select().from(staff).where(eq(staff.isActive, true)).all();
+  }
   const result = allStaff.map((s) => {
     const certs = db.select().from(certifications).where(eq(certifications.staffId, s.id)).all();
     const staffKpis = db.select().from(kpis).where(eq(kpis.staffId, s.id)).all();
@@ -79486,6 +79497,9 @@ router2.get("/", requireAuth, requirePermission("staff:read"), (_req, res) => {
 router2.get("/:id", requireAuth, requirePermission("staff:read"), (req, res) => {
   const s = db.select().from(staff).where(eq(staff.id, String(req.params.id))).get();
   if (!s) return res.status(404).json({ error: "Staff not found" });
+  if (req.user.role === "LEADER" && req.user.department && s.department !== req.user.department) {
+    return res.status(403).json({ error: "Access denied: staff is not in your department" });
+  }
   const certs = db.select().from(certifications).where(eq(certifications.staffId, s.id)).all();
   const staffKpis = db.select().from(kpis).where(eq(kpis.staffId, s.id)).all();
   res.json({ ...s, certifications: certs, kpis: staffKpis });
@@ -79569,6 +79583,12 @@ router3.get("/", requireAuth, requirePermission("attendance:read"), (req, res) =
   res.json(db.select().from(attendanceRecords).all());
 });
 router3.post("/", requireAuth, requirePermission("attendance:write"), (req, res) => {
+  if (req.body.staffId && req.body.date) {
+    const existing = db.select().from(attendanceRecords).where(and(eq(attendanceRecords.staffId, req.body.staffId), eq(attendanceRecords.date, req.body.date))).get();
+    if (existing) {
+      return res.status(400).json({ error: "Attendance already marked for this staff member on this date" });
+    }
+  }
   const id = (0, import_crypto3.randomUUID)();
   db.insert(attendanceRecords).values({ id, ...req.body }).run();
   res.status(201).json(db.select().from(attendanceRecords).where(eq(attendanceRecords.id, id)).get());
@@ -79605,18 +79625,28 @@ router4.get("/", requireAuth, requirePermission("leave:apply"), (req, res) => {
 router4.get("/types", requireAuth, (_req, res) => {
   res.json(db.select().from(leaveTypes).where(eq(leaveTypes.isActive, true)).all());
 });
-router4.post("/types", requireAuth, requirePermission("settings:write"), (req, res) => {
+router4.post("/types", requireAuth, requirePermission("leave:manage-types"), (req, res) => {
   const id = (0, import_crypto4.randomUUID)();
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: "Name is required" });
   db.insert(leaveTypes).values({ id, name, createdBy: req.user.name, createdAt: (/* @__PURE__ */ new Date()).toISOString() }).run();
   res.status(201).json(db.select().from(leaveTypes).where(eq(leaveTypes.id, id)).get());
 });
-router4.delete("/types/:id", requireAuth, requirePermission("settings:write"), (req, res) => {
+router4.delete("/types/:id", requireAuth, requirePermission("leave:manage-types"), (req, res) => {
   db.update(leaveTypes).set({ isActive: false }).where(eq(leaveTypes.id, String(req.params.id))).run();
   res.status(204).send();
 });
 router4.post("/", requireAuth, requirePermission("leave:apply"), (req, res) => {
+  const { startDate, endDate } = req.body;
+  if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
+    return res.status(400).json({ error: "End date must be on or after start date" });
+  }
+  if (req.user.role === "STAFF" && req.body.staffId) {
+    const linkedStaff = db.select({ id: staff.id }).from(staff).where(eq(staff.userId, req.user.id)).get();
+    if (!linkedStaff || req.body.staffId !== linkedStaff.id) {
+      return res.status(403).json({ error: "You can only apply leave for yourself" });
+    }
+  }
   const id = (0, import_crypto4.randomUUID)();
   db.insert(leaveRequests).values({ id, ...req.body, status: "Pending", appliedDate: (/* @__PURE__ */ new Date()).toISOString() }).run();
   res.status(201).json(db.select().from(leaveRequests).where(eq(leaveRequests.id, id)).get());
@@ -79641,6 +79671,12 @@ router4.patch("/:id/cancel", requireAuth, requirePermission("leave:apply"), (req
   const record = db.select().from(leaveRequests).where(eq(leaveRequests.id, leaveId)).get();
   if (!record) return res.status(404).json({ error: "Leave request not found" });
   if (record.status !== "Pending") return res.status(400).json({ error: "Only pending requests can be cancelled" });
+  const linkedStaff = db.select({ id: staff.id }).from(staff).where(eq(staff.userId, req.user.id)).get();
+  const isOwner = linkedStaff && record.staffId === linkedStaff.id;
+  const canApprove = hasPermission(req.user.role, "leave:approve");
+  if (!isOwner && !canApprove) {
+    return res.status(403).json({ error: "You can only cancel your own leave requests" });
+  }
   db.update(leaveRequests).set({ status: "Cancelled" }).where(eq(leaveRequests.id, leaveId)).run();
   res.json(db.select().from(leaveRequests).where(eq(leaveRequests.id, leaveId)).get());
 });
@@ -79692,11 +79728,11 @@ router5.post("/generate", requireAuth, requirePermission("payroll:write"), (req,
       const epfEmployer = 1800;
       const otherAllowance = Math.round(basicSalary * 0.47);
       const grossSalary = basicSalary + hra + otherAllowance;
-      const professionalTax = 200;
+      const professionalTax = grossSalary <= 5e3 ? 0 : grossSalary <= 1e4 ? 150 : 200;
       const epfEmployee = 1800;
       const shiftRate = grossSalary / workingDays;
-      const leaveDeductions = Math.round((workingDays - attendedShifts) * shiftRate);
-      const netSalary = grossSalary - professionalTax - epfEmployee - (leaveDeductions > 0 ? leaveDeductions : 0);
+      const leaveDeductions = Math.max(0, Math.round((workingDays - attendedShifts) * shiftRate));
+      const netSalary = grossSalary - professionalTax - epfEmployee - leaveDeductions;
       const id = (0, import_crypto5.randomUUID)();
       db.insert(payrollRecords).values({
         id,
@@ -79713,12 +79749,12 @@ router5.post("/generate", requireAuth, requirePermission("payroll:write"), (req,
         grossSalary,
         professionalTax,
         epfEmployee,
-        leaveDeductions: leaveDeductions > 0 ? leaveDeductions : 0,
+        leaveDeductions,
         totalShifts: workingDays,
         attendedShifts,
         leavesTaken,
         shiftRate: Math.round(shiftRate),
-        deductions: professionalTax + epfEmployee + (leaveDeductions > 0 ? leaveDeductions : 0),
+        deductions: professionalTax + epfEmployee + leaveDeductions,
         bonus: 0,
         netSalary: Math.round(netSalary),
         status: "Draft"
@@ -79772,7 +79808,21 @@ router5.post("/", requireAuth, requirePermission("payroll:write"), (req, res) =>
 });
 router5.patch("/:id/status", requireAuth, requirePermission("payroll:approve"), (req, res) => {
   const payId = String(req.params.id);
-  db.update(payrollRecords).set({ status: req.body.status }).where(eq(payrollRecords.id, payId)).run();
+  const record = db.select().from(payrollRecords).where(eq(payrollRecords.id, payId)).get();
+  if (!record) return res.status(404).json({ error: "Payroll record not found" });
+  const { status } = req.body;
+  const VALID_TRANSITIONS = {
+    Draft: ["Processed"],
+    Processed: ["Approved"],
+    Approved: ["Paid"]
+  };
+  const allowed = VALID_TRANSITIONS[record.status] || [];
+  if (!allowed.includes(status)) {
+    if (req.user.role !== "SUPER_ADMIN") {
+      return res.status(400).json({ error: `Cannot change status from ${record.status} to ${status}` });
+    }
+  }
+  db.update(payrollRecords).set({ status }).where(eq(payrollRecords.id, payId)).run();
   res.json(db.select().from(payrollRecords).where(eq(payrollRecords.id, payId)).get());
 });
 router5.delete("/:id", requireAuth, requirePermission("payroll:write"), (req, res) => {
@@ -79808,6 +79858,12 @@ router6.get("/", requireAuth, requirePermission("users:read"), (_req, res) => {
   res.json(result);
 });
 router6.post("/", requireAuth, requirePermission("users:write"), (req, res) => {
+  if (req.body.role === "SUPER_ADMIN" && req.user?.role !== "SUPER_ADMIN") {
+    return res.status(403).json({ error: "Only Super Admin can create Super Admin accounts" });
+  }
+  if (req.body.role === "LEADER" && !req.body.department) {
+    return res.status(400).json({ error: "Department is required for Leader role" });
+  }
   const id = (0, import_crypto6.randomUUID)();
   const now = (/* @__PURE__ */ new Date()).toISOString();
   const hashed = import_bcryptjs3.default.hashSync(req.body.password || "password123", 10);
@@ -79834,6 +79890,12 @@ router6.post("/", requireAuth, requirePermission("users:write"), (req, res) => {
   res.status(201).json(created);
 });
 router6.put("/:id", requireAuth, requirePermission("users:write"), (req, res) => {
+  if (req.body.role === "SUPER_ADMIN" && req.user?.role !== "SUPER_ADMIN") {
+    return res.status(403).json({ error: "Only Super Admin can assign Super Admin role" });
+  }
+  if (req.body.role === "LEADER" && !req.body.department) {
+    return res.status(400).json({ error: "Department is required for Leader role" });
+  }
   const userId = String(req.params.id);
   const data = {
     name: req.body.name,
@@ -79861,6 +79923,9 @@ router6.put("/:id", requireAuth, requirePermission("users:write"), (req, res) =>
 });
 router6.delete("/:id", requireAuth, requirePermission("users:delete"), (req, res) => {
   const userId = String(req.params.id);
+  if (userId === req.user?.id) {
+    return res.status(400).json({ error: "Cannot delete your own account" });
+  }
   const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
   if (permanent) {
     db.update(staff).set({ userId: null }).where(eq(staff.userId, userId)).run();
@@ -79931,7 +79996,7 @@ router8.get("/mode", (_req, res) => {
   const setting = db.select().from(appSettings).where(eq(appSettings.key, "appMode")).get();
   res.json({ mode: setting?.value || "demo" });
 });
-router8.post("/mode", (req, res) => {
+router8.post("/mode", requireAuth, requirePermission("settings:write"), (req, res) => {
   const { mode } = req.body;
   if (!mode || !["demo", "user"].includes(mode)) {
     return res.status(400).json({ error: "Invalid mode. Use 'demo' or 'user'." });

@@ -62,7 +62,7 @@ router.patch("/:id/pay", requireAuth, requirePermission("billing:write", "payrol
 });
 
 /** DELETE /api/billing/:id */
-router.delete("/:id", requireAuth, requirePermission("billing:delete", "payroll:write"), (req: any, res) => {
+router.delete("/:id", requireAuth, requirePermission("billing:delete"), (req: any, res) => {
   const billId = String(req.params.id);
   const exists = db.select().from(billingRecords).where(eq(billingRecords.id, billId)).get();
   if (!exists) return res.status(404).json({ error: "Billing record not found" });

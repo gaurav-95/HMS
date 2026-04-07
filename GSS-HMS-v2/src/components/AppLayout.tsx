@@ -1,8 +1,19 @@
+import { useState, useEffect, useCallback } from "react";
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
+import { GuidedTour } from "@/components/GuidedTour";
 
 export function AppLayout() {
+  const [tourActive, setTourActive] = useState(false);
+
+  const startTour = useCallback(() => setTourActive(true), []);
+
+  useEffect(() => {
+    window.addEventListener("gss-start-tour", startTour);
+    return () => window.removeEventListener("gss-start-tour", startTour);
+  }, [startTour]);
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
@@ -12,6 +23,7 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
+      <GuidedTour active={tourActive} onEnd={() => setTourActive(false)} />
     </div>
   );
 }

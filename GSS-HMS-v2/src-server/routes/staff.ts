@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import multer from "multer";
 import path from "path";
@@ -7,7 +7,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import { db } from "../db/index";
 import { staff, certifications, kpis, attendanceRecords, leaveRequests, payrollRecords, performanceEvaluations, doctorSchedules } from "../db/schema";
-import { requireAuth, requirePermission } from "../middleware/auth";
+import { requireAuth, requirePermission, AuthRequest } from "../middleware/auth";
 
 const __filename_esm = typeof __filename !== "undefined" ? __filename : fileURLToPath(import.meta.url);
 const __dirname_esm = typeof __dirname !== "undefined" ? __dirname : path.dirname(__filename_esm);
@@ -26,8 +26,16 @@ const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } }); // 5M
 const router = Router();
 
 /** GET /api/staff */
-router.get("/", requireAuth, requirePermission("staff:read"), (_req, res) => {
-  const allStaff = db.select().from(staff).where(eq(staff.isActive, true)).all();
+router.get("/", requireAuth, requirePermission("staff:read"), (req: AuthRequest, res) => {
+  let allStaff;
+
+  // LEADER: only see staff in their department
+  if (req.user!.role === "LEADER" && req.user!.department) {
+    allStaff = db.select().from(staff)
+      .where(and(eq(staff.isActive, true), eq(staff.department, req.user!.department))).all();
+  } else {
+    allStaff = db.select().from(staff).where(eq(staff.isActive, true)).all();
+  }
 
   // Attach certifications and KPIs
   const result = allStaff.map((s) => {
@@ -40,9 +48,14 @@ router.get("/", requireAuth, requirePermission("staff:read"), (_req, res) => {
 });
 
 /** GET /api/staff/:id */
-router.get("/:id", requireAuth, requirePermission("staff:read"), (req, res) => {
-  const s = db.select().from(staff).where(eq(staff.id, String(req.params.id))).get();
+router.get("/:id", requireAuth, requirePermission("staff:read"), (req: AuthRequest, res) => {
+  const s = db.select().from(staff).where(eq(staff.id, String(req.params.id))).get() as any;
   if (!s) return res.status(404).json({ error: "Staff not found" });
+
+  // LEADER can only view staff in their department
+  if (req.user!.role === "LEADER" && req.user!.department && s.department !== req.user!.department) {
+    return res.status(403).json({ error: "Access denied: staff is not in your department" });
+  }
 
   const certs = db.select().from(certifications).where(eq(certifications.staffId, s.id)).all();
   const staffKpis = db.select().from(kpis).where(eq(kpis.staffId, s.id)).all();

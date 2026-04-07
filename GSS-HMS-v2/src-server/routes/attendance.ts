@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { eq, inArray } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { db } from "../db/index";
 import { attendanceRecords, staff } from "../db/schema";
@@ -33,6 +33,14 @@ router.get("/", requireAuth, requirePermission("attendance:read"), (req: AuthReq
 
 /** POST /api/attendance – mark attendance for a staff member */
 router.post("/", requireAuth, requirePermission("attendance:write"), (req, res) => {
+  // Prevent duplicate attendance for same staff + date
+  if (req.body.staffId && req.body.date) {
+    const existing = db.select().from(attendanceRecords)
+      .where(and(eq(attendanceRecords.staffId, req.body.staffId), eq(attendanceRecords.date, req.body.date))).get();
+    if (existing) {
+      return res.status(400).json({ error: "Attendance already marked for this staff member on this date" });
+    }
+  }
   const id = randomUUID();
   db.insert(attendanceRecords).values({ id, ...req.body }).run();
   res.status(201).json(db.select().from(attendanceRecords).where(eq(attendanceRecords.id, id)).get());

@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db, clearAllData } from "../db/index";
 import { users, appSettings, leaveTypes } from "../db/schema";
 import { seedDemoData } from "../db/seed";
+import { requireAuth, requirePermission } from "../middleware/auth";
 
 const router = Router();
 
@@ -18,8 +19,8 @@ router.get("/mode", (_req, res) => {
   res.json({ mode: setting?.value || "demo" });
 });
 
-/** POST /api/settings/mode — switch between demo ↔ user mode (public for standalone) */
-router.post("/mode", (req, res) => {
+/** POST /api/settings/mode — switch between demo ↔ user mode (requires SUPER_ADMIN) */
+router.post("/mode", requireAuth, requirePermission("settings:write"), (req, res) => {
   const { mode } = req.body;
   if (!mode || !["demo", "user"].includes(mode)) {
     return res.status(400).json({ error: "Invalid mode. Use 'demo' or 'user'." });

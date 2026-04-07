@@ -76,7 +76,7 @@ export type DocCategory =
 
 export type LeaveType = "Casual" | "Sick" | "Earned" | "Maternity" | "Paternity" | "Unpaid";
 
-export type LeaveStatus = "Pending" | "Approved" | "Rejected";
+export type LeaveStatus = "Pending" | "Approved" | "Rejected" | "Cancelled";
 
 export type AttendanceStatus = "Present" | "Absent" | "Late" | "HalfDay" | "OnLeave";
 
@@ -158,12 +158,14 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     "payroll:read",
     "leave:apply", "leave:approve",
     "attendance:read", "attendance:write",
+    "settings:read",
   ],
   STAFF: [
     "dashboard:view",
     "attendance:read",
     "leave:apply",
     "payroll:read",
+    "settings:read",
   ],
 };
 

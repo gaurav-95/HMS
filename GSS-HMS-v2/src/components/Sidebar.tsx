@@ -24,7 +24,7 @@ const SIDEBAR_LINKS: SidebarLink[] = [
   { label: "Leave",          path: "/leave",       icon: <Calendar size={ICON_SIZE} />,         permissions: ["leave:apply"] },
   { label: "Payroll",        path: "/payroll",     icon: <Wallet size={ICON_SIZE} />,           permissions: ["payroll:read"] },
   { label: "User Admin",    path: "/users",       icon: <UserCog size={ICON_SIZE} />,          permissions: ["users:read"] },
-  { label: "Settings",       path: "/settings",    icon: <Settings size={ICON_SIZE} />,         permissions: ["dashboard:view"] },
+  { label: "Settings",       path: "/settings",    icon: <Settings size={ICON_SIZE} />,         permissions: ["settings:read"] },
 ];
 
 export function Sidebar() {

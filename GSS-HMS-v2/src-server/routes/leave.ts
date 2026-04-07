@@ -3,7 +3,7 @@ import { eq, inArray } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { db } from "../db/index";
 import { leaveRequests, leaveTypes, staff } from "../db/schema";
-import { requireAuth, requirePermission, AuthRequest } from "../middleware/auth";
+import { requireAuth, requirePermission, AuthRequest, hasPermission } from "../middleware/auth";
 
 const router = Router();
 
@@ -37,7 +37,7 @@ router.get("/types", requireAuth, (_req, res) => {
 });
 
 /** POST /api/leave/types – create a leave type (Super Admin) */
-router.post("/types", requireAuth, requirePermission("settings:write"), (req: AuthRequest, res) => {
+router.post("/types", requireAuth, requirePermission("leave:manage-types"), (req: AuthRequest, res) => {
   const id = randomUUID();
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: "Name is required" });
@@ -46,13 +46,26 @@ router.post("/types", requireAuth, requirePermission("settings:write"), (req: Au
 });
 
 /** DELETE /api/leave/types/:id – deactivate a leave type (Super Admin) */
-router.delete("/types/:id", requireAuth, requirePermission("settings:write"), (req, res) => {
+router.delete("/types/:id", requireAuth, requirePermission("leave:manage-types"), (req, res) => {
   db.update(leaveTypes).set({ isActive: false }).where(eq(leaveTypes.id, String(req.params.id))).run();
   res.status(204).send();
 });
 
 /** POST /api/leave – apply for leave */
-router.post("/", requireAuth, requirePermission("leave:apply"), (req, res) => {
+router.post("/", requireAuth, requirePermission("leave:apply"), (req: AuthRequest, res) => {
+  const { startDate, endDate } = req.body;
+  if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
+    return res.status(400).json({ error: "End date must be on or after start date" });
+  }
+
+  // STAFF can only apply leave for themselves
+  if (req.user!.role === "STAFF" && req.body.staffId) {
+    const linkedStaff = db.select({ id: staff.id }).from(staff).where(eq(staff.userId, req.user!.id)).get();
+    if (!linkedStaff || req.body.staffId !== linkedStaff.id) {
+      return res.status(403).json({ error: "You can only apply leave for yourself" });
+    }
+  }
+
   const id = randomUUID();
   db.insert(leaveRequests).values({ id, ...req.body, status: "Pending", appliedDate: new Date().toISOString() }).run();
   res.status(201).json(db.select().from(leaveRequests).where(eq(leaveRequests.id, id)).get());
@@ -82,11 +95,20 @@ router.patch("/:id/status", requireAuth, requirePermission("leave:approve"), (re
 });
 
 /** PATCH /api/leave/:id/cancel – cancel a pending leave request */
-router.patch("/:id/cancel", requireAuth, requirePermission("leave:apply"), (req, res) => {
+router.patch("/:id/cancel", requireAuth, requirePermission("leave:apply"), (req: AuthRequest, res) => {
   const leaveId = String(req.params.id);
   const record = db.select().from(leaveRequests).where(eq(leaveRequests.id, leaveId)).get() as any;
   if (!record) return res.status(404).json({ error: "Leave request not found" });
   if (record.status !== "Pending") return res.status(400).json({ error: "Only pending requests can be cancelled" });
+
+  // Only the leave owner or a manager (leave:approve) can cancel
+  const linkedStaff = db.select({ id: staff.id }).from(staff).where(eq(staff.userId, req.user!.id)).get();
+  const isOwner = linkedStaff && record.staffId === linkedStaff.id;
+  const canApprove = hasPermission(req.user!.role, "leave:approve");
+  if (!isOwner && !canApprove) {
+    return res.status(403).json({ error: "You can only cancel your own leave requests" });
+  }
+
   db.update(leaveRequests).set({ status: "Cancelled" }).where(eq(leaveRequests.id, leaveId)).run();
   res.json(db.select().from(leaveRequests).where(eq(leaveRequests.id, leaveId)).get());
 });
