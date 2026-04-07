@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import { db } from "../db/index";
 import {
-  staff, attendanceRecords, leaveRequests,
+  staff, attendanceRecords, leaveRequests, certifications,
 } from "../db/schema";
 import { requireAuth } from "../middleware/auth";
 
@@ -83,6 +83,22 @@ router.get("/stats", requireAuth, (req, res) => {
     .groupBy(leaveRequests.status)
     .all();
 
+  // Expired / Expiring certifications (not yet addressed)
+  const expiredCerts = db
+    .select({
+      id: certifications.id,
+      staffId: certifications.staffId,
+      staffName: staff.name,
+      department: staff.department,
+      certName: certifications.name,
+      expiryDate: certifications.expiryDate,
+      status: certifications.status,
+    })
+    .from(certifications)
+    .innerJoin(staff, sql`${certifications.staffId} = ${staff.id}`)
+    .where(sql`${certifications.status} IN ('Expired', 'Expiring') AND (${certifications.addressed} = 0 OR ${certifications.addressed} IS NULL) AND ${staff.isActive} = 1`)
+    .all();
+
   res.json({
     totalStaff,
     terminatedStaff,
@@ -92,8 +108,18 @@ router.get("/stats", requireAuth, (req, res) => {
     staffByRole: roleRows,
     attendanceSummary,
     leaveSummary,
+    expiredCerts,
     period,
   });
+});
+
+/** PATCH /api/dashboard/certifications/:certId/address — mark a cert as addressed */
+router.patch("/certifications/:certId/address", requireAuth, (req, res) => {
+  const certId = String(req.params.certId);
+  const cert = db.select().from(certifications).where(eq(certifications.id, certId)).get();
+  if (!cert) return res.status(404).json({ error: "Certification not found" });
+  db.update(certifications).set({ addressed: true }).where(eq(certifications.id, certId)).run();
+  res.json({ ok: true });
 });
 
 export default router;

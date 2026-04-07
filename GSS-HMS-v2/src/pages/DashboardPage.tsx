@@ -1,8 +1,11 @@
 ﻿import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useDashboardStats } from "@/hooks/queries";
-import { Users, UserX, ClipboardCheck, Calendar, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useDashboardStats, useAddressCertification } from "@/hooks/queries";
+import { useAuth } from "@/context/AuthContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Users, UserX, ClipboardCheck, Calendar, Loader2, ShieldAlert, CheckCircle2 } from "lucide-react";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 const CHART_COLORS = ["#0d9488", "#f59e0b", "#3b82f6", "#ef4444", "#8b5cf6", "#ec4899", "#10b981", "#f97316"];
@@ -15,6 +18,10 @@ const PERIODS = [
 export default function DashboardPage() {
   const [period, setPeriod] = useState<string>("monthly");
   const { data: stats, isLoading } = useDashboardStats(period);
+  const { hasPermission } = useAuth();
+  const addressCert = useAddressCertification();
+  const [addressingCertId, setAddressingCertId] = useState<string | null>(null);
+  const [addressingCertName, setAddressingCertName] = useState("");
 
   if (isLoading) {
     return (
@@ -32,6 +39,7 @@ export default function DashboardPage() {
   const staffByRole: { role: string; count: number }[] = stats?.staffByRole ?? [];
   const attendanceSummary: { status: string; count: number }[] = stats?.attendanceSummary ?? [];
   const leaveSummary: { status: string; count: number }[] = stats?.leaveSummary ?? [];
+  const expiredCerts: { id: string; staffId: string; staffName: string; department: string; certName: string; expiryDate: string; status: string }[] = stats?.expiredCerts ?? [];
 
   const attendancePct = totalStaff > 0 ? Math.round((todayPresent / totalStaff) * 100) : 0;
 
@@ -146,6 +154,70 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Expired / Expiring Certifications Alert */}
+      {expiredCerts.length > 0 && (
+        <Card className="border-destructive/40 bg-destructive/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2 text-destructive">
+              <ShieldAlert size={18} />
+              Expired / Expiring Certifications
+              <Badge variant="destructive" className="ml-1">{expiredCerts.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {expiredCerts.map((c) => (
+                <div key={c.id} className="flex items-center justify-between gap-3 p-2.5 rounded-lg border bg-card">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className={`inline-block h-2.5 w-2.5 rounded-full shrink-0 ${c.status === "Expired" ? "bg-red-500" : "bg-amber-500"}`} />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{c.certName}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {c.staffName} · {c.department} · Expires {c.expiryDate}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Badge variant={c.status === "Expired" ? "destructive" : "outline"} className="text-[10px]">
+                      {c.status}
+                    </Badge>
+                    {hasPermission("staff:write") && (
+                      <Button
+                        variant="outline" size="sm" className="gap-1.5 h-7 text-xs"
+                        onClick={() => { setAddressingCertId(c.id); setAddressingCertName(`${c.certName} (${c.staffName})`); }}
+                      >
+                        <CheckCircle2 size={12} /> Addressed
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Mark Addressed Confirmation */}
+      <Dialog open={!!addressingCertId} onOpenChange={() => setAddressingCertId(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+              Mark as Addressed
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground py-2">
+            Are you sure you want to mark <strong>{addressingCertName}</strong> as addressed? It will be cleared from this alert list.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddressingCertId(null)} disabled={addressCert.isPending}>Cancel</Button>
+            <Button onClick={() => { if (addressingCertId) { addressCert.mutate(addressingCertId); setAddressingCertId(null); } }} disabled={addressCert.isPending}>
+              {addressCert.isPending ? "Saving..." : "Confirm"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

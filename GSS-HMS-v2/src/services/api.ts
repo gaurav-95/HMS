@@ -39,6 +39,13 @@ api.interceptors.response.use(
 
 export default api;
 
+/** Resolve an upload path to a full URL (handles Tauri vs dev modes) */
+export function getUploadUrl(uploadPath: string): string {
+  if (!uploadPath) return "";
+  // uploadPath is like "/uploads/staff/{id}/photo/file.jpg"
+  return isTauri ? `http://localhost:3001${uploadPath}` : uploadPath;
+}
+
 // ─── Typed API helpers ──────────────────────────────────────
 export const authApi = {
   login: (email: string, password: string) =>
@@ -61,6 +68,24 @@ export const staffApi = {
       headers: { "Content-Type": "multipart/form-data" },
     });
   },
+  // Document management
+  listDocuments: (id: string) => api.get(`/staff/${id}/documents`),
+  uploadDocument: (id: string, file: File, category: "official" | "medical", documentType: string) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("category", category);
+    formData.append("documentType", documentType);
+    return api.post(`/staff/${id}/documents`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+  deleteDocument: (staffId: string, docId: string) => api.delete(`/staff/${staffId}/documents/${docId}`),
+  useDocumentAsPhoto: (staffId: string, documentId: string) => api.post(`/staff/${staffId}/photo-from-document`, { documentId }),
+  // Certifications
+  listCertifications: (id: string) => api.get(`/staff/${id}/certifications`),
+  createCertification: (staffId: string, data: Record<string, unknown>) => api.post(`/staff/${staffId}/certifications`, data),
+  updateCertification: (staffId: string, certId: string, data: Record<string, unknown>) => api.put(`/staff/${staffId}/certifications/${certId}`, data),
+  deleteCertification: (staffId: string, certId: string) => api.delete(`/staff/${staffId}/certifications/${certId}`),
 };
 
 export const attendanceApi = {
@@ -97,6 +122,7 @@ export const usersApi = {
 
 export const dashboardApi = {
   stats: (period?: string) => api.get("/dashboard/stats", { params: { period: period || "monthly" } }),
+  addressCertification: (certId: string) => api.patch(`/dashboard/certifications/${certId}/address`),
 };
 
 export const settingsApi = {

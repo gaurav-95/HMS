@@ -75,29 +75,27 @@ export default function LoginPage() {
 
   const handleModeSwitch = async () => {
     setSwitching(true);
+    setSwitchDialogOpen(false);
     try {
-      const res = await settingsApi.switchMode(targetMode);
-      setAppMode(targetMode);
-      setSwitchDialogOpen(false);
-      toast.success(res.data.message);
-
-      // Pre-fill credentials for the new mode
-      if (targetMode === "user") {
-        setEmail("admin@hospital.com");
-        setPassword("admin123");
-      } else {
-        setEmail("");
-        setPassword("");
-      }
+      await settingsApi.switchMode(targetMode);
+      // Full page reload to guarantee no stale demo data in React state/cache
+      window.location.href = "/login";
     } catch {
       toast.error("Failed to switch mode. Please try again.");
-    } finally {
       setSwitching(false);
     }
   };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-cyan-50 p-4">
+      {/* Full-screen blocking overlay during mode switch */}
+      {switching && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
+          <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+          <p className="text-lg font-semibold">Switching to {targetMode === "demo" ? "Demo" : "User"} Mode...</p>
+          <p className="text-sm text-muted-foreground mt-1">Clearing data and setting up. Please wait.</p>
+        </div>
+      )}
       <div className="w-full max-w-md space-y-5">
         {/* Logo / Brand */}
         <div className="text-center">
@@ -244,8 +242,8 @@ export default function LoginPage() {
       <Dialog open={switchDialogOpen} onOpenChange={setSwitchDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle size={20} className="text-amber-500" />
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle size={20} className="text-destructive" />
               Switch to {targetMode === "demo" ? "Demo" : "User"} Mode?
             </DialogTitle>
             <DialogDescription>
@@ -254,6 +252,19 @@ export default function LoginPage() {
                 : "This will clear all demo data and start fresh with a clean database. You'll get a default admin account to begin setup."}
             </DialogDescription>
           </DialogHeader>
+
+          {/* Data wipe warning */}
+          <div className="rounded-lg border-2 border-destructive/50 bg-destructive/5 p-3 flex items-start gap-2.5">
+            <AlertTriangle size={18} className="text-destructive shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-semibold text-destructive">Warning: All data will be erased</p>
+              <p className="text-destructive/80 text-xs mt-0.5">
+                {targetMode === "user"
+                  ? "All demo records (staff, attendance, payroll, leave, etc.) will be permanently removed."
+                  : "All your real data (staff, attendance, payroll, leave, etc.) will be permanently deleted and replaced with demo data."}
+              </p>
+            </div>
+          </div>
 
           <Separator />
 
@@ -290,7 +301,7 @@ export default function LoginPage() {
               Cancel
             </Button>
             <Button
-              variant={targetMode === "demo" ? "default" : "default"}
+              variant="destructive"
               onClick={handleModeSwitch}
               disabled={switching}
             >

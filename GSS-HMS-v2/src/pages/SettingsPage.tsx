@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { settingsApi } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -17,7 +18,7 @@ import { Tip } from "@/components/ui/tooltip";
 
 const HOSPITAL_DEFAULTS = {
   name: "Gandhi Seva Sadan Hospital",
-  address: "Main Road, Patna, Bihar 800001",
+  address: "207/1, SK Deb Rd, Sreebhumi, Lake Town, South Dumdum, West Bengal 700048",
   phone: "+91 612 222 1234",
   email: "info@gsshospital.com",
   website: "www.gsshospital.com",
@@ -41,6 +42,7 @@ export default function SettingsPage() {
   const [theme, setTheme] = useState("system");
 
   // App mode state
+  const queryClient = useQueryClient();
   const [appMode, setAppMode] = useState<"demo" | "user">("demo");
   const [switchDialogOpen, setSwitchDialogOpen] = useState(false);
   const [switching, setSwitching] = useState(false);
@@ -52,16 +54,13 @@ export default function SettingsPage() {
   const handleModeSwitch = async () => {
     const target = appMode === "demo" ? "user" : "demo";
     setSwitching(true);
+    setSwitchDialogOpen(false);
     try {
       const res = await settingsApi.switchMode(target);
-      setAppMode(target);
-      setSwitchDialogOpen(false);
+      queryClient.clear();
+      localStorage.removeItem("auth-token");
       toast.success(res.data.message);
-      // Log the user out since all data was replaced
-      setTimeout(() => {
-        localStorage.removeItem("auth-token");
-        window.location.href = "/login";
-      }, 1500);
+      window.location.href = "/login";
     } catch {
       toast.error("Failed to switch mode");
     } finally {
@@ -82,6 +81,14 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6 max-w-3xl">
+      {/* Full-screen blocking overlay during mode switch */}
+      {switching && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
+          <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+          <p className="text-lg font-semibold">Switching Mode...</p>
+          <p className="text-sm text-muted-foreground mt-1">Clearing data and setting up. Please wait.</p>
+        </div>
+      )}
       <div>
         <h1 className="text-2xl font-bold">Settings</h1>
         <p className="text-muted-foreground">System configuration and preferences</p>
@@ -304,8 +311,8 @@ export default function SettingsPage() {
       <Dialog open={switchDialogOpen} onOpenChange={setSwitchDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle size={20} className="text-amber-500" />
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle size={20} className="text-destructive" />
               Switch to {appMode === "demo" ? "User" : "Demo"} Mode?
             </DialogTitle>
             <DialogDescription>
@@ -314,11 +321,25 @@ export default function SettingsPage() {
                 : "This will replace all your data with sample demo data. Your data will be permanently deleted."}
             </DialogDescription>
           </DialogHeader>
+
+          {/* Data wipe warning */}
+          <div className="rounded-lg border-2 border-destructive/50 bg-destructive/5 p-3 flex items-start gap-2.5">
+            <AlertTriangle size={18} className="text-destructive shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-semibold text-destructive">Warning: All data will be erased</p>
+              <p className="text-destructive/80 text-xs mt-0.5">
+                {appMode === "demo"
+                  ? "All demo records (staff, attendance, payroll, leave, etc.) will be permanently removed."
+                  : "All your real data (staff, attendance, payroll, leave, etc.) will be permanently deleted and replaced with demo data."}
+              </p>
+            </div>
+          </div>
+
           <Separator />
           <p className="text-sm text-muted-foreground">You will be logged out after switching.</p>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setSwitchDialogOpen(false)} disabled={switching}>Cancel</Button>
-            <Button onClick={handleModeSwitch} disabled={switching}>
+            <Button variant="destructive" onClick={handleModeSwitch} disabled={switching}>
               {switching ? <><Loader2 size={16} className="animate-spin mr-1" /> Switching...</> : `Switch to ${appMode === "demo" ? "User" : "Demo"} Mode`}
             </Button>
           </DialogFooter>

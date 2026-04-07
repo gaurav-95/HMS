@@ -37,7 +37,7 @@ export function clearAllData() {
   const tables = [
     "certifications", "kpis", "attendance_records", "leave_requests",
     "payroll_records", "doctor_schedules", "performance_evaluations",
-    "patient_documents", "medicine_administrations",
+    "patient_documents", "medicine_administrations", "staff_documents",
     "staff", "users", "patients", "tokens", "documents", "announcements",
     "inventory_items", "prescriptions", "billing_records", "lab_tests",
     "leave_types",
@@ -87,7 +87,8 @@ export function setupDatabase() {
       staff_id TEXT NOT NULL REFERENCES staff(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
       expiry_date TEXT NOT NULL,
-      status TEXT NOT NULL
+      status TEXT NOT NULL,
+      addressed INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS kpis (
@@ -320,6 +321,18 @@ export function setupDatabase() {
       uploaded_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS staff_documents (
+      id TEXT PRIMARY KEY,
+      staff_id TEXT NOT NULL REFERENCES staff(id) ON DELETE CASCADE,
+      file_name TEXT NOT NULL,
+      original_name TEXT NOT NULL,
+      category TEXT NOT NULL,
+      document_type TEXT NOT NULL,
+      file_size INTEGER NOT NULL,
+      mime_type TEXT NOT NULL,
+      uploaded_at TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS leave_types (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -410,6 +423,9 @@ export function setupDatabase() {
 
   // Users department column (for LEADER role)
   addColumnIfMissing("users", "department", "TEXT");
+
+  // Certifications addressed column
+  addColumnIfMissing("certifications", "addressed", "INTEGER NOT NULL DEFAULT 0");
 
   // Seed default leave types if table is empty
   const leaveTypeCount = sqlite.prepare("SELECT COUNT(*) as cnt FROM leave_types").get() as { cnt: number };

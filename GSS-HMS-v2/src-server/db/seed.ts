@@ -7,7 +7,7 @@
  */
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
-import { db } from "./index";
+import { db, sqlite } from "./index";
 import { setupDatabase } from "./index";
 import {
   users, staff, certifications, kpis, patients,
@@ -19,6 +19,9 @@ import {
 
 /** Seed all demo data into an already-initialized database */
 export function seedDemoData() {
+  // Wrap entire seed in a single transaction — makes ~950 INSERTs near-instant
+  // instead of each auto-committing (which triggers fsync per statement in SQLite).
+  const _seedAll = sqlite.transaction(() => {
 
 const hash = (pw: string) => bcrypt.hashSync(pw, 10);
 const now = new Date().toISOString();
@@ -508,6 +511,10 @@ console.log("  Leader (GM)  : leader@gsshospital.com");
 console.log("  Staff        : staff@gsshospital.com");
 console.log("  Leader (Surg): leader2@gsshospital.com");
 console.log("  Staff 2      : staff2@gsshospital.com");
+
+  }); // end sqlite.transaction
+
+  _seedAll(); // execute the transaction
 
 } // end seedDemoData
 

@@ -48,6 +48,7 @@ export const certifications = sqliteTable("certifications", {
   name: text("name").notNull(),
   expiryDate: text("expiry_date").notNull(),
   status: text("status").notNull(), // Valid | Expiring | Expired
+  addressed: integer("addressed", { mode: "boolean" }).notNull().default(false),
 });
 
 // ─── KPIs ───────────────────────────────────────────────────
@@ -124,6 +125,19 @@ export const announcements = sqliteTable("announcements", {
   postedDate: text("posted_date").notNull(),
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   penaltyConfig: text("penalty_config"), // JSON string
+});
+
+// ─── Staff Documents ────────────────────────────────────────
+export const staffDocuments = sqliteTable("staff_documents", {
+  id: text("id").primaryKey(),
+  staffId: text("staff_id").notNull().references(() => staff.id, { onDelete: "cascade" }),
+  fileName: text("file_name").notNull(),        // stored filename on disk
+  originalName: text("original_name").notNull(), // user's original filename
+  category: text("category").notNull(),          // official | medical
+  documentType: text("document_type").notNull(), // Aadhaar | PAN | Voter ID | Driving License | Passport | Degree | Registration | Experience | Other
+  fileSize: integer("file_size").notNull(),
+  mimeType: text("mime_type").notNull(),
+  uploadedAt: text("uploaded_at").notNull(),
 });
 
 // ─── Attendance ─────────────────────────────────────────────

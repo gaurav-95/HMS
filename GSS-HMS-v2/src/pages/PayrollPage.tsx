@@ -33,7 +33,8 @@ export default function PayrollPage() {
   const allStaff = staffList as any[];
 
   const [search, setSearch] = useState("");
-  const [filterMonth, setFilterMonth] = useState<string>("all");
+  const [filterMonth, setFilterMonth] = useState<string>(currentMonth);
+  const [filterYear, setFilterYear] = useState<string>(currentYear);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [genMonth, setGenMonth] = useState(currentMonth);
@@ -66,14 +67,22 @@ export default function PayrollPage() {
     }
   };
 
+  // Extract distinct years from data for the year dropdown
+  const availableYears = useMemo(() => {
+    const yrs = new Set(allPayroll.map((p: any) => p.year).filter(Boolean));
+    yrs.add(currentYear);
+    return [...yrs].sort((a, b) => Number(b) - Number(a));
+  }, [allPayroll]);
+
   const filtered = useMemo(() => {
     return allPayroll.filter((p: any) => {
       const matchSearch = !search || p.staffName?.toLowerCase().includes(search.toLowerCase());
       const matchMonth = filterMonth === "all" || p.month === filterMonth;
+      const matchYear = filterYear === "all" || p.year === filterYear;
       const matchStatus = filterStatus === "all" || p.status === filterStatus;
-      return matchSearch && matchMonth && matchStatus;
+      return matchSearch && matchMonth && matchYear && matchStatus;
     });
-  }, [allPayroll, search, filterMonth, filterStatus]);
+  }, [allPayroll, search, filterMonth, filterYear, filterStatus]);
 
   const totalGross = filtered.reduce((s: number, p: any) => s + (p.grossSalary || 0), 0);
   const totalNet = filtered.reduce((s: number, p: any) => s + (p.netSalary || 0), 0);
@@ -125,8 +134,15 @@ export default function PayrollPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search by name..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
+        <Select value={filterYear} onValueChange={setFilterYear}>
+          <SelectTrigger className="w-[120px]"><Filter className="h-4 w-4 mr-1" /><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Years</SelectItem>
+            {availableYears.map((y) => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <Select value={filterMonth} onValueChange={setFilterMonth}>
-          <SelectTrigger className="w-[150px]"><Filter className="h-4 w-4 mr-1" /><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Months</SelectItem>
             {MONTHS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}

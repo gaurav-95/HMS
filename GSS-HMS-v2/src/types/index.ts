@@ -213,6 +213,18 @@ export interface Staff {
   certifications: Certification[];
 }
 
+export interface StaffDocument {
+  id: string;
+  staffId: string;
+  fileName: string;
+  originalName: string;
+  category: "official" | "medical";
+  documentType: string;
+  fileSize: number;
+  mimeType: string;
+  uploadedAt: string;
+}
+
 export interface Patient {
   id: string;
   registrationNumber: string;

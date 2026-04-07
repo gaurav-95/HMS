@@ -1,6 +1,7 @@
 ﻿import { useState, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, usePermanentDeleteUser } from "@/hooks/queries";
+import { getUploadUrl } from "@/services/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -114,7 +115,7 @@ export default function UserManagementPage() {
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10 shrink-0">
                   {u.photoPath ? (
-                    <AvatarImage src={`/uploads/staff/${u.photoPath.split("/").pop()}`} />
+                    <AvatarImage src={getUploadUrl(u.photoPath)} />
                   ) : u.avatar ? (
                     <AvatarImage src={u.avatar} />
                   ) : null}

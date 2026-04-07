@@ -11,6 +11,14 @@ const errMsg = (e: unknown) => (e as any)?.response?.data?.error || (e as Error)
 export function useDashboardStats(period?: string) {
   return useQuery({ queryKey: ["dashboard", period || "monthly"], queryFn: () => dashboardApi.stats(period).then((r) => r.data) });
 }
+export function useAddressCertification() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (certId: string) => dashboardApi.addressCertification(certId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["dashboard"] }); qc.invalidateQueries({ queryKey: ["staff-certs"] }); qc.invalidateQueries({ queryKey: ["staff"] }); toast.success("Certification marked as addressed"); },
+    onError: (e) => toast.error(errMsg(e)),
+  });
+}
 
 // ─── Staff ──────────────────────────────────────────────────
 export function useStaff() {
@@ -35,6 +43,67 @@ export function usePermanentDeleteStaff() {
 export function useUploadStaffFile() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: ({ id, file, fieldType }: { id: string; file: File; fieldType: "photo" | "aadhaar" }) => staffApi.uploadFile(id, file, fieldType).then((r) => r.data), onSuccess: () => { qc.invalidateQueries({ queryKey: ["staff"] }); toast.success("File uploaded"); }, onError: (e) => toast.error(errMsg(e)) });
+}
+
+// ─── Staff Documents ────────────────────────────────────────
+export function useStaffDocuments(staffId: string) {
+  return useQuery({ queryKey: ["staff-documents", staffId], queryFn: () => staffApi.listDocuments(staffId).then((r) => r.data), enabled: !!staffId });
+}
+export function useUploadStaffDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ staffId, file, category, documentType }: { staffId: string; file: File; category: "official" | "medical"; documentType: string }) =>
+      staffApi.uploadDocument(staffId, file, category, documentType).then((r) => r.data),
+    onSuccess: (_d, v) => { qc.invalidateQueries({ queryKey: ["staff-documents", v.staffId] }); toast.success("Document uploaded"); },
+    onError: (e) => toast.error(errMsg(e)),
+  });
+}
+export function useDeleteStaffDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ staffId, docId }: { staffId: string; docId: string }) => staffApi.deleteDocument(staffId, docId),
+    onSuccess: (_d, v) => { qc.invalidateQueries({ queryKey: ["staff-documents", v.staffId] }); toast.success("Document deleted"); },
+    onError: (e) => toast.error(errMsg(e)),
+  });
+}
+export function useDocumentAsPhoto() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ staffId, documentId }: { staffId: string; documentId: string }) => staffApi.useDocumentAsPhoto(staffId, documentId).then((r) => r.data),
+    onSuccess: (_d, v) => { qc.invalidateQueries({ queryKey: ["staff"] }); toast.success("Profile photo updated from document"); },
+    onError: (e) => toast.error(errMsg(e)),
+  });
+}
+
+// ─── Staff Certifications ───────────────────────────────────
+export function useStaffCertifications(staffId: string) {
+  return useQuery({ queryKey: ["staff-certs", staffId], queryFn: () => staffApi.listCertifications(staffId).then((r) => r.data), enabled: !!staffId });
+}
+export function useCreateCertification() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ staffId, ...data }: { staffId: string; name: string; expiryDate: string; status: string }) =>
+      staffApi.createCertification(staffId, data).then((r) => r.data),
+    onSuccess: (_d, v) => { qc.invalidateQueries({ queryKey: ["staff-certs", v.staffId] }); qc.invalidateQueries({ queryKey: ["staff"] }); toast.success("Certification added"); },
+    onError: (e) => toast.error(errMsg(e)),
+  });
+}
+export function useUpdateCertification() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ staffId, certId, ...data }: { staffId: string; certId: string; name?: string; expiryDate?: string; status?: string }) =>
+      staffApi.updateCertification(staffId, certId, data).then((r) => r.data),
+    onSuccess: (_d, v) => { qc.invalidateQueries({ queryKey: ["staff-certs", v.staffId] }); qc.invalidateQueries({ queryKey: ["staff"] }); toast.success("Certification updated"); },
+    onError: (e) => toast.error(errMsg(e)),
+  });
+}
+export function useDeleteCertification() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ staffId, certId }: { staffId: string; certId: string }) => staffApi.deleteCertification(staffId, certId),
+    onSuccess: (_d, v) => { qc.invalidateQueries({ queryKey: ["staff-certs", v.staffId] }); qc.invalidateQueries({ queryKey: ["staff"] }); toast.success("Certification deleted"); },
+    onError: (e) => toast.error(errMsg(e)),
+  });
 }
 
 // ─── Attendance ─────────────────────────────────────────────

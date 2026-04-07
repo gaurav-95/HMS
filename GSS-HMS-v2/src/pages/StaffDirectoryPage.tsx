@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useStaff, useCreateStaff, useUpdateStaff, useDeleteStaff, usePermanentDeleteStaff, useUploadStaffFile } from "@/hooks/queries";
+import { StaffDocumentsDialog } from "@/components/StaffDocumentsDialog";
+import { getUploadUrl } from "@/services/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Plus, Phone, Mail, Edit, Loader2, Trash2, ClipboardCheck, Wallet, Filter, Camera, FileText, ChevronDown, ChevronUp, X } from "lucide-react";
+import { Search, Plus, Phone, Mail, Edit, Loader2, Trash2, ClipboardCheck, Wallet, Filter, Camera, FileText, ChevronDown, ChevronUp, X, FolderOpen } from "lucide-react";
 import { getInitials, formatCurrency } from "@/lib/utils";
 import { DEPARTMENTS, STAFF_ROLES, STAFF_CATEGORIES, getDefaultCategory } from "@/constants";
 import { ExportButtons } from "@/components/ExportButtons";
@@ -38,6 +40,7 @@ export default function StaffDirectoryPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState<any | null>(null);
   const [deletingStaff, setDeletingStaff] = useState<any | null>(null);
+  const [documentsStaff, setDocumentsStaff] = useState<any | null>(null);
   const canWrite = hasPermission("staff:write");
   const canDelete = hasPermission("staff:delete");
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
@@ -177,7 +180,7 @@ export default function StaffDirectoryPage() {
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10 shrink-0">
                   {member.photoPath ? (
-                    <AvatarImage src={`/uploads/staff/${member.photoPath.split("/").pop()}`} />
+                    <AvatarImage src={getUploadUrl(member.photoPath)} />
                   ) : (
                     <AvatarImage src={member.imageUrl} />
                   )}
@@ -224,6 +227,11 @@ export default function StaffDirectoryPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
+                  <Tip content="View uploaded documents">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDocumentsStaff(member)}>
+                      <FolderOpen size={14} />
+                    </Button>
+                  </Tip>
                   {canWrite && (
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingStaff(member)} title="Edit">
                       <Edit size={14} />
@@ -278,6 +286,16 @@ export default function StaffDirectoryPage() {
       )}
 
       {/* Delete Confirmation */}
+      {/* Documents Dialog */}
+      {documentsStaff && (
+        <StaffDocumentsDialog
+          open={!!documentsStaff}
+          onClose={() => setDocumentsStaff(null)}
+          staff={documentsStaff}
+          canEdit={canWrite}
+        />
+      )}
+
       <DeleteConfirmationDialog
         open={!!deletingStaff}
         onClose={() => setDeletingStaff(null)}

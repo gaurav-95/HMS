@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { db, clearAllData } from "../db/index";
 import { users, appSettings, leaveTypes } from "../db/schema";
 import { seedDemoData } from "../db/seed";
-import { requireAuth, requirePermission } from "../middleware/auth";
+import { requireAuth, requirePermission, AuthRequest } from "../middleware/auth";
 
 const router = Router();
 
@@ -19,8 +19,13 @@ router.get("/mode", (_req, res) => {
   res.json({ mode: setting?.value || "demo" });
 });
 
-/** POST /api/settings/mode — switch between demo ↔ user mode (requires SUPER_ADMIN) */
-router.post("/mode", requireAuth, requirePermission("settings:write"), (req, res) => {
+/**
+ * POST /api/settings/mode — switch between demo ↔ user mode.
+ * This is a standalone desktop app — mode switching is always allowed from
+ * the login page regardless of current mode. The confirmation dialog on the
+ * frontend is the safety gate (not auth).
+ */
+router.post("/mode", (req: AuthRequest, res) => {
   const { mode } = req.body;
   if (!mode || !["demo", "user"].includes(mode)) {
     return res.status(400).json({ error: "Invalid mode. Use 'demo' or 'user'." });
