@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Plus, Loader2, Search, Filter, XCircle, Trash2, Settings } from "lucide-react";
+import { Calendar, Plus, Loader2, Search, Filter, XCircle, Trash2, Settings, CheckCircle2, X, AlertTriangle, Pencil } from "lucide-react";
 import { ExportButtons } from "@/components/ExportButtons";
 
 const blankForm = {
@@ -50,6 +50,13 @@ export default function LeavePage() {
   const [showTypeManager, setShowTypeManager] = useState(false);
   const [newTypeName, setNewTypeName] = useState("");
   const [form, setForm] = useState(blankForm);
+
+  // Confirmation dialog state for ADMIN approve/reject
+  const [confirmAction, setConfirmAction] = useState<{ id: string; staffName: string; action: "Approved" | "Rejected" } | null>(null);
+
+  // Edit status dialog for SUPER_ADMIN
+  const [editStatusTarget, setEditStatusTarget] = useState<{ id: string; staffName: string; currentStatus: string } | null>(null);
+  const [editStatusValue, setEditStatusValue] = useState<string>("");
 
   const filtered = useMemo(() => {
     return allLeaves.filter((l: any) => {
@@ -189,15 +196,37 @@ export default function LeavePage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
+                      {/* Pending leaves: approve/reject for SUPER_ADMIN (direct), ADMIN (with confirmation) */}
                       {l.status === "Pending" && canApprove && (
                         <>
-                          <Button size="sm" variant="outline" onClick={() => updateLeaveStatus.mutate({ id: l.id, status: "Approved" })}>
-                            Approve
+                          <Button size="sm" variant="outline" onClick={() => {
+                            if (isAdmin) {
+                              setConfirmAction({ id: l.id, staffName: l.staffName, action: "Approved" });
+                            } else {
+                              updateLeaveStatus.mutate({ id: l.id, status: "Approved" });
+                            }
+                          }}>
+                            <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Approve
                           </Button>
-                          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => updateLeaveStatus.mutate({ id: l.id, status: "Rejected" })}>
-                            Reject
+                          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => {
+                            if (isAdmin) {
+                              setConfirmAction({ id: l.id, staffName: l.staffName, action: "Rejected" });
+                            } else {
+                              updateLeaveStatus.mutate({ id: l.id, status: "Rejected" });
+                            }
+                          }}>
+                            <X className="h-3.5 w-3.5 mr-1" /> Reject
                           </Button>
                         </>
+                      )}
+                      {/* SUPER_ADMIN can edit status of already-decided leaves */}
+                      {l.status !== "Pending" && l.status !== "Cancelled" && isSuperAdmin && (
+                        <Button size="sm" variant="outline" onClick={() => {
+                          setEditStatusTarget({ id: l.id, staffName: l.staffName, currentStatus: l.status });
+                          setEditStatusValue(l.status);
+                        }}>
+                          <Pencil className="h-3.5 w-3.5 mr-1" /> Edit Status
+                        </Button>
                       )}
                       {l.status === "Pending" && hasPermission("leave:apply") && (
                         <Button size="sm" variant="ghost" className="text-muted-foreground" onClick={() => cancelLeave.mutate(l.id)}>
@@ -317,6 +346,84 @@ export default function LeavePage() {
               )}
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Admin Confirmation Dialog */}
+      <Dialog open={!!confirmAction} onOpenChange={() => setConfirmAction(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Confirm {confirmAction?.action === "Approved" ? "Approval" : "Rejection"}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Are you sure you want to <strong>{confirmAction?.action === "Approved" ? "approve" : "reject"}</strong> the
+            leave request from <strong>{confirmAction?.staffName}</strong>? This action will be recorded.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmAction(null)}>Cancel</Button>
+            <Button
+              variant={confirmAction?.action === "Rejected" ? "destructive" : "default"}
+              disabled={updateLeaveStatus.isPending}
+              onClick={() => {
+                if (confirmAction) {
+                  updateLeaveStatus.mutate(
+                    { id: confirmAction.id, status: confirmAction.action },
+                    { onSuccess: () => setConfirmAction(null) }
+                  );
+                }
+              }}
+            >
+              {updateLeaveStatus.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              {confirmAction?.action === "Approved" ? "Approve" : "Reject"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Super Admin Edit Status Dialog */}
+      <Dialog open={!!editStatusTarget} onOpenChange={() => setEditStatusTarget(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-5 w-5" />
+              Edit Leave Status
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground mb-2">
+            Change the leave status for <strong>{editStatusTarget?.staffName}</strong>.
+            Current status: <Badge variant={editStatusTarget?.currentStatus === "Approved" ? "success" : "destructive"}>{editStatusTarget?.currentStatus}</Badge>
+          </p>
+          <div className="space-y-2">
+            <Label>New Status</Label>
+            <Select value={editStatusValue} onValueChange={setEditStatusValue}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Approved">Approved</SelectItem>
+                <SelectItem value="Rejected">Rejected</SelectItem>
+                <SelectItem value="Pending">Pending</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditStatusTarget(null)}>Cancel</Button>
+            <Button
+              disabled={editStatusValue === editStatusTarget?.currentStatus || updateLeaveStatus.isPending}
+              onClick={() => {
+                if (editStatusTarget && editStatusValue !== editStatusTarget.currentStatus) {
+                  updateLeaveStatus.mutate(
+                    { id: editStatusTarget.id, status: editStatusValue },
+                    { onSuccess: () => setEditStatusTarget(null) }
+                  );
+                }
+              }}
+            >
+              {updateLeaveStatus.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              Update Status
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

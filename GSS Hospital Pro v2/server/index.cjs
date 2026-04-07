@@ -79624,6 +79624,15 @@ router4.post("/", requireAuth, requirePermission("leave:apply"), (req, res) => {
 router4.patch("/:id/status", requireAuth, requirePermission("leave:approve"), (req, res) => {
   const leaveId = String(req.params.id);
   const { status } = req.body;
+  const allowed = ["Approved", "Rejected", "Pending"];
+  if (!status || !allowed.includes(status)) {
+    return res.status(400).json({ error: "Invalid status" });
+  }
+  const record = db.select().from(leaveRequests).where(eq(leaveRequests.id, leaveId)).get();
+  if (!record) return res.status(404).json({ error: "Leave request not found" });
+  if (record.status !== "Pending" && req.user.role !== "SUPER_ADMIN") {
+    return res.status(403).json({ error: "Only Super Admin can change a decided leave status" });
+  }
   db.update(leaveRequests).set({ status, approvedBy: req.user.name }).where(eq(leaveRequests.id, leaveId)).run();
   res.json(db.select().from(leaveRequests).where(eq(leaveRequests.id, leaveId)).get());
 });
