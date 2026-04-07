@@ -82,7 +82,7 @@ export const leaveApi = {
 export const payrollApi = {
   list: () => api.get("/payroll"),
   create: (data: Record<string, unknown>) => api.post("/payroll", data),
-  generate: (data: { month: string; year: string }) => api.post("/payroll/generate", data),
+  generate: (data: { month: string; year: string; staffIds?: string[] }) => api.post("/payroll/generate", data),
   updateStatus: (id: string, status: string) => api.patch(`/payroll/${id}/status`, { status }),
   delete: (id: string) => api.delete(`/payroll/${id}`),
 };

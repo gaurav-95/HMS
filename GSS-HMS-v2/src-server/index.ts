@@ -3,7 +3,8 @@ import cors from "cors";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { setupDatabase } from "./db/index";
+import { setupDatabase, sqlite } from "./db/index";
+import { seedDemoData } from "./db/seed";
 
 // ESM / CJS compat — __dirname is defined in CJS (esbuild bundle) but not in ESM (tsx dev)
 const __filename_esm = typeof __filename !== "undefined" ? __filename : fileURLToPath(import.meta.url);
@@ -28,6 +29,15 @@ app.use(express.json({ limit: "10mb" }));
 
 // ─── Self-initialize database ───────────────────────────────
 setupDatabase();
+
+// ─── Auto-seed demo data on first launch (fresh DB) ─────────
+const userCount = (sqlite.prepare("SELECT COUNT(*) as cnt FROM users").get() as { cnt: number }).cnt;
+if (userCount === 0) {
+  console.log("📦 Fresh database detected — seeding demo data...");
+  seedDemoData();
+  const now = new Date().toISOString();
+  sqlite.prepare("INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES (?, ?, ?)").run("appMode", "demo", now);
+}
 
 // ─── API Routes ─────────────────────────────────────────────
 app.use("/api/auth", authRoutes);

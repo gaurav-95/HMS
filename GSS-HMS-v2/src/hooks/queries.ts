@@ -88,7 +88,7 @@ export function useCreatePayroll() {
 }
 export function useGeneratePayroll() {
   const qc = useQueryClient();
-  return useMutation({ mutationFn: (d: { month: string; year: string }) => payrollApi.generate(d).then((r) => r.data), onSuccess: (data: any) => { qc.invalidateQueries({ queryKey: ["payroll"] }); toast.success(`Generated ${data.generated} payroll records`); }, onError: (e) => toast.error(errMsg(e)) });
+  return useMutation({ mutationFn: (d: { month: string; year: string; staffIds?: string[] }) => payrollApi.generate(d).then((r) => r.data), onSuccess: (data: any) => { qc.invalidateQueries({ queryKey: ["payroll"] }); toast.success(`Generated ${data.generated} payroll records`); }, onError: (e) => toast.error(errMsg(e)) });
 }
 export function useUpdatePayrollStatus() {
   const qc = useQueryClient();

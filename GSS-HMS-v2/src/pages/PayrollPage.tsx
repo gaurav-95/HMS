@@ -13,6 +13,7 @@ import { Loader2, Search, Filter, Trash2, ArrowRight, Zap } from "lucide-react";
 import { ExportButtons } from "@/components/ExportButtons";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 import { formatCurrency } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const currentMonth = MONTHS[new Date().getMonth()];
@@ -37,6 +38,32 @@ export default function PayrollPage() {
   const [genMonth, setGenMonth] = useState(currentMonth);
   const [genYear, setGenYear] = useState(currentYear);
   const [showGenerate, setShowGenerate] = useState(false);
+  const [selectedStaffIds, setSelectedStaffIds] = useState<Set<string>>(new Set());
+
+  // Active staff for the generate dialog
+  const activeStaff = useMemo(() => allStaff.filter((s: any) => s.isActive !== false && !s.terminationDate), [allStaff]);
+
+  // When dialog opens, select all staff by default
+  const openGenerateDialog = () => {
+    setSelectedStaffIds(new Set(activeStaff.map((s: any) => s.id)));
+    setShowGenerate(true);
+  };
+
+  const toggleStaff = (id: string) => {
+    setSelectedStaffIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selectedStaffIds.size === activeStaff.length) {
+      setSelectedStaffIds(new Set());
+    } else {
+      setSelectedStaffIds(new Set(activeStaff.map((s: any) => s.id)));
+    }
+  };
 
   const filtered = useMemo(() => {
     return allPayroll.filter((p: any) => {
@@ -57,7 +84,11 @@ export default function PayrollPage() {
   };
 
   const handleGenerate = () => {
-    generatePayroll.mutate({ month: genMonth, year: genYear }, { onSuccess: () => setShowGenerate(false) });
+    const staffIds = [...selectedStaffIds];
+    generatePayroll.mutate(
+      { month: genMonth, year: genYear, staffIds: staffIds.length === activeStaff.length ? undefined : staffIds },
+      { onSuccess: () => setShowGenerate(false) },
+    );
   };
 
   const handleDelete = () => {
@@ -80,7 +111,7 @@ export default function PayrollPage() {
             rows={filtered.map((p: any) => [p.staffName, p.department || "", p.month, p.year, p.basicSalary || 0, p.hra || 0, p.epfEmployer || 0, p.otherAllowance || 0, p.grossSalary || 0, p.professionalTax || 0, p.epfEmployee || 0, p.leaveDeductions || 0, p.netSalary || 0, p.totalShifts || 0, p.attendedShifts || 0, p.leavesTaken || 0, p.status])}
           />
           {hasPermission("payroll:write") && (
-            <Button onClick={() => setShowGenerate(true)} className="gap-1.5"><Zap size={16} /> Generate Payroll</Button>
+            <Button onClick={openGenerateDialog} className="gap-1.5"><Zap size={16} /> Generate Payroll</Button>
           )}
         </div>
       </div>
@@ -192,9 +223,9 @@ export default function PayrollPage() {
 
       {/* Generate Payroll Dialog */}
       <Dialog open={showGenerate} onOpenChange={setShowGenerate}>
-        <DialogContent>
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
           <DialogHeader><DialogTitle>Generate Monthly Payroll</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">Auto-calculate salary for all active staff based on attendance data for the selected month. Existing records won't be duplicated.</p>
+          <p className="text-sm text-muted-foreground">Auto-calculate salary based on attendance data. Existing records for selected month won't be duplicated.</p>
           <div className="grid grid-cols-2 gap-4 py-2">
             <div className="space-y-2">
               <Label>Month</Label>
@@ -208,6 +239,30 @@ export default function PayrollPage() {
               <Input value={genYear} onChange={(e) => setGenYear(e.target.value)} />
             </div>
           </div>
+
+          {/* Staff Selection */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Select Staff ({selectedStaffIds.size} of {activeStaff.length})</Label>
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={toggleAll}>
+                {selectedStaffIds.size === activeStaff.length ? "Deselect All" : "Select All"}
+              </Button>
+            </div>
+            <div className="border rounded-md max-h-[240px] overflow-y-auto">
+              {activeStaff.map((s: any) => (
+                <label key={s.id} className="flex items-center gap-3 px-3 py-2 hover:bg-muted/50 cursor-pointer border-b last:border-b-0">
+                  <Checkbox checked={selectedStaffIds.has(s.id)} onCheckedChange={() => toggleStaff(s.id)} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{s.name}</p>
+                    <p className="text-xs text-muted-foreground">{s.department} &middot; {s.role}</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{formatCurrency(s.baseSalary)}</span>
+                </label>
+              ))}
+              {activeStaff.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No active staff</p>}
+            </div>
+          </div>
+
           <div className="bg-muted rounded-md p-3 text-sm space-y-1">
             <p><strong>Salary structure:</strong></p>
             <p>Basic Salary + HRA (50%) + Other Allowance (47%)</p>
@@ -215,9 +270,9 @@ export default function PayrollPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowGenerate(false)}>Cancel</Button>
-            <Button onClick={handleGenerate} disabled={generatePayroll.isPending}>
+            <Button onClick={handleGenerate} disabled={generatePayroll.isPending || selectedStaffIds.size === 0}>
               {generatePayroll.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Zap size={16} className="mr-1" />}
-              Generate
+              Generate ({selectedStaffIds.size})
             </Button>
           </DialogFooter>
         </DialogContent>

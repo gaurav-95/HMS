@@ -78891,611 +78891,13 @@ function setupDatabase() {
   console.log("\u2713 Database tables initialized");
 }
 
-// src-server/routes/auth.ts
-var import_express = __toESM(require_express2(), 1);
-var import_bcryptjs = __toESM(require("bcryptjs"), 1);
-
-// src-server/middleware/auth.ts
-var import_jsonwebtoken = __toESM(require_jsonwebtoken(), 1);
-var JWT_SECRET = "gss-hms-standalone-secret-2026";
-var JWT_EXPIRES_IN = "24h";
-var ROLE_PERMISSIONS = {
-  SUPER_ADMIN: [
-    "dashboard:view",
-    "staff:read",
-    "staff:write",
-    "staff:delete",
-    "payroll:read",
-    "payroll:write",
-    "payroll:approve",
-    "users:read",
-    "users:write",
-    "users:delete",
-    "leave:apply",
-    "leave:approve",
-    "leave:manage-types",
-    "attendance:read",
-    "attendance:write",
-    "settings:read",
-    "settings:write"
-  ],
-  ADMIN: [
-    "dashboard:view",
-    "staff:read",
-    "staff:write",
-    "payroll:read",
-    "users:read",
-    "users:write",
-    "leave:apply",
-    "leave:approve",
-    "attendance:read",
-    "attendance:write",
-    "settings:read"
-  ],
-  LEADER: [
-    "dashboard:view",
-    "staff:read",
-    "payroll:read",
-    "leave:apply",
-    "leave:approve",
-    "attendance:read",
-    "attendance:write"
-  ],
-  STAFF: [
-    "dashboard:view",
-    "attendance:read",
-    "leave:apply",
-    "payroll:read"
-  ]
-};
-function signToken(payload) {
-  return import_jsonwebtoken.default.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-}
-function verifyToken(token) {
-  return import_jsonwebtoken.default.verify(token, JWT_SECRET);
-}
-function requireAuth(req, res, next) {
-  const header = req.headers.authorization;
-  if (!header?.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Authentication required" });
-  }
-  try {
-    req.user = verifyToken(header.slice(7));
-    next();
-  } catch {
-    return res.status(401).json({ error: "Invalid or expired token" });
-  }
-}
-function requirePermission(...permissions) {
-  return (req, res, next) => {
-    if (!req.user) return res.status(401).json({ error: "Authentication required" });
-    const userPerms = ROLE_PERMISSIONS[req.user.role] || [];
-    const hasRequired = permissions.some((p) => userPerms.includes(p));
-    if (!hasRequired) {
-      return res.status(403).json({ error: "Insufficient permissions" });
-    }
-    next();
-  };
-}
-
-// src-server/routes/auth.ts
-var router = (0, import_express.Router)();
-router.post("/login", (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ error: "Email and password required" });
-  }
-  const user = db.select().from(users).where(eq(users.email, email)).get();
-  if (!user || !user.isActive) {
-    return res.status(401).json({ error: "Invalid credentials" });
-  }
-  const valid = import_bcryptjs.default.compareSync(password, user.password);
-  if (!valid) {
-    return res.status(401).json({ error: "Invalid credentials" });
-  }
-  db.update(users).set({ lastLogin: (/* @__PURE__ */ new Date()).toISOString() }).where(eq(users.id, user.id)).run();
-  const token = signToken({
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role,
-    department: user.department || void 0
-  });
-  res.json({
-    token,
-    user: {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      department: user.department || null,
-      isActive: user.isActive
-    }
-  });
-});
-router.get("/me", requireAuth, (req, res) => {
-  const user = db.select().from(users).where(eq(users.id, req.user.id)).get();
-  if (!user) return res.status(404).json({ error: "User not found" });
-  res.json({
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role,
-    department: user.department || null,
-    isActive: user.isActive,
-    lastLogin: user.lastLogin
-  });
-});
-var auth_default = router;
-
-// src-server/routes/staff.ts
-var import_express2 = __toESM(require_express2(), 1);
-var import_crypto = require("crypto");
-var import_multer = __toESM(require_multer(), 1);
-var import_path2 = __toESM(require("path"), 1);
-var import_fs2 = __toESM(require("fs"), 1);
-var import_url2 = require("url");
-var import_meta2 = {};
-var __filename_esm2 = typeof __filename !== "undefined" ? __filename : (0, import_url2.fileURLToPath)(import_meta2.url);
-var __dirname_esm2 = typeof __dirname !== "undefined" ? __dirname : import_path2.default.dirname(__filename_esm2);
-var UPLOADS_DIR = import_path2.default.resolve(__dirname_esm2, "..", "..", "data", "uploads", "staff");
-if (!import_fs2.default.existsSync(UPLOADS_DIR)) import_fs2.default.mkdirSync(UPLOADS_DIR, { recursive: true });
-var storage = import_multer.default.diskStorage({
-  destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
-  filename: (_req, file, cb) => {
-    const ext = import_path2.default.extname(file.originalname);
-    cb(null, `${(0, import_crypto.randomUUID)()}${ext}`);
-  }
-});
-var upload = (0, import_multer.default)({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
-var router2 = (0, import_express2.Router)();
-router2.get("/", requireAuth, requirePermission("staff:read"), (_req, res) => {
-  const allStaff = db.select().from(staff).where(eq(staff.isActive, true)).all();
-  const result = allStaff.map((s) => {
-    const certs = db.select().from(certifications).where(eq(certifications.staffId, s.id)).all();
-    const staffKpis = db.select().from(kpis).where(eq(kpis.staffId, s.id)).all();
-    return { ...s, certifications: certs, kpis: staffKpis };
-  });
-  res.json(result);
-});
-router2.get("/:id", requireAuth, requirePermission("staff:read"), (req, res) => {
-  const s = db.select().from(staff).where(eq(staff.id, String(req.params.id))).get();
-  if (!s) return res.status(404).json({ error: "Staff not found" });
-  const certs = db.select().from(certifications).where(eq(certifications.staffId, s.id)).all();
-  const staffKpis = db.select().from(kpis).where(eq(kpis.staffId, s.id)).all();
-  res.json({ ...s, certifications: certs, kpis: staffKpis });
-});
-router2.post("/", requireAuth, requirePermission("staff:write"), (req, res) => {
-  const now = (/* @__PURE__ */ new Date()).toISOString();
-  const id = (0, import_crypto.randomUUID)();
-  const { certifications: certs, kpis: staffKpis, ...data } = req.body;
-  db.insert(staff).values({ id, ...data, createdAt: now, updatedAt: now }).run();
-  if (Array.isArray(certs)) {
-    for (const c of certs) {
-      db.insert(certifications).values({ id: (0, import_crypto.randomUUID)(), staffId: id, ...c }).run();
-    }
-  }
-  if (Array.isArray(staffKpis)) {
-    for (const k of staffKpis) {
-      db.insert(kpis).values({ id: (0, import_crypto.randomUUID)(), staffId: id, ...k }).run();
-    }
-  }
-  const created = db.select().from(staff).where(eq(staff.id, id)).get();
-  res.status(201).json(created);
-});
-router2.post("/:id/upload", requireAuth, requirePermission("staff:write"), upload.single("file"), (req, res) => {
-  const staffId = String(req.params.id);
-  const s = db.select().from(staff).where(eq(staff.id, staffId)).get();
-  if (!s) return res.status(404).json({ error: "Staff not found" });
-  if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-  const fieldType = req.body.fieldType;
-  const relativePath = `/uploads/staff/${req.file.filename}`;
-  if (fieldType === "photo") {
-    db.update(staff).set({ photoPath: relativePath, updatedAt: (/* @__PURE__ */ new Date()).toISOString() }).where(eq(staff.id, staffId)).run();
-  } else if (fieldType === "aadhaar") {
-    db.update(staff).set({ aadhaarDocPath: relativePath, updatedAt: (/* @__PURE__ */ new Date()).toISOString() }).where(eq(staff.id, staffId)).run();
-  } else {
-    return res.status(400).json({ error: "fieldType must be 'photo' or 'aadhaar'" });
-  }
-  res.json({ path: relativePath });
-});
-router2.put("/:id", requireAuth, requirePermission("staff:write"), (req, res) => {
-  const staffId = String(req.params.id);
-  const { certifications: _c, kpis: _k, id: _id, createdAt: _ca, ...data } = req.body;
-  db.update(staff).set({ ...data, updatedAt: (/* @__PURE__ */ new Date()).toISOString() }).where(eq(staff.id, staffId)).run();
-  const updated = db.select().from(staff).where(eq(staff.id, staffId)).get();
-  if (!updated) return res.status(404).json({ error: "Staff not found" });
-  res.json(updated);
-});
-router2.delete("/:id", requireAuth, requirePermission("staff:delete"), (req, res) => {
-  const staffId = String(req.params.id);
-  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
-  if (permanent) {
-    db.delete(payrollRecords).where(eq(payrollRecords.staffId, staffId)).run();
-    db.delete(attendanceRecords).where(eq(attendanceRecords.staffId, staffId)).run();
-    db.delete(leaveRequests).where(eq(leaveRequests.staffId, staffId)).run();
-    db.delete(performanceEvaluations).where(eq(performanceEvaluations.staffId, staffId)).run();
-    db.delete(doctorSchedules).where(eq(doctorSchedules.doctorId, staffId)).run();
-    db.delete(staff).where(eq(staff.id, staffId)).run();
-  } else {
-    db.update(staff).set({ isActive: false, updatedAt: (/* @__PURE__ */ new Date()).toISOString() }).where(eq(staff.id, staffId)).run();
-  }
-  res.status(204).send();
-});
-var staff_default = router2;
-
-// src-server/routes/attendance.ts
-var import_express3 = __toESM(require_express2(), 1);
-var import_crypto2 = require("crypto");
-var router3 = (0, import_express3.Router)();
-router3.get("/", requireAuth, requirePermission("attendance:read"), (req, res) => {
-  const userRole = req.user.role;
-  const userDept = req.user.department;
-  if (userRole === "LEADER" && userDept) {
-    const deptStaffIds = db.select({ id: staff.id }).from(staff).where(eq(staff.department, userDept)).all().map((s) => s.id);
-    if (deptStaffIds.length === 0) return res.json([]);
-    return res.json(db.select().from(attendanceRecords).where(inArray(attendanceRecords.staffId, deptStaffIds)).all());
-  }
-  if (userRole === "STAFF") {
-    const linkedStaff = db.select({ id: staff.id }).from(staff).where(eq(staff.userId, req.user.id)).get();
-    if (!linkedStaff) return res.json([]);
-    return res.json(db.select().from(attendanceRecords).where(eq(attendanceRecords.staffId, linkedStaff.id)).all());
-  }
-  res.json(db.select().from(attendanceRecords).all());
-});
-router3.post("/", requireAuth, requirePermission("attendance:write"), (req, res) => {
-  const id = (0, import_crypto2.randomUUID)();
-  db.insert(attendanceRecords).values({ id, ...req.body }).run();
-  res.status(201).json(db.select().from(attendanceRecords).where(eq(attendanceRecords.id, id)).get());
-});
-router3.put("/:id", requireAuth, requirePermission("attendance:write"), (req, res) => {
-  const attId = String(req.params.id);
-  const { id: _id, ...data } = req.body;
-  db.update(attendanceRecords).set(data).where(eq(attendanceRecords.id, attId)).run();
-  const updated = db.select().from(attendanceRecords).where(eq(attendanceRecords.id, attId)).get();
-  if (!updated) return res.status(404).json({ error: "Record not found" });
-  res.json(updated);
-});
-var attendance_default = router3;
-
-// src-server/routes/leave.ts
-var import_express4 = __toESM(require_express2(), 1);
-var import_crypto3 = require("crypto");
-var router4 = (0, import_express4.Router)();
-router4.get("/", requireAuth, requirePermission("leave:apply"), (req, res) => {
-  const userRole = req.user.role;
-  const userDept = req.user.department;
-  if (userRole === "LEADER" && userDept) {
-    const deptStaffIds = db.select({ id: staff.id }).from(staff).where(eq(staff.department, userDept)).all().map((s) => s.id);
-    if (deptStaffIds.length === 0) return res.json([]);
-    return res.json(db.select().from(leaveRequests).where(inArray(leaveRequests.staffId, deptStaffIds)).all());
-  }
-  if (userRole === "STAFF") {
-    const linkedStaff = db.select({ id: staff.id }).from(staff).where(eq(staff.userId, req.user.id)).get();
-    if (!linkedStaff) return res.json([]);
-    return res.json(db.select().from(leaveRequests).where(eq(leaveRequests.staffId, linkedStaff.id)).all());
-  }
-  res.json(db.select().from(leaveRequests).all());
-});
-router4.get("/types", requireAuth, (_req, res) => {
-  res.json(db.select().from(leaveTypes).where(eq(leaveTypes.isActive, true)).all());
-});
-router4.post("/types", requireAuth, requirePermission("settings:write"), (req, res) => {
-  const id = (0, import_crypto3.randomUUID)();
-  const { name } = req.body;
-  if (!name) return res.status(400).json({ error: "Name is required" });
-  db.insert(leaveTypes).values({ id, name, createdBy: req.user.name, createdAt: (/* @__PURE__ */ new Date()).toISOString() }).run();
-  res.status(201).json(db.select().from(leaveTypes).where(eq(leaveTypes.id, id)).get());
-});
-router4.delete("/types/:id", requireAuth, requirePermission("settings:write"), (req, res) => {
-  db.update(leaveTypes).set({ isActive: false }).where(eq(leaveTypes.id, String(req.params.id))).run();
-  res.status(204).send();
-});
-router4.post("/", requireAuth, requirePermission("leave:apply"), (req, res) => {
-  const id = (0, import_crypto3.randomUUID)();
-  db.insert(leaveRequests).values({ id, ...req.body, status: "Pending", appliedDate: (/* @__PURE__ */ new Date()).toISOString() }).run();
-  res.status(201).json(db.select().from(leaveRequests).where(eq(leaveRequests.id, id)).get());
-});
-router4.patch("/:id/status", requireAuth, requirePermission("leave:approve"), (req, res) => {
-  const leaveId = String(req.params.id);
-  const { status } = req.body;
-  db.update(leaveRequests).set({ status, approvedBy: req.user.name }).where(eq(leaveRequests.id, leaveId)).run();
-  res.json(db.select().from(leaveRequests).where(eq(leaveRequests.id, leaveId)).get());
-});
-router4.patch("/:id/cancel", requireAuth, requirePermission("leave:apply"), (req, res) => {
-  const leaveId = String(req.params.id);
-  const record = db.select().from(leaveRequests).where(eq(leaveRequests.id, leaveId)).get();
-  if (!record) return res.status(404).json({ error: "Leave request not found" });
-  if (record.status !== "Pending") return res.status(400).json({ error: "Only pending requests can be cancelled" });
-  db.update(leaveRequests).set({ status: "Cancelled" }).where(eq(leaveRequests.id, leaveId)).run();
-  res.json(db.select().from(leaveRequests).where(eq(leaveRequests.id, leaveId)).get());
-});
-var leave_default = router4;
-
-// src-server/routes/payroll.ts
-var import_express5 = __toESM(require_express2(), 1);
-var import_crypto4 = require("crypto");
-var router5 = (0, import_express5.Router)();
-router5.get("/", requireAuth, requirePermission("payroll:read"), (req, res) => {
-  const userRole = req.user.role;
-  const userDept = req.user.department;
-  if (userRole === "LEADER" && userDept) {
-    const deptStaffIds = db.select({ id: staff.id }).from(staff).where(eq(staff.department, userDept)).all().map((s) => s.id);
-    if (deptStaffIds.length === 0) return res.json([]);
-    return res.json(db.select().from(payrollRecords).where(inArray(payrollRecords.staffId, deptStaffIds)).all());
-  }
-  if (userRole === "STAFF") {
-    const linkedStaff = db.select({ id: staff.id }).from(staff).where(eq(staff.userId, req.user.id)).get();
-    if (!linkedStaff) return res.json([]);
-    return res.json(db.select().from(payrollRecords).where(eq(payrollRecords.staffId, linkedStaff.id)).all());
-  }
-  res.json(db.select().from(payrollRecords).all());
-});
-router5.post("/generate", requireAuth, requirePermission("payroll:write"), (req, res) => {
-  try {
-    const { month, year } = req.body;
-    if (!month || !year) return res.status(400).json({ error: "month and year required" });
-    const settingsRow = db.select().from(appSettings).where(eq(appSettings.key, "workingDaysPerMonth")).get();
-    const workingDays = settingsRow ? Number(settingsRow.value) : 26;
-    const activeStaff = db.select().from(staff).all().filter((s) => s.isActive !== 0 && s.isActive !== false);
-    const existing = db.select().from(payrollRecords).where(and(eq(payrollRecords.month, month), eq(payrollRecords.year, year))).all();
-    const existingStaffIds = new Set(existing.map((r) => r.staffId));
-    const datePrefix = `${year}-${String("January,February,March,April,May,June,July,August,September,October,November,December".split(",").indexOf(month) + 1).padStart(2, "0")}`;
-    const created = [];
-    for (const s of activeStaff) {
-      if (existingStaffIds.has(s.id)) continue;
-      const attendanceRows = db.select().from(attendanceRecords).where(and(eq(attendanceRecords.staffId, s.id), like(attendanceRecords.date, `${datePrefix}%`))).all();
-      const present = attendanceRows.filter((a) => ["Present", "Late"].includes(a.status)).length;
-      const halfDays = attendanceRows.filter((a) => a.status === "HalfDay").length;
-      const attendedShifts = present + halfDays * 0.5;
-      const leavesTaken = attendanceRows.filter((a) => a.status === "OnLeave").length;
-      const basicSalary = s.baseSalary || 6e4;
-      const hra = Math.round(basicSalary * 0.5);
-      const epfEmployer = 1800;
-      const otherAllowance = Math.round(basicSalary * 0.47);
-      const grossSalary = basicSalary + hra + otherAllowance;
-      const professionalTax = 200;
-      const epfEmployee = 1800;
-      const shiftRate = grossSalary / workingDays;
-      const leaveDeductions = Math.round((workingDays - attendedShifts) * shiftRate);
-      const netSalary = grossSalary - professionalTax - epfEmployee - (leaveDeductions > 0 ? leaveDeductions : 0);
-      const id = (0, import_crypto4.randomUUID)();
-      db.insert(payrollRecords).values({
-        id,
-        staffId: s.id,
-        staffName: s.name,
-        department: s.department,
-        month,
-        year,
-        baseSalary: basicSalary,
-        basicSalary,
-        hra,
-        epfEmployer,
-        otherAllowance,
-        grossSalary,
-        professionalTax,
-        epfEmployee,
-        leaveDeductions: leaveDeductions > 0 ? leaveDeductions : 0,
-        totalShifts: workingDays,
-        attendedShifts,
-        leavesTaken,
-        shiftRate: Math.round(shiftRate),
-        deductions: professionalTax + epfEmployee + (leaveDeductions > 0 ? leaveDeductions : 0),
-        bonus: 0,
-        netSalary: Math.round(netSalary),
-        status: "Draft"
-      }).run();
-      created.push(db.select().from(payrollRecords).where(eq(payrollRecords.id, id)).get());
-    }
-    res.status(201).json({ generated: created.length, records: created });
-  } catch (err) {
-    console.error("Payroll generate error:", err);
-    res.status(500).json({ error: "Failed to generate payroll: " + (err.message || err) });
-  }
-});
-router5.post("/", requireAuth, requirePermission("payroll:write"), (req, res) => {
-  const id = (0, import_crypto4.randomUUID)();
-  const data = req.body;
-  const basicSalary = data.basicSalary ?? data.baseSalary ?? 0;
-  const hra = data.hra ?? 0;
-  const epfEmployer = data.epfEmployer ?? 1800;
-  const otherAllowance = data.otherAllowance ?? 0;
-  const grossSalary = basicSalary + hra + otherAllowance;
-  const professionalTax = data.professionalTax ?? 200;
-  const epfEmployee = data.epfEmployee ?? 1800;
-  const leaveDeductions = data.leaveDeductions ?? 0;
-  const netSalary = grossSalary - professionalTax - epfEmployee - leaveDeductions;
-  db.insert(payrollRecords).values({
-    id,
-    staffId: data.staffId,
-    staffName: data.staffName,
-    department: data.department,
-    month: data.month,
-    year: data.year,
-    baseSalary: basicSalary,
-    basicSalary,
-    hra,
-    epfEmployer,
-    otherAllowance,
-    grossSalary,
-    professionalTax,
-    epfEmployee,
-    leaveDeductions,
-    totalShifts: data.totalShifts ?? 0,
-    attendedShifts: data.attendedShifts ?? 0,
-    leavesTaken: data.leavesTaken ?? 0,
-    shiftRate: data.shiftRate ?? 0,
-    deductions: professionalTax + epfEmployee + leaveDeductions,
-    bonus: data.bonus ?? 0,
-    netSalary: Math.round(netSalary),
-    status: data.status || "Draft"
-  }).run();
-  res.status(201).json(db.select().from(payrollRecords).where(eq(payrollRecords.id, id)).get());
-});
-router5.patch("/:id/status", requireAuth, requirePermission("payroll:approve"), (req, res) => {
-  const payId = String(req.params.id);
-  db.update(payrollRecords).set({ status: req.body.status }).where(eq(payrollRecords.id, payId)).run();
-  res.json(db.select().from(payrollRecords).where(eq(payrollRecords.id, payId)).get());
-});
-router5.delete("/:id", requireAuth, requirePermission("payroll:write"), (req, res) => {
-  const payId = String(req.params.id);
-  const record = db.select().from(payrollRecords).where(eq(payrollRecords.id, payId)).get();
-  if (!record) return res.status(404).json({ error: "Payroll record not found" });
-  if (record.status !== "Draft") return res.status(400).json({ error: "Only draft entries can be deleted" });
-  db.delete(payrollRecords).where(eq(payrollRecords.id, payId)).run();
-  res.json({ success: true });
-});
-var payroll_default = router5;
-
-// src-server/routes/users.ts
-var import_express6 = __toESM(require_express2(), 1);
-var import_crypto5 = require("crypto");
-var import_bcryptjs2 = __toESM(require("bcryptjs"), 1);
-var router6 = (0, import_express6.Router)();
-router6.get("/", requireAuth, requirePermission("users:read"), (_req, res) => {
-  const allUsers = db.select({
-    id: users.id,
-    email: users.email,
-    name: users.name,
-    role: users.role,
-    department: users.department,
-    isActive: users.isActive,
-    lastLogin: users.lastLogin,
-    createdAt: users.createdAt
-  }).from(users).all();
-  const result = allUsers.map((u) => {
-    const linked = db.select({ photoPath: staff.photoPath, avatar: staff.avatar }).from(staff).where(eq(staff.userId, u.id)).get();
-    return { ...u, photoPath: linked?.photoPath || null, avatar: linked?.avatar || null };
-  });
-  res.json(result);
-});
-router6.post("/", requireAuth, requirePermission("users:write"), (req, res) => {
-  const id = (0, import_crypto5.randomUUID)();
-  const now = (/* @__PURE__ */ new Date()).toISOString();
-  const hashed = import_bcryptjs2.default.hashSync(req.body.password || "password123", 10);
-  db.insert(users).values({
-    id,
-    email: req.body.email,
-    name: req.body.name,
-    role: req.body.role,
-    department: req.body.department || null,
-    password: hashed,
-    isActive: req.body.isActive ?? true,
-    createdAt: now,
-    updatedAt: now
-  }).run();
-  const created = db.select({
-    id: users.id,
-    email: users.email,
-    name: users.name,
-    role: users.role,
-    department: users.department,
-    isActive: users.isActive,
-    createdAt: users.createdAt
-  }).from(users).where(eq(users.id, id)).get();
-  res.status(201).json(created);
-});
-router6.put("/:id", requireAuth, requirePermission("users:write"), (req, res) => {
-  const userId = String(req.params.id);
-  const data = {
-    name: req.body.name,
-    email: req.body.email,
-    role: req.body.role,
-    department: req.body.department ?? null,
-    isActive: req.body.isActive,
-    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
-  };
-  if (req.body.password) {
-    data.password = import_bcryptjs2.default.hashSync(req.body.password, 10);
-  }
-  db.update(users).set(data).where(eq(users.id, userId)).run();
-  const updated = db.select({
-    id: users.id,
-    email: users.email,
-    name: users.name,
-    role: users.role,
-    department: users.department,
-    isActive: users.isActive,
-    createdAt: users.createdAt
-  }).from(users).where(eq(users.id, userId)).get();
-  if (!updated) return res.status(404).json({ error: "User not found" });
-  res.json(updated);
-});
-router6.delete("/:id", requireAuth, requirePermission("users:delete"), (req, res) => {
-  const userId = String(req.params.id);
-  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
-  if (permanent) {
-    db.update(staff).set({ userId: null }).where(eq(staff.userId, userId)).run();
-    db.delete(users).where(eq(users.id, userId)).run();
-  } else {
-    db.update(users).set({ isActive: false, updatedAt: (/* @__PURE__ */ new Date()).toISOString() }).where(eq(users.id, userId)).run();
-  }
-  res.status(204).send();
-});
-var users_default = router6;
-
-// src-server/routes/dashboard.ts
-var import_express7 = __toESM(require_express2(), 1);
-var router7 = (0, import_express7.Router)();
-router7.get("/stats", requireAuth, (req, res) => {
-  const totalStaff = db.select({ count: sql`COUNT(*)` }).from(staff).where(sql`is_active = 1`).get()?.count ?? 0;
-  const terminatedStaff = db.select({ count: sql`COUNT(*)` }).from(staff).where(sql`is_active = 0`).get()?.count ?? 0;
-  const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-  const todayPresent = db.select({ count: sql`COUNT(*)` }).from(attendanceRecords).where(sql`date = ${today} AND status IN ('Present', 'Late', 'HalfDay')`).get()?.count ?? 0;
-  const pendingLeaves = db.select({ count: sql`COUNT(*)` }).from(leaveRequests).where(sql`status = 'Pending'`).get()?.count ?? 0;
-  const deptRows = db.select({
-    department: staff.department,
-    count: sql`COUNT(*)`
-  }).from(staff).where(sql`is_active = 1`).groupBy(staff.department).all();
-  const roleRows = db.select({
-    role: staff.role,
-    count: sql`COUNT(*)`
-  }).from(staff).where(sql`is_active = 1`).groupBy(staff.role).all();
-  const period = req.query.period || "monthly";
-  const now = /* @__PURE__ */ new Date();
-  let dateFrom;
-  if (period === "yearly") {
-    dateFrom = `${now.getFullYear()}-01-01`;
-  } else if (period === "quarterly") {
-    const qMonth = Math.floor(now.getMonth() / 3) * 3;
-    dateFrom = `${now.getFullYear()}-${String(qMonth + 1).padStart(2, "0")}-01`;
-  } else {
-    dateFrom = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-  }
-  const attendanceSummary = db.select({
-    status: attendanceRecords.status,
-    count: sql`COUNT(*)`
-  }).from(attendanceRecords).where(sql`date >= ${dateFrom}`).groupBy(attendanceRecords.status).all();
-  const leaveSummary = db.select({
-    status: leaveRequests.status,
-    count: sql`COUNT(*)`
-  }).from(leaveRequests).where(sql`applied_date >= ${dateFrom}`).groupBy(leaveRequests.status).all();
-  res.json({
-    totalStaff,
-    terminatedStaff,
-    todayPresent,
-    pendingLeaves,
-    staffByDepartment: deptRows,
-    staffByRole: roleRows,
-    attendanceSummary,
-    leaveSummary,
-    period
-  });
-});
-var dashboard_default = router7;
-
-// src-server/routes/settings.ts
-var import_express8 = __toESM(require_express2(), 1);
-var import_bcryptjs4 = __toESM(require("bcryptjs"), 1);
-var import_crypto7 = require("crypto");
-
 // src-server/db/seed.ts
-var import_bcryptjs3 = __toESM(require("bcryptjs"), 1);
-var import_crypto6 = require("crypto");
+var import_bcryptjs = __toESM(require("bcryptjs"), 1);
+var import_crypto = require("crypto");
 function seedDemoData() {
-  const hash = (pw) => import_bcryptjs3.default.hashSync(pw, 10);
+  const hash = (pw) => import_bcryptjs.default.hashSync(pw, 10);
   const now = (/* @__PURE__ */ new Date()).toISOString();
-  const uuid = () => (0, import_crypto6.randomUUID)();
+  const uuid = () => (0, import_crypto.randomUUID)();
   console.log("\u{1F331} Seeding database...\n");
   const userRecords = [
     { id: uuid(), email: "superadmin@gsshospital.com", password: hash("password123"), name: "Rajesh Kumar", role: "SUPER_ADMIN", department: null, isActive: true, createdAt: now, updatedAt: now },
@@ -79914,7 +79316,607 @@ if (isDirectRun) {
   seedDemoData();
 }
 
+// src-server/routes/auth.ts
+var import_express = __toESM(require_express2(), 1);
+var import_bcryptjs2 = __toESM(require("bcryptjs"), 1);
+
+// src-server/middleware/auth.ts
+var import_jsonwebtoken = __toESM(require_jsonwebtoken(), 1);
+var JWT_SECRET = "gss-hms-standalone-secret-2026";
+var JWT_EXPIRES_IN = "24h";
+var ROLE_PERMISSIONS = {
+  SUPER_ADMIN: [
+    "dashboard:view",
+    "staff:read",
+    "staff:write",
+    "staff:delete",
+    "payroll:read",
+    "payroll:write",
+    "payroll:approve",
+    "users:read",
+    "users:write",
+    "users:delete",
+    "leave:apply",
+    "leave:approve",
+    "leave:manage-types",
+    "attendance:read",
+    "attendance:write",
+    "settings:read",
+    "settings:write"
+  ],
+  ADMIN: [
+    "dashboard:view",
+    "staff:read",
+    "staff:write",
+    "payroll:read",
+    "users:read",
+    "users:write",
+    "leave:apply",
+    "leave:approve",
+    "attendance:read",
+    "attendance:write",
+    "settings:read"
+  ],
+  LEADER: [
+    "dashboard:view",
+    "staff:read",
+    "payroll:read",
+    "leave:apply",
+    "leave:approve",
+    "attendance:read",
+    "attendance:write"
+  ],
+  STAFF: [
+    "dashboard:view",
+    "attendance:read",
+    "leave:apply",
+    "payroll:read"
+  ]
+};
+function signToken(payload) {
+  return import_jsonwebtoken.default.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+}
+function verifyToken(token) {
+  return import_jsonwebtoken.default.verify(token, JWT_SECRET);
+}
+function requireAuth(req, res, next) {
+  const header = req.headers.authorization;
+  if (!header?.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  try {
+    req.user = verifyToken(header.slice(7));
+    next();
+  } catch {
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
+}
+function requirePermission(...permissions) {
+  return (req, res, next) => {
+    if (!req.user) return res.status(401).json({ error: "Authentication required" });
+    const userPerms = ROLE_PERMISSIONS[req.user.role] || [];
+    const hasRequired = permissions.some((p) => userPerms.includes(p));
+    if (!hasRequired) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+    next();
+  };
+}
+
+// src-server/routes/auth.ts
+var router = (0, import_express.Router)();
+router.post("/login", (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password required" });
+  }
+  const user = db.select().from(users).where(eq(users.email, email)).get();
+  if (!user || !user.isActive) {
+    return res.status(401).json({ error: "Invalid credentials" });
+  }
+  const valid = import_bcryptjs2.default.compareSync(password, user.password);
+  if (!valid) {
+    return res.status(401).json({ error: "Invalid credentials" });
+  }
+  db.update(users).set({ lastLogin: (/* @__PURE__ */ new Date()).toISOString() }).where(eq(users.id, user.id)).run();
+  const token = signToken({
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    department: user.department || void 0
+  });
+  res.json({
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      department: user.department || null,
+      isActive: user.isActive
+    }
+  });
+});
+router.get("/me", requireAuth, (req, res) => {
+  const user = db.select().from(users).where(eq(users.id, req.user.id)).get();
+  if (!user) return res.status(404).json({ error: "User not found" });
+  res.json({
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    department: user.department || null,
+    isActive: user.isActive,
+    lastLogin: user.lastLogin
+  });
+});
+var auth_default = router;
+
+// src-server/routes/staff.ts
+var import_express2 = __toESM(require_express2(), 1);
+var import_crypto2 = require("crypto");
+var import_multer = __toESM(require_multer(), 1);
+var import_path2 = __toESM(require("path"), 1);
+var import_fs2 = __toESM(require("fs"), 1);
+var import_url2 = require("url");
+var import_meta2 = {};
+var __filename_esm2 = typeof __filename !== "undefined" ? __filename : (0, import_url2.fileURLToPath)(import_meta2.url);
+var __dirname_esm2 = typeof __dirname !== "undefined" ? __dirname : import_path2.default.dirname(__filename_esm2);
+var UPLOADS_DIR = import_path2.default.resolve(__dirname_esm2, "..", "..", "data", "uploads", "staff");
+if (!import_fs2.default.existsSync(UPLOADS_DIR)) import_fs2.default.mkdirSync(UPLOADS_DIR, { recursive: true });
+var storage = import_multer.default.diskStorage({
+  destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
+  filename: (_req, file, cb) => {
+    const ext = import_path2.default.extname(file.originalname);
+    cb(null, `${(0, import_crypto2.randomUUID)()}${ext}`);
+  }
+});
+var upload = (0, import_multer.default)({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+var router2 = (0, import_express2.Router)();
+router2.get("/", requireAuth, requirePermission("staff:read"), (_req, res) => {
+  const allStaff = db.select().from(staff).where(eq(staff.isActive, true)).all();
+  const result = allStaff.map((s) => {
+    const certs = db.select().from(certifications).where(eq(certifications.staffId, s.id)).all();
+    const staffKpis = db.select().from(kpis).where(eq(kpis.staffId, s.id)).all();
+    return { ...s, certifications: certs, kpis: staffKpis };
+  });
+  res.json(result);
+});
+router2.get("/:id", requireAuth, requirePermission("staff:read"), (req, res) => {
+  const s = db.select().from(staff).where(eq(staff.id, String(req.params.id))).get();
+  if (!s) return res.status(404).json({ error: "Staff not found" });
+  const certs = db.select().from(certifications).where(eq(certifications.staffId, s.id)).all();
+  const staffKpis = db.select().from(kpis).where(eq(kpis.staffId, s.id)).all();
+  res.json({ ...s, certifications: certs, kpis: staffKpis });
+});
+router2.post("/", requireAuth, requirePermission("staff:write"), (req, res) => {
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const id = (0, import_crypto2.randomUUID)();
+  const { certifications: certs, kpis: staffKpis, ...data } = req.body;
+  db.insert(staff).values({ id, ...data, createdAt: now, updatedAt: now }).run();
+  if (Array.isArray(certs)) {
+    for (const c of certs) {
+      db.insert(certifications).values({ id: (0, import_crypto2.randomUUID)(), staffId: id, ...c }).run();
+    }
+  }
+  if (Array.isArray(staffKpis)) {
+    for (const k of staffKpis) {
+      db.insert(kpis).values({ id: (0, import_crypto2.randomUUID)(), staffId: id, ...k }).run();
+    }
+  }
+  const created = db.select().from(staff).where(eq(staff.id, id)).get();
+  res.status(201).json(created);
+});
+router2.post("/:id/upload", requireAuth, requirePermission("staff:write"), upload.single("file"), (req, res) => {
+  const staffId = String(req.params.id);
+  const s = db.select().from(staff).where(eq(staff.id, staffId)).get();
+  if (!s) return res.status(404).json({ error: "Staff not found" });
+  if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+  const fieldType = req.body.fieldType;
+  const relativePath = `/uploads/staff/${req.file.filename}`;
+  if (fieldType === "photo") {
+    db.update(staff).set({ photoPath: relativePath, updatedAt: (/* @__PURE__ */ new Date()).toISOString() }).where(eq(staff.id, staffId)).run();
+  } else if (fieldType === "aadhaar") {
+    db.update(staff).set({ aadhaarDocPath: relativePath, updatedAt: (/* @__PURE__ */ new Date()).toISOString() }).where(eq(staff.id, staffId)).run();
+  } else {
+    return res.status(400).json({ error: "fieldType must be 'photo' or 'aadhaar'" });
+  }
+  res.json({ path: relativePath });
+});
+router2.put("/:id", requireAuth, requirePermission("staff:write"), (req, res) => {
+  const staffId = String(req.params.id);
+  const { certifications: _c, kpis: _k, id: _id, createdAt: _ca, ...data } = req.body;
+  db.update(staff).set({ ...data, updatedAt: (/* @__PURE__ */ new Date()).toISOString() }).where(eq(staff.id, staffId)).run();
+  const updated = db.select().from(staff).where(eq(staff.id, staffId)).get();
+  if (!updated) return res.status(404).json({ error: "Staff not found" });
+  res.json(updated);
+});
+router2.delete("/:id", requireAuth, requirePermission("staff:delete"), (req, res) => {
+  const staffId = String(req.params.id);
+  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
+  if (permanent) {
+    db.delete(payrollRecords).where(eq(payrollRecords.staffId, staffId)).run();
+    db.delete(attendanceRecords).where(eq(attendanceRecords.staffId, staffId)).run();
+    db.delete(leaveRequests).where(eq(leaveRequests.staffId, staffId)).run();
+    db.delete(performanceEvaluations).where(eq(performanceEvaluations.staffId, staffId)).run();
+    db.delete(doctorSchedules).where(eq(doctorSchedules.doctorId, staffId)).run();
+    db.delete(staff).where(eq(staff.id, staffId)).run();
+  } else {
+    db.update(staff).set({ isActive: false, updatedAt: (/* @__PURE__ */ new Date()).toISOString() }).where(eq(staff.id, staffId)).run();
+  }
+  res.status(204).send();
+});
+var staff_default = router2;
+
+// src-server/routes/attendance.ts
+var import_express3 = __toESM(require_express2(), 1);
+var import_crypto3 = require("crypto");
+var router3 = (0, import_express3.Router)();
+router3.get("/", requireAuth, requirePermission("attendance:read"), (req, res) => {
+  const userRole = req.user.role;
+  const userDept = req.user.department;
+  if (userRole === "LEADER" && userDept) {
+    const deptStaffIds = db.select({ id: staff.id }).from(staff).where(eq(staff.department, userDept)).all().map((s) => s.id);
+    if (deptStaffIds.length === 0) return res.json([]);
+    return res.json(db.select().from(attendanceRecords).where(inArray(attendanceRecords.staffId, deptStaffIds)).all());
+  }
+  if (userRole === "STAFF") {
+    const linkedStaff = db.select({ id: staff.id }).from(staff).where(eq(staff.userId, req.user.id)).get();
+    if (!linkedStaff) return res.json([]);
+    return res.json(db.select().from(attendanceRecords).where(eq(attendanceRecords.staffId, linkedStaff.id)).all());
+  }
+  res.json(db.select().from(attendanceRecords).all());
+});
+router3.post("/", requireAuth, requirePermission("attendance:write"), (req, res) => {
+  const id = (0, import_crypto3.randomUUID)();
+  db.insert(attendanceRecords).values({ id, ...req.body }).run();
+  res.status(201).json(db.select().from(attendanceRecords).where(eq(attendanceRecords.id, id)).get());
+});
+router3.put("/:id", requireAuth, requirePermission("attendance:write"), (req, res) => {
+  const attId = String(req.params.id);
+  const { id: _id, ...data } = req.body;
+  db.update(attendanceRecords).set(data).where(eq(attendanceRecords.id, attId)).run();
+  const updated = db.select().from(attendanceRecords).where(eq(attendanceRecords.id, attId)).get();
+  if (!updated) return res.status(404).json({ error: "Record not found" });
+  res.json(updated);
+});
+var attendance_default = router3;
+
+// src-server/routes/leave.ts
+var import_express4 = __toESM(require_express2(), 1);
+var import_crypto4 = require("crypto");
+var router4 = (0, import_express4.Router)();
+router4.get("/", requireAuth, requirePermission("leave:apply"), (req, res) => {
+  const userRole = req.user.role;
+  const userDept = req.user.department;
+  if (userRole === "LEADER" && userDept) {
+    const deptStaffIds = db.select({ id: staff.id }).from(staff).where(eq(staff.department, userDept)).all().map((s) => s.id);
+    if (deptStaffIds.length === 0) return res.json([]);
+    return res.json(db.select().from(leaveRequests).where(inArray(leaveRequests.staffId, deptStaffIds)).all());
+  }
+  if (userRole === "STAFF") {
+    const linkedStaff = db.select({ id: staff.id }).from(staff).where(eq(staff.userId, req.user.id)).get();
+    if (!linkedStaff) return res.json([]);
+    return res.json(db.select().from(leaveRequests).where(eq(leaveRequests.staffId, linkedStaff.id)).all());
+  }
+  res.json(db.select().from(leaveRequests).all());
+});
+router4.get("/types", requireAuth, (_req, res) => {
+  res.json(db.select().from(leaveTypes).where(eq(leaveTypes.isActive, true)).all());
+});
+router4.post("/types", requireAuth, requirePermission("settings:write"), (req, res) => {
+  const id = (0, import_crypto4.randomUUID)();
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: "Name is required" });
+  db.insert(leaveTypes).values({ id, name, createdBy: req.user.name, createdAt: (/* @__PURE__ */ new Date()).toISOString() }).run();
+  res.status(201).json(db.select().from(leaveTypes).where(eq(leaveTypes.id, id)).get());
+});
+router4.delete("/types/:id", requireAuth, requirePermission("settings:write"), (req, res) => {
+  db.update(leaveTypes).set({ isActive: false }).where(eq(leaveTypes.id, String(req.params.id))).run();
+  res.status(204).send();
+});
+router4.post("/", requireAuth, requirePermission("leave:apply"), (req, res) => {
+  const id = (0, import_crypto4.randomUUID)();
+  db.insert(leaveRequests).values({ id, ...req.body, status: "Pending", appliedDate: (/* @__PURE__ */ new Date()).toISOString() }).run();
+  res.status(201).json(db.select().from(leaveRequests).where(eq(leaveRequests.id, id)).get());
+});
+router4.patch("/:id/status", requireAuth, requirePermission("leave:approve"), (req, res) => {
+  const leaveId = String(req.params.id);
+  const { status } = req.body;
+  db.update(leaveRequests).set({ status, approvedBy: req.user.name }).where(eq(leaveRequests.id, leaveId)).run();
+  res.json(db.select().from(leaveRequests).where(eq(leaveRequests.id, leaveId)).get());
+});
+router4.patch("/:id/cancel", requireAuth, requirePermission("leave:apply"), (req, res) => {
+  const leaveId = String(req.params.id);
+  const record = db.select().from(leaveRequests).where(eq(leaveRequests.id, leaveId)).get();
+  if (!record) return res.status(404).json({ error: "Leave request not found" });
+  if (record.status !== "Pending") return res.status(400).json({ error: "Only pending requests can be cancelled" });
+  db.update(leaveRequests).set({ status: "Cancelled" }).where(eq(leaveRequests.id, leaveId)).run();
+  res.json(db.select().from(leaveRequests).where(eq(leaveRequests.id, leaveId)).get());
+});
+var leave_default = router4;
+
+// src-server/routes/payroll.ts
+var import_express5 = __toESM(require_express2(), 1);
+var import_crypto5 = require("crypto");
+var router5 = (0, import_express5.Router)();
+router5.get("/", requireAuth, requirePermission("payroll:read"), (req, res) => {
+  const userRole = req.user.role;
+  const userDept = req.user.department;
+  if (userRole === "LEADER" && userDept) {
+    const deptStaffIds = db.select({ id: staff.id }).from(staff).where(eq(staff.department, userDept)).all().map((s) => s.id);
+    if (deptStaffIds.length === 0) return res.json([]);
+    return res.json(db.select().from(payrollRecords).where(inArray(payrollRecords.staffId, deptStaffIds)).all());
+  }
+  if (userRole === "STAFF") {
+    const linkedStaff = db.select({ id: staff.id }).from(staff).where(eq(staff.userId, req.user.id)).get();
+    if (!linkedStaff) return res.json([]);
+    return res.json(db.select().from(payrollRecords).where(eq(payrollRecords.staffId, linkedStaff.id)).all());
+  }
+  res.json(db.select().from(payrollRecords).all());
+});
+router5.post("/generate", requireAuth, requirePermission("payroll:write"), (req, res) => {
+  try {
+    const { month, year, staffIds } = req.body;
+    if (!month || !year) return res.status(400).json({ error: "month and year required" });
+    const settingsRow = db.select().from(appSettings).where(eq(appSettings.key, "workingDaysPerMonth")).get();
+    const workingDays = settingsRow ? Number(settingsRow.value) : 26;
+    let activeStaff = db.select().from(staff).all().filter((s) => s.isActive !== 0 && s.isActive !== false);
+    if (Array.isArray(staffIds) && staffIds.length > 0) {
+      const idSet = new Set(staffIds);
+      activeStaff = activeStaff.filter((s) => idSet.has(s.id));
+    }
+    const existing = db.select().from(payrollRecords).where(and(eq(payrollRecords.month, month), eq(payrollRecords.year, String(year)))).all();
+    const existingStaffIds = new Set(existing.map((r) => r.staffId));
+    const datePrefix = `${year}-${String("January,February,March,April,May,June,July,August,September,October,November,December".split(",").indexOf(month) + 1).padStart(2, "0")}`;
+    const created = [];
+    for (const s of activeStaff) {
+      if (existingStaffIds.has(s.id)) continue;
+      const attendanceRows = db.select().from(attendanceRecords).where(and(eq(attendanceRecords.staffId, s.id), like(attendanceRecords.date, `${datePrefix}%`))).all();
+      const present = attendanceRows.filter((a) => ["Present", "Late"].includes(a.status)).length;
+      const halfDays = attendanceRows.filter((a) => a.status === "HalfDay").length;
+      const attendedShifts = present + halfDays * 0.5;
+      const leavesTaken = attendanceRows.filter((a) => a.status === "OnLeave").length;
+      const basicSalary = s.baseSalary || 6e4;
+      const hra = Math.round(basicSalary * 0.5);
+      const epfEmployer = 1800;
+      const otherAllowance = Math.round(basicSalary * 0.47);
+      const grossSalary = basicSalary + hra + otherAllowance;
+      const professionalTax = 200;
+      const epfEmployee = 1800;
+      const shiftRate = grossSalary / workingDays;
+      const leaveDeductions = Math.round((workingDays - attendedShifts) * shiftRate);
+      const netSalary = grossSalary - professionalTax - epfEmployee - (leaveDeductions > 0 ? leaveDeductions : 0);
+      const id = (0, import_crypto5.randomUUID)();
+      db.insert(payrollRecords).values({
+        id,
+        staffId: s.id,
+        staffName: s.name,
+        department: s.department,
+        month,
+        year,
+        baseSalary: basicSalary,
+        basicSalary,
+        hra,
+        epfEmployer,
+        otherAllowance,
+        grossSalary,
+        professionalTax,
+        epfEmployee,
+        leaveDeductions: leaveDeductions > 0 ? leaveDeductions : 0,
+        totalShifts: workingDays,
+        attendedShifts,
+        leavesTaken,
+        shiftRate: Math.round(shiftRate),
+        deductions: professionalTax + epfEmployee + (leaveDeductions > 0 ? leaveDeductions : 0),
+        bonus: 0,
+        netSalary: Math.round(netSalary),
+        status: "Draft"
+      }).run();
+      created.push(db.select().from(payrollRecords).where(eq(payrollRecords.id, id)).get());
+    }
+    res.status(201).json({ generated: created.length, records: created });
+  } catch (err) {
+    console.error("Payroll generate error:", err);
+    res.status(500).json({ error: "Failed to generate payroll: " + (err.message || err) });
+  }
+});
+router5.post("/", requireAuth, requirePermission("payroll:write"), (req, res) => {
+  const id = (0, import_crypto5.randomUUID)();
+  const data = req.body;
+  const basicSalary = data.basicSalary ?? data.baseSalary ?? 0;
+  const hra = data.hra ?? 0;
+  const epfEmployer = data.epfEmployer ?? 1800;
+  const otherAllowance = data.otherAllowance ?? 0;
+  const grossSalary = basicSalary + hra + otherAllowance;
+  const professionalTax = data.professionalTax ?? 200;
+  const epfEmployee = data.epfEmployee ?? 1800;
+  const leaveDeductions = data.leaveDeductions ?? 0;
+  const netSalary = grossSalary - professionalTax - epfEmployee - leaveDeductions;
+  db.insert(payrollRecords).values({
+    id,
+    staffId: data.staffId,
+    staffName: data.staffName,
+    department: data.department,
+    month: data.month,
+    year: data.year,
+    baseSalary: basicSalary,
+    basicSalary,
+    hra,
+    epfEmployer,
+    otherAllowance,
+    grossSalary,
+    professionalTax,
+    epfEmployee,
+    leaveDeductions,
+    totalShifts: data.totalShifts ?? 0,
+    attendedShifts: data.attendedShifts ?? 0,
+    leavesTaken: data.leavesTaken ?? 0,
+    shiftRate: data.shiftRate ?? 0,
+    deductions: professionalTax + epfEmployee + leaveDeductions,
+    bonus: data.bonus ?? 0,
+    netSalary: Math.round(netSalary),
+    status: data.status || "Draft"
+  }).run();
+  res.status(201).json(db.select().from(payrollRecords).where(eq(payrollRecords.id, id)).get());
+});
+router5.patch("/:id/status", requireAuth, requirePermission("payroll:approve"), (req, res) => {
+  const payId = String(req.params.id);
+  db.update(payrollRecords).set({ status: req.body.status }).where(eq(payrollRecords.id, payId)).run();
+  res.json(db.select().from(payrollRecords).where(eq(payrollRecords.id, payId)).get());
+});
+router5.delete("/:id", requireAuth, requirePermission("payroll:write"), (req, res) => {
+  const payId = String(req.params.id);
+  const record = db.select().from(payrollRecords).where(eq(payrollRecords.id, payId)).get();
+  if (!record) return res.status(404).json({ error: "Payroll record not found" });
+  if (record.status !== "Draft") return res.status(400).json({ error: "Only draft entries can be deleted" });
+  db.delete(payrollRecords).where(eq(payrollRecords.id, payId)).run();
+  res.json({ success: true });
+});
+var payroll_default = router5;
+
+// src-server/routes/users.ts
+var import_express6 = __toESM(require_express2(), 1);
+var import_crypto6 = require("crypto");
+var import_bcryptjs3 = __toESM(require("bcryptjs"), 1);
+var router6 = (0, import_express6.Router)();
+router6.get("/", requireAuth, requirePermission("users:read"), (_req, res) => {
+  const allUsers = db.select({
+    id: users.id,
+    email: users.email,
+    name: users.name,
+    role: users.role,
+    department: users.department,
+    isActive: users.isActive,
+    lastLogin: users.lastLogin,
+    createdAt: users.createdAt
+  }).from(users).all();
+  const result = allUsers.map((u) => {
+    const linked = db.select({ photoPath: staff.photoPath, avatar: staff.avatar }).from(staff).where(eq(staff.userId, u.id)).get();
+    return { ...u, photoPath: linked?.photoPath || null, avatar: linked?.avatar || null };
+  });
+  res.json(result);
+});
+router6.post("/", requireAuth, requirePermission("users:write"), (req, res) => {
+  const id = (0, import_crypto6.randomUUID)();
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const hashed = import_bcryptjs3.default.hashSync(req.body.password || "password123", 10);
+  db.insert(users).values({
+    id,
+    email: req.body.email,
+    name: req.body.name,
+    role: req.body.role,
+    department: req.body.department || null,
+    password: hashed,
+    isActive: req.body.isActive ?? true,
+    createdAt: now,
+    updatedAt: now
+  }).run();
+  const created = db.select({
+    id: users.id,
+    email: users.email,
+    name: users.name,
+    role: users.role,
+    department: users.department,
+    isActive: users.isActive,
+    createdAt: users.createdAt
+  }).from(users).where(eq(users.id, id)).get();
+  res.status(201).json(created);
+});
+router6.put("/:id", requireAuth, requirePermission("users:write"), (req, res) => {
+  const userId = String(req.params.id);
+  const data = {
+    name: req.body.name,
+    email: req.body.email,
+    role: req.body.role,
+    department: req.body.department ?? null,
+    isActive: req.body.isActive,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  };
+  if (req.body.password) {
+    data.password = import_bcryptjs3.default.hashSync(req.body.password, 10);
+  }
+  db.update(users).set(data).where(eq(users.id, userId)).run();
+  const updated = db.select({
+    id: users.id,
+    email: users.email,
+    name: users.name,
+    role: users.role,
+    department: users.department,
+    isActive: users.isActive,
+    createdAt: users.createdAt
+  }).from(users).where(eq(users.id, userId)).get();
+  if (!updated) return res.status(404).json({ error: "User not found" });
+  res.json(updated);
+});
+router6.delete("/:id", requireAuth, requirePermission("users:delete"), (req, res) => {
+  const userId = String(req.params.id);
+  const permanent = req.query.permanent === "true" && req.user?.role === "SUPER_ADMIN";
+  if (permanent) {
+    db.update(staff).set({ userId: null }).where(eq(staff.userId, userId)).run();
+    db.delete(users).where(eq(users.id, userId)).run();
+  } else {
+    db.update(users).set({ isActive: false, updatedAt: (/* @__PURE__ */ new Date()).toISOString() }).where(eq(users.id, userId)).run();
+  }
+  res.status(204).send();
+});
+var users_default = router6;
+
+// src-server/routes/dashboard.ts
+var import_express7 = __toESM(require_express2(), 1);
+var router7 = (0, import_express7.Router)();
+router7.get("/stats", requireAuth, (req, res) => {
+  const totalStaff = db.select({ count: sql`COUNT(*)` }).from(staff).where(sql`is_active = 1`).get()?.count ?? 0;
+  const terminatedStaff = db.select({ count: sql`COUNT(*)` }).from(staff).where(sql`is_active = 0`).get()?.count ?? 0;
+  const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+  const todayPresent = db.select({ count: sql`COUNT(*)` }).from(attendanceRecords).where(sql`date = ${today} AND status IN ('Present', 'Late', 'HalfDay')`).get()?.count ?? 0;
+  const pendingLeaves = db.select({ count: sql`COUNT(*)` }).from(leaveRequests).where(sql`status = 'Pending'`).get()?.count ?? 0;
+  const deptRows = db.select({
+    department: staff.department,
+    count: sql`COUNT(*)`
+  }).from(staff).where(sql`is_active = 1`).groupBy(staff.department).all();
+  const roleRows = db.select({
+    role: staff.role,
+    count: sql`COUNT(*)`
+  }).from(staff).where(sql`is_active = 1`).groupBy(staff.role).all();
+  const period = req.query.period || "monthly";
+  const now = /* @__PURE__ */ new Date();
+  let dateFrom;
+  if (period === "yearly") {
+    dateFrom = `${now.getFullYear()}-01-01`;
+  } else if (period === "quarterly") {
+    const qMonth = Math.floor(now.getMonth() / 3) * 3;
+    dateFrom = `${now.getFullYear()}-${String(qMonth + 1).padStart(2, "0")}-01`;
+  } else {
+    dateFrom = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  }
+  const attendanceSummary = db.select({
+    status: attendanceRecords.status,
+    count: sql`COUNT(*)`
+  }).from(attendanceRecords).where(sql`date >= ${dateFrom}`).groupBy(attendanceRecords.status).all();
+  const leaveSummary = db.select({
+    status: leaveRequests.status,
+    count: sql`COUNT(*)`
+  }).from(leaveRequests).where(sql`applied_date >= ${dateFrom}`).groupBy(leaveRequests.status).all();
+  res.json({
+    totalStaff,
+    terminatedStaff,
+    todayPresent,
+    pendingLeaves,
+    staffByDepartment: deptRows,
+    staffByRole: roleRows,
+    attendanceSummary,
+    leaveSummary,
+    period
+  });
+});
+var dashboard_default = router7;
+
 // src-server/routes/settings.ts
+var import_express8 = __toESM(require_express2(), 1);
+var import_bcryptjs4 = __toESM(require("bcryptjs"), 1);
+var import_crypto7 = require("crypto");
 var router8 = (0, import_express8.Router)();
 router8.get("/mode", (_req, res) => {
   const setting = db.select().from(appSettings).where(eq(appSettings.key, "appMode")).get();
@@ -79980,6 +79982,13 @@ var PORT = Number(process.env.PORT) || 3001;
 app.use((0, import_cors.default)());
 app.use(import_express9.default.json({ limit: "10mb" }));
 setupDatabase();
+var userCount = sqlite.prepare("SELECT COUNT(*) as cnt FROM users").get().cnt;
+if (userCount === 0) {
+  console.log("\u{1F4E6} Fresh database detected \u2014 seeding demo data...");
+  seedDemoData();
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  sqlite.prepare("INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES (?, ?, ?)").run("appMode", "demo", now);
+}
 app.use("/api/auth", auth_default);
 app.use("/api/staff", staff_default);
 app.use("/api/attendance", attendance_default);

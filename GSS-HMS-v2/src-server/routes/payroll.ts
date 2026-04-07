@@ -31,20 +31,26 @@ router.get("/", requireAuth, requirePermission("payroll:read"), (req: AuthReques
   res.json(db.select().from(payrollRecords).all());
 });
 
-/** POST /api/payroll/generate – auto-generate for all active staff for a month */
+/** POST /api/payroll/generate – auto-generate for selected (or all) active staff for a month */
 router.post("/generate", requireAuth, requirePermission("payroll:write"), (req, res) => {
   try {
-  const { month, year } = req.body;
+  const { month, year, staffIds } = req.body;
   if (!month || !year) return res.status(400).json({ error: "month and year required" });
 
   const settingsRow = db.select().from(appSettings).where(eq(appSettings.key, "workingDaysPerMonth")).get() as any;
   const workingDays = settingsRow ? Number(settingsRow.value) : 26;
 
-  const activeStaff = db.select().from(staff).all().filter((s: any) => s.isActive !== 0 && s.isActive !== false);
+  let activeStaff = db.select().from(staff).all().filter((s: any) => s.isActive !== 0 && s.isActive !== false);
+
+  // If specific staff IDs provided, filter to only those
+  if (Array.isArray(staffIds) && staffIds.length > 0) {
+    const idSet = new Set(staffIds);
+    activeStaff = activeStaff.filter((s: any) => idSet.has(s.id));
+  }
 
   // Check which staff already have a record for this month
   const existing = db.select().from(payrollRecords)
-    .where(and(eq(payrollRecords.month, month), eq(payrollRecords.year, year))).all() as any[];
+    .where(and(eq(payrollRecords.month, month), eq(payrollRecords.year, String(year)))).all() as any[];
   const existingStaffIds = new Set(existing.map((r: any) => r.staffId));
 
   const datePrefix = `${year}-${String("January,February,March,April,May,June,July,August,September,October,November,December".split(",").indexOf(month) + 1).padStart(2, "0")}`;

@@ -10,7 +10,7 @@ echo  ========================================================
 echo.
 
 REM ─── Configuration ──────────────────────────────────────
-set "NODE_VER=v20.18.0"
+set "NODE_VER=v21.7.3"
 set "MIN_NODE=18"
 
 REM ─── Detect system architecture ─────────────────────────
