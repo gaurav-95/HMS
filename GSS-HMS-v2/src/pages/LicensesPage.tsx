@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +21,6 @@ import {
   useUnaddressCertification,
   useUploadCertificationFile,
 } from "@/hooks/queries";
-import { getUploadUrl } from "@/services/api";
 import type { HospitalLicense } from "@/types";
 import {
   FileCheck2, Plus, Upload, Download, Eye, Pencil, Trash2, CheckCircle2,
@@ -132,6 +132,34 @@ export default function LicensesPage() {
     setViewerError(null);
     setViewerLoading(false);
     setViewerTitle("");
+  }
+
+  async function downloadFile(apiPath: string, filename: string) {
+    toast.info("Download started");
+    try {
+      const token = localStorage.getItem("auth-token") ?? "";
+      const isTauri = window.location.protocol === "tauri:" ||
+        (window.location.protocol === "https:" && window.location.hostname === "tauri.localhost");
+      const base = isTauri ? "http://localhost:3001" : "";
+      const resp = await fetch(`${base}${apiPath}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      // Extract filename from Content-Disposition header if available
+      const disposition = resp.headers.get("content-disposition") ?? "";
+      const match = disposition.match(/filename="?([^"\s]+)"?/i);
+      a.download = match ? decodeURIComponent(match[1]) : filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      toast.error(`Download failed: ${err?.message ?? "Unknown error"}`);
+    }
   }
 
   async function openViewer(apiPath: string, title: string) {
@@ -398,7 +426,7 @@ export default function LicensesPage() {
                                 <Button
                                   variant="ghost" size="sm" className="h-7 w-7 p-0"
                                   title="Download"
-                                  onClick={() => window.open(getUploadUrl(lic.filePath!), "_blank")}
+                                  onClick={() => downloadFile(`/api/hospital-licenses/${lic.id}/download`, lic.name)}
                                 >
                                   <Download size={14} />
                                 </Button>
@@ -561,7 +589,7 @@ export default function LicensesPage() {
                                 </Button>
                                 <Button
                                   variant="ghost" size="sm" className="h-7 w-7 p-0" title="Download"
-                                  onClick={() => window.open(getUploadUrl(c.filePath!), "_blank")}
+                                  onClick={() => downloadFile(`/api/staff/${c.staffId}/certifications/${c.id}/download`, c.certName)}
                                 >
                                   <Download size={14} />
                                 </Button>
