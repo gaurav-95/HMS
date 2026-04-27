@@ -25,7 +25,10 @@ router.get("/mode", (_req, res) => {
  * the login page regardless of current mode. The confirmation dialog on the
  * frontend is the safety gate (not auth).
  */
-router.post("/mode", (req: AuthRequest, res) => {
+router.post("/mode", requireAuth, (req: AuthRequest, res) => {
+  if (req.user!.role !== "SUPER_ADMIN") {
+    return res.status(403).json({ error: "Only Super Admin can switch app mode" });
+  }
   const { mode } = req.body;
   if (!mode || !["demo", "user"].includes(mode)) {
     return res.status(400).json({ error: "Invalid mode. Use 'demo' or 'user'." });

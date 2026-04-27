@@ -151,11 +151,6 @@ router.patch("/:id/cancel", requireAuth, requirePermission("leave:apply"), (req:
     return res.status(403).json({ error: "You can only cancel your own leave requests" });
   }
 
-  // If the leave was somehow approved before cancellation (SUPER_ADMIN flow), clean up attendance
-  if (record.status === "Approved") {
-    removeLeaveAttendance(record.staffId, record.startDate, record.endDate);
-  }
-
   db.update(leaveRequests).set({ status: "Cancelled" }).where(eq(leaveRequests.id, leaveId)).run();
   res.json(db.select().from(leaveRequests).where(eq(leaveRequests.id, leaveId)).get());
 });

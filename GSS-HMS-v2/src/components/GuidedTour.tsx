@@ -196,12 +196,4 @@ export function GuidedTour({ active, onEnd }: GuidedTourProps) {
   );
 }
 
-/** Button to launch the guided tour — used in Header and Settings */
-export function StartTourButton({ onClick, variant = "ghost", size = "sm" }: { onClick: () => void; variant?: "ghost" | "outline" | "default"; size?: "sm" | "icon" | "default" }) {
-  return (
-    <Button variant={variant} size={size} onClick={onClick} className="gap-1.5" title="Start guided demo tour">
-      <Play size={16} className="text-primary" />
-      {size !== "icon" && <span className="text-xs">Demo Tour</span>}
-    </Button>
-  );
-}
+

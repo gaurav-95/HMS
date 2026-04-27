@@ -11,6 +11,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "/leave": "Leave",
   "/payroll": "Payroll",
   "/users": "User Admin",
+  "/licenses": "Licenses & Certifications",
   "/settings": "Settings",
 };
 

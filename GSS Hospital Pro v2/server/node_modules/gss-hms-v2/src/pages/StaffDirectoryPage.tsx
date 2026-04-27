@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useStaff, useCreateStaff, useUpdateStaff, useDeleteStaff, usePermanentDeleteStaff, useUploadStaffFile } from "@/hooks/queries";
+import { useStaff, useCreateStaff, useUpdateStaff, useDeleteStaff, usePermanentDeleteStaff } from "@/hooks/queries";
 import { StaffDocumentsDialog } from "@/components/StaffDocumentsDialog";
 import { getUploadUrl } from "@/services/api";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Plus, Phone, Mail, Edit, Loader2, Trash2, ClipboardCheck, Wallet, Filter, Camera, FileText, ChevronDown, ChevronUp, X, FolderOpen } from "lucide-react";
+import { Search, Plus, Phone, Mail, Edit, Loader2, Trash2, ClipboardCheck, Wallet, Filter, ChevronDown, ChevronUp, X, FolderOpen } from "lucide-react";
 import { getInitials, formatCurrency } from "@/lib/utils";
 import { DEPARTMENTS, STAFF_ROLES, STAFF_CATEGORIES, getDefaultCategory } from "@/constants";
 import { ExportButtons } from "@/components/ExportButtons";
@@ -49,7 +49,7 @@ export default function StaffDirectoryPage() {
   const allStaff = staff as any[];
 
   // Base pool filtered by active/terminated toggle — used for unique dept/role lists too
-  const basePool = allStaff.filter((s: any) => showTerminated ? !!s.terminationDate : !s.terminationDate);
+  const basePool = allStaff.filter((s: any) => showTerminated ? s.isActive === false : s.isActive !== false);
 
   const filteredStaff = basePool.filter(
     (s: any) => {

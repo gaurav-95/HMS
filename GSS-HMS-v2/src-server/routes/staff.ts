@@ -6,7 +6,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { db } from "../db/index";
-import { staff, certifications, kpis, attendanceRecords, leaveRequests, payrollRecords, performanceEvaluations, doctorSchedules, staffDocuments } from "../db/schema";
+import { staff, certifications, kpis, attendanceRecords, leaveRequests, payrollRecords, staffDocuments } from "../db/schema";
 import { requireAuth, requirePermission, AuthRequest } from "../middleware/auth";
 
 const __filename_esm = typeof __filename !== "undefined" ? __filename : fileURLToPath(import.meta.url);
@@ -323,8 +323,6 @@ router.delete("/:id", requireAuth, requirePermission("staff:delete"), (req: any,
     db.delete(payrollRecords).where(eq(payrollRecords.staffId, staffId)).run();
     db.delete(attendanceRecords).where(eq(attendanceRecords.staffId, staffId)).run();
     db.delete(leaveRequests).where(eq(leaveRequests.staffId, staffId)).run();
-    db.delete(performanceEvaluations).where(eq(performanceEvaluations.staffId, staffId)).run();
-    db.delete(doctorSchedules).where(eq(doctorSchedules.doctorId, staffId)).run();
     // certifications and kpis cascade automatically
     db.delete(staff).where(eq(staff.id, staffId)).run();
   } else {

@@ -53,7 +53,10 @@ router.post("/generate", requireAuth, requirePermission("payroll:write"), (req, 
     .where(and(eq(payrollRecords.month, month), eq(payrollRecords.year, String(year)))).all() as any[];
   const existingStaffIds = new Set(existing.map((r: any) => r.staffId));
 
-  const datePrefix = `${year}-${String("January,February,March,April,May,June,July,August,September,October,November,December".split(",").indexOf(month) + 1).padStart(2, "0")}`;
+  const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const monthIndex = MONTH_NAMES.indexOf(month);
+  if (monthIndex === -1) return res.status(400).json({ error: "Invalid month. Use full English month name (e.g. 'January')." });
+  const datePrefix = `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
 
   const created: any[] = [];
   for (const s of activeStaff as any[]) {

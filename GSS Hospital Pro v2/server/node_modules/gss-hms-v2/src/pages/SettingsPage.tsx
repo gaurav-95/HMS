@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { settingsApi } from "@/services/api";
@@ -39,7 +40,28 @@ export default function SettingsPage() {
 
   const [hospital, setHospital] = useState(HOSPITAL_DEFAULTS);
   const [opd, setOpd] = useState(OPD_DEFAULTS);
-  const [theme, setTheme] = useState("system");
+  const [theme, setTheme] = useState<string>(() => localStorage.getItem("theme") || "system");
+
+  // Apply theme on mount and whenever theme changes
+  useEffect(() => {
+    const root = document.documentElement;
+    const applyTheme = (t: string) => {
+      if (t === "dark") {
+        root.classList.add("dark");
+        root.classList.remove("light");
+      } else if (t === "light") {
+        root.classList.remove("dark");
+        root.classList.add("light");
+      } else {
+        // system: follow OS preference
+        root.classList.remove("dark", "light");
+        if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+          root.classList.add("dark");
+        }
+      }
+    };
+    applyTheme(theme);
+  }, [theme]);
 
   // Load hospital and OPD settings from API on mount
   const { data: hospitalData } = useHospitalSettings();
@@ -213,7 +235,7 @@ export default function SettingsPage() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Theme</Label>
-            <Select value={theme} onValueChange={(v) => { setTheme(v); toast.success(`Theme set to ${v}`); }}>
+            <Select value={theme} onValueChange={(v) => { setTheme(v); localStorage.setItem("theme", v); toast.success(`Theme set to ${v}`); }}>
               <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="system">System Default</SelectItem>

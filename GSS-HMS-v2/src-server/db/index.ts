@@ -36,10 +36,7 @@ export function clearAllData() {
   sqlite.pragma("foreign_keys = OFF");
   const tables = [
     "certifications", "kpis", "attendance_records", "leave_requests",
-    "payroll_records", "doctor_schedules", "performance_evaluations",
-    "patient_documents", "medicine_administrations", "staff_documents",
-    "staff", "users", "patients", "tokens", "documents", "announcements",
-    "inventory_items", "prescriptions", "billing_records", "lab_tests",
+    "payroll_records", "staff_documents", "staff", "users",
     "leave_types", "hospital_licenses",
   ];
   for (const table of tables) {
@@ -99,68 +96,6 @@ export function setupDatabase() {
       target INTEGER NOT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS patients (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      age INTEGER NOT NULL,
-      gender TEXT NOT NULL,
-      phone TEXT NOT NULL,
-      address TEXT,
-      blood_group TEXT,
-      emergency_contact TEXT,
-      insurance_id TEXT,
-      is_active INTEGER NOT NULL DEFAULT 1,
-      created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS lab_tests (
-      id TEXT PRIMARY KEY,
-      patient_name TEXT NOT NULL,
-      test_name TEXT NOT NULL,
-      category TEXT NOT NULL,
-      priority TEXT NOT NULL,
-      status TEXT NOT NULL,
-      result TEXT,
-      ordered_by TEXT NOT NULL,
-      ordered_date TEXT NOT NULL,
-      completed_date TEXT,
-      is_active INTEGER NOT NULL DEFAULT 1
-    );
-
-    CREATE TABLE IF NOT EXISTS tokens (
-      id TEXT PRIMARY KEY,
-      token_number INTEGER NOT NULL,
-      patient_name TEXT NOT NULL,
-      doctor_name TEXT NOT NULL,
-      department TEXT NOT NULL,
-      status TEXT NOT NULL,
-      created_at TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS documents (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      category TEXT NOT NULL,
-      uploaded_by TEXT NOT NULL,
-      upload_date TEXT NOT NULL,
-      expiry_date TEXT,
-      file_size TEXT NOT NULL,
-      file_path TEXT,
-      is_active INTEGER NOT NULL DEFAULT 1
-    );
-
-    CREATE TABLE IF NOT EXISTS announcements (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      content TEXT NOT NULL,
-      type TEXT NOT NULL,
-      posted_by TEXT NOT NULL,
-      posted_date TEXT NOT NULL,
-      is_active INTEGER NOT NULL DEFAULT 1,
-      penalty_config TEXT
-    );
-
     CREATE TABLE IF NOT EXISTS attendance_records (
       id TEXT PRIMARY KEY,
       staff_id TEXT NOT NULL REFERENCES staff(id),
@@ -192,134 +127,11 @@ export function setupDatabase() {
       year TEXT,
       base_salary REAL NOT NULL,
       basic_salary REAL,
-      ta REAL DEFAULT 0,
-      conveyance REAL DEFAULT 0,
-      pf REAL DEFAULT 0,
-      tds REAL DEFAULT 0,
       hra REAL DEFAULT 0,
       deductions REAL NOT NULL DEFAULT 0,
       bonus REAL NOT NULL DEFAULT 0,
       net_salary REAL NOT NULL,
       status TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS performance_evaluations (
-      id TEXT PRIMARY KEY,
-      staff_id TEXT NOT NULL REFERENCES staff(id),
-      staff_name TEXT NOT NULL,
-      evaluator_id TEXT,
-      evaluation_date TEXT NOT NULL,
-      responsible INTEGER NOT NULL,
-      engaged INTEGER NOT NULL,
-      self_starter INTEGER NOT NULL,
-      team_player INTEGER NOT NULL,
-      challenged INTEGER NOT NULL,
-      employee_oriented INTEGER NOT NULL,
-      overall_score REAL NOT NULL,
-      comments TEXT,
-      period TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS inventory_items (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      category TEXT NOT NULL,
-      asset_type TEXT NOT NULL DEFAULT 'Fixed',
-      quantity INTEGER NOT NULL DEFAULT 0,
-      assigned_qty INTEGER NOT NULL DEFAULT 0,
-      disposable_qty INTEGER NOT NULL DEFAULT 0,
-      unit TEXT NOT NULL DEFAULT 'pcs',
-      min_stock INTEGER NOT NULL DEFAULT 0,
-      max_stock INTEGER NOT NULL DEFAULT 100,
-      location TEXT,
-      supplier TEXT,
-      unit_cost REAL NOT NULL DEFAULT 0,
-      last_restocked TEXT,
-      expiry_date TEXT,
-      warranty_expiry TEXT,
-      purchase_date TEXT,
-      damage_status TEXT,
-      disposal_status TEXT,
-      disposal_type TEXT,
-      disposal_date TEXT,
-      photo_evidence TEXT,
-      bill_reference TEXT,
-      warranty_doc TEXT,
-      status TEXT NOT NULL DEFAULT 'InStock'
-    );
-
-    CREATE TABLE IF NOT EXISTS doctor_schedules (
-      id TEXT PRIMARY KEY,
-      doctor_id TEXT NOT NULL REFERENCES staff(id),
-      doctor_name TEXT NOT NULL,
-      department TEXT NOT NULL,
-      day_of_week TEXT NOT NULL,
-      start_time TEXT NOT NULL,
-      end_time TEXT NOT NULL,
-      max_patients INTEGER NOT NULL,
-      shift_type TEXT NOT NULL DEFAULT 'General',
-      is_active INTEGER NOT NULL DEFAULT 1
-    );
-
-    CREATE TABLE IF NOT EXISTS prescriptions (
-      id TEXT PRIMARY KEY,
-      patient_name TEXT NOT NULL,
-      doctor_name TEXT NOT NULL,
-      medicine_name TEXT NOT NULL,
-      dosage TEXT NOT NULL,
-      frequency TEXT NOT NULL,
-      duration TEXT NOT NULL,
-      quantity INTEGER NOT NULL,
-      status TEXT NOT NULL,
-      notes TEXT,
-      prescribed_date TEXT NOT NULL,
-      dispensed_date TEXT,
-      dispensed_by TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS billing_records (
-      id TEXT PRIMARY KEY,
-      patient_name TEXT NOT NULL,
-      invoice_number TEXT NOT NULL,
-      items TEXT NOT NULL,
-      subtotal REAL NOT NULL,
-      discount REAL NOT NULL DEFAULT 0,
-      tax REAL NOT NULL DEFAULT 0,
-      total_amount REAL NOT NULL,
-      paid_amount REAL NOT NULL DEFAULT 0,
-      payment_method TEXT,
-      status TEXT NOT NULL DEFAULT 'Unpaid',
-      created_date TEXT NOT NULL DEFAULT '',
-      paid_date TEXT,
-      created_by TEXT NOT NULL DEFAULT 'system',
-      is_active INTEGER NOT NULL DEFAULT 1
-    );
-
-    CREATE TABLE IF NOT EXISTS medicine_administrations (
-      id TEXT PRIMARY KEY,
-      prescription_id TEXT REFERENCES prescriptions(id),
-      patient_name TEXT NOT NULL,
-      doctor_name TEXT NOT NULL,
-      prescribed_medicine TEXT NOT NULL,
-      prescribed_dosage TEXT NOT NULL,
-      administered_medicine TEXT NOT NULL,
-      administered_dosage TEXT NOT NULL,
-      administered_by TEXT NOT NULL,
-      administered_by_role TEXT NOT NULL,
-      administered_date TEXT NOT NULL,
-      has_discrepancy INTEGER NOT NULL DEFAULT 0,
-      discrepancy_notes TEXT,
-      status TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS patient_documents (
-      id TEXT PRIMARY KEY,
-      patient_id TEXT NOT NULL REFERENCES patients(id),
-      doc_type TEXT NOT NULL,
-      file_name TEXT NOT NULL,
-      mime_type TEXT NOT NULL,
-      file_data TEXT NOT NULL,
-      uploaded_at TEXT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS staff_documents (
@@ -375,31 +187,6 @@ export function setupDatabase() {
     }
   };
 
-  // Inventory columns added post-Phase 3
-  const invCols: [string, string][] = [
-    ["asset_type", "TEXT NOT NULL DEFAULT 'Fixed'"],
-    ["assigned_qty", "INTEGER NOT NULL DEFAULT 0"],
-    ["disposable_qty", "INTEGER NOT NULL DEFAULT 0"],
-    ["warranty_expiry", "TEXT"],
-    ["purchase_date", "TEXT"],
-    ["damage_status", "TEXT"],
-    ["disposal_status", "TEXT"],
-    ["disposal_type", "TEXT"],
-    ["disposal_date", "TEXT"],
-    ["photo_evidence", "TEXT"],
-    ["bill_reference", "TEXT"],
-    ["warranty_doc", "TEXT"],
-  ];
-  for (const [col, def] of invCols) {
-    addColumnIfMissing("inventory_items", col, def);
-  }
-
-  // Soft-delete columns for tables that previously lacked is_active
-  const softDeleteTables = ["patients", "lab_tests", "documents", "billing_records"];
-  for (const table of softDeleteTables) {
-    addColumnIfMissing(table, "is_active", "INTEGER NOT NULL DEFAULT 1");
-  }
-
   // Staff columns added for HR enhancements
   const staffHrCols: [string, string][] = [
     ["appointment_date", "TEXT"],
@@ -419,10 +206,6 @@ export function setupDatabase() {
   const payrollCols: [string, string][] = [
     ["year", "TEXT"],
     ["basic_salary", "REAL"],
-    ["ta", "REAL DEFAULT 0"],
-    ["conveyance", "REAL DEFAULT 0"],
-    ["pf", "REAL DEFAULT 0"],
-    ["tds", "REAL DEFAULT 0"],
     ["hra", "REAL DEFAULT 0"],
     ["department", "TEXT"],
     ["epf_employer", "REAL DEFAULT 0"],
@@ -447,9 +230,6 @@ export function setupDatabase() {
   addColumnIfMissing("certifications", "addressed", "INTEGER NOT NULL DEFAULT 0");
   addColumnIfMissing("certifications", "file_path", "TEXT");
   addColumnIfMissing("certifications", "file_size", "TEXT");
-
-  // Doctor schedules shift type column
-  addColumnIfMissing("doctor_schedules", "shift_type", "TEXT NOT NULL DEFAULT 'General'");
 
   // Seed default leave types if table is empty
   const leaveTypeCount = sqlite.prepare("SELECT COUNT(*) as cnt FROM leave_types").get() as { cnt: number };
