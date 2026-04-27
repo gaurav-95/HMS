@@ -76,19 +76,38 @@ for (const s of staffRecords) db.insert(staff).values(s).run();
 console.log(`  ✓ ${staffRecords.length} staff`);
 
 // ═══════════════════════════════════════════════════════════════
-//  CERTIFICATIONS  (10 — mix of Valid, Expiring, Expired)
+//  CERTIFICATIONS  (24 — mix of Valid, Expiring, Expired across all staff)
 // ═══════════════════════════════════════════════════════════════
 const certRecords = [
-  { id: uuid(), staffId: S.anil,   name: "Medical License",        expiryDate: "2026-03-15", status: "Valid" },
-  { id: uuid(), staffId: S.anil,   name: "BLS Certification",      expiryDate: "2026-02-28", status: "Expiring" },
-  { id: uuid(), staffId: S.vikram, name: "Medical License",        expiryDate: "2027-07-01", status: "Valid" },
-  { id: uuid(), staffId: S.sunita, name: "ATLS Certification",     expiryDate: "2026-04-15", status: "Valid" },
-  { id: uuid(), staffId: S.anil,   name: "Medical License",        expiryDate: "2026-02-15", status: "Expiring" },
-  { id: uuid(), staffId: S.anil,   name: "Pediatric Life Support", expiryDate: "2025-11-30", status: "Expired" },
-  { id: uuid(), staffId: S.sita,   name: "Nursing License",        expiryDate: "2025-12-31", status: "Expired" },
-  { id: uuid(), staffId: S.sita,   name: "ACLS Certification",     expiryDate: "2026-06-30", status: "Valid" },
-  { id: uuid(), staffId: S.vikram, name: "Nursing License",        expiryDate: "2026-12-31", status: "Valid" },
-  { id: uuid(), staffId: S.ramesh, name: "Lab Tech Certificate",   expiryDate: "2027-01-01", status: "Valid" },
+  // Doctors
+  { id: uuid(), staffId: S.anil,   name: "MBBS Degree Certificate",          expiryDate: "2099-01-01", status: "Valid" },
+  { id: uuid(), staffId: S.anil,   name: "BLS Certification",                expiryDate: "2026-05-20", status: "Expiring" },
+  { id: uuid(), staffId: S.anil,   name: "ACLS Provider",                    expiryDate: "2027-03-01", status: "Valid" },
+  { id: uuid(), staffId: S.anil,   name: "Pediatric Life Support (PALS)",    expiryDate: "2025-11-30", status: "Expired" },
+  { id: uuid(), staffId: S.sunita, name: "MBBS + MS (Surgery) Degree",       expiryDate: "2099-01-01", status: "Valid" },
+  { id: uuid(), staffId: S.sunita, name: "ATLS Certification",               expiryDate: "2026-06-01", status: "Valid" },
+  { id: uuid(), staffId: S.sunita, name: "Laparoscopic Surgery Certificate", expiryDate: "2025-12-31", status: "Expired" },
+  { id: uuid(), staffId: S.vikram, name: "BSc Nursing License",              expiryDate: "2026-12-31", status: "Valid" },
+  { id: uuid(), staffId: S.vikram, name: "BLS Certification",                expiryDate: "2026-05-10", status: "Expiring" },
+  // Nurses
+  { id: uuid(), staffId: S.sita,   name: "GNM Nursing License",              expiryDate: "2025-12-31", status: "Expired" },
+  { id: uuid(), staffId: S.sita,   name: "ACLS Certification",               expiryDate: "2026-06-30", status: "Valid" },
+  { id: uuid(), staffId: S.sita,   name: "Infection Control Certificate",    expiryDate: "2026-04-30", status: "Expiring" },
+  { id: uuid(), staffId: S.kavita, name: "BSc Nursing License",              expiryDate: "2027-02-28", status: "Valid" },
+  { id: uuid(), staffId: S.kavita, name: "BLS Certification",                expiryDate: "2026-05-15", status: "Expiring" },
+  { id: uuid(), staffId: S.kavita, name: "Wound Care Management",            expiryDate: "2027-08-01", status: "Valid" },
+  // Technicians
+  { id: uuid(), staffId: S.ramesh, name: "DMLT Certificate",                 expiryDate: "2028-01-01", status: "Valid" },
+  { id: uuid(), staffId: S.ramesh, name: "Phlebotomy Certification",         expiryDate: "2026-04-30", status: "Expiring" },
+  { id: uuid(), staffId: S.amit,   name: "BMLT Degree",                      expiryDate: "2028-06-01", status: "Valid" },
+  { id: uuid(), staffId: S.amit,   name: "ECG Interpretation Certificate",   expiryDate: "2025-10-31", status: "Expired" },
+  // Pharmacist
+  { id: uuid(), staffId: S.deepak, name: "B.Pharm License",                  expiryDate: "2028-03-01", status: "Valid" },
+  { id: uuid(), staffId: S.deepak, name: "Pharmacovigilance Certificate",    expiryDate: "2026-05-01", status: "Expiring" },
+  // Admin / Receptionist
+  { id: uuid(), staffId: S.rajesh, name: "Hospital Admin Certification",     expiryDate: "2027-06-01", status: "Valid" },
+  { id: uuid(), staffId: S.priya,  name: "Medical Records Management",       expiryDate: "2026-06-15", status: "Valid" },
+  { id: uuid(), staffId: S.neha,   name: "Front Desk Management Certificate",expiryDate: "2026-05-01", status: "Expiring" },
 ];
 
 for (const c of certRecords) db.insert(certifications).values(c).run();
@@ -489,15 +508,21 @@ if (existingTypes.length === 0) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  HOSPITAL LICENSES  (6 — mix of Valid, Expiring, Expired)
+//  HOSPITAL LICENSES  (12 — mix of Valid, Expiring, Expired)
 // ═══════════════════════════════════════════════════════════════
 const licenseRecords = [
-  { id: uuid(), name: "NMC Hospital Registration",          category: "Statutory",   issuingAuthority: "National Medical Commission",           licenseNumber: "NMC/REG/WB/2024/001",   issueDate: "2024-01-01", expiryDate: "2027-01-01", status: "Valid",    addressed: false, uploadedBy: "Rajesh Kumar", isActive: true, createdAt: now, updatedAt: now },
-  { id: uuid(), name: "PCPNDT Registration",                 category: "Regulatory",  issuingAuthority: "District Appropriate Authority",         licenseNumber: "PCPNDT/WB/2024/0234",   issueDate: "2024-03-01", expiryDate: "2026-05-15", status: "Expiring", addressed: false, uploadedBy: "Rajesh Kumar", isActive: true, createdAt: now, updatedAt: now },
-  { id: uuid(), name: "Bio-Medical Waste Authorization",     category: "Statutory",   issuingAuthority: "West Bengal Pollution Control Board",    licenseNumber: "WBPCB/BMW/2023/4421",   issueDate: "2023-07-01", expiryDate: "2025-07-01", status: "Expired",  addressed: false, uploadedBy: "Priya Sharma",  isActive: true, createdAt: now, updatedAt: now },
-  { id: uuid(), name: "Fire Safety NOC",                     category: "Regulatory",  issuingAuthority: "West Bengal Fire & Emergency Services",  licenseNumber: "WBFES/NOC/2024/1122",   issueDate: "2024-06-01", expiryDate: "2026-06-01", status: "Valid",    addressed: false, uploadedBy: "Priya Sharma",  isActive: true, createdAt: now, updatedAt: now },
-  { id: uuid(), name: "GST Registration Certificate",        category: "Income Tax",  issuingAuthority: "GSTN",                                  licenseNumber: "19AACCS1234F1ZT",       issueDate: "2019-08-01", expiryDate: null,         status: "Valid",    addressed: false, uploadedBy: "Rajesh Kumar", isActive: true, createdAt: now, updatedAt: now },
-  { id: uuid(), name: "Clinical Establishment Registration", category: "Clinical",    issuingAuthority: "Directorate of Health Services, WB",    licenseNumber: "DHS/WB/CER/2024/5521",  issueDate: "2024-04-01", expiryDate: "2026-04-15", status: "Expiring", addressed: false, uploadedBy: "Priya Sharma",  isActive: true, createdAt: now, updatedAt: now },
+  { id: uuid(), name: "NMC Hospital Registration",           category: "Statutory",     issuingAuthority: "National Medical Commission",                licenseNumber: "NMC/REG/WB/2024/001",   issueDate: "2024-01-01", expiryDate: "2027-01-01", status: "Valid",    addressed: false, uploadedBy: "Rajesh Kumar", isActive: true, createdAt: now, updatedAt: now },
+  { id: uuid(), name: "PCPNDT Registration",                  category: "Regulatory",    issuingAuthority: "District Appropriate Authority",              licenseNumber: "PCPNDT/WB/2024/0234",   issueDate: "2024-03-01", expiryDate: "2026-05-15", status: "Expiring", addressed: false, uploadedBy: "Rajesh Kumar", isActive: true, createdAt: now, updatedAt: now },
+  { id: uuid(), name: "Bio-Medical Waste Authorization",      category: "Statutory",     issuingAuthority: "West Bengal Pollution Control Board",         licenseNumber: "WBPCB/BMW/2023/4421",   issueDate: "2023-07-01", expiryDate: "2025-07-01", status: "Expired",  addressed: false, uploadedBy: "Priya Sharma",  isActive: true, createdAt: now, updatedAt: now },
+  { id: uuid(), name: "Fire Safety NOC",                      category: "Regulatory",    issuingAuthority: "West Bengal Fire & Emergency Services",       licenseNumber: "WBFES/NOC/2024/1122",   issueDate: "2024-06-01", expiryDate: "2027-06-01", status: "Valid",    addressed: false, uploadedBy: "Priya Sharma",  isActive: true, createdAt: now, updatedAt: now },
+  { id: uuid(), name: "GST Registration Certificate",         category: "Income Tax",    issuingAuthority: "GSTN",                                       licenseNumber: "19AACCS1234F1ZT",       issueDate: "2019-08-01", expiryDate: null,         status: "Valid",    addressed: false, uploadedBy: "Rajesh Kumar", isActive: true, createdAt: now, updatedAt: now },
+  { id: uuid(), name: "Clinical Establishment Registration",  category: "Clinical",      issuingAuthority: "Directorate of Health Services, WB",         licenseNumber: "DHS/WB/CER/2024/5521",  issueDate: "2024-04-01", expiryDate: "2026-04-30", status: "Expiring", addressed: false, uploadedBy: "Priya Sharma",  isActive: true, createdAt: now, updatedAt: now },
+  { id: uuid(), name: "Pharmacy License",                     category: "Pharmacy",      issuingAuthority: "West Bengal Pharmacy Council",               licenseNumber: "WBPC/LIC/2023/0892",    issueDate: "2023-09-01", expiryDate: "2027-09-01", status: "Valid",    addressed: false, uploadedBy: "Rajesh Kumar", isActive: true, createdAt: now, updatedAt: now },
+  { id: uuid(), name: "Blood Bank License",                   category: "Clinical",      issuingAuthority: "Central Drugs Standard Control Organisation",licenseNumber: "CDSCO/BB/WB/2023/114",  issueDate: "2023-05-01", expiryDate: "2026-05-01", status: "Expiring", addressed: false, uploadedBy: "Priya Sharma",  isActive: true, createdAt: now, updatedAt: now },
+  { id: uuid(), name: "Narcotics License (NDPS)",             category: "Regulatory",    issuingAuthority: "Narcotics Commissioner of India",             licenseNumber: "NDPS/WB/2024/0456",     issueDate: "2024-02-01", expiryDate: "2027-02-01", status: "Valid",    addressed: false, uploadedBy: "Rajesh Kumar", isActive: true, createdAt: now, updatedAt: now },
+  { id: uuid(), name: "Lift Safety Certificate",              category: "Regulatory",    issuingAuthority: "West Bengal Inspectorate of Factories",       licenseNumber: "WBF/LIFT/2024/3301",    issueDate: "2024-08-01", expiryDate: "2025-08-01", status: "Expired",  addressed: false, uploadedBy: "Priya Sharma",  isActive: true, createdAt: now, updatedAt: now },
+  { id: uuid(), name: "Income Tax Registration (80G)",        category: "Income Tax",    issuingAuthority: "Income Tax Department of India",              licenseNumber: "CIT/80G/WB/2020/0033",  issueDate: "2020-04-01", expiryDate: null,         status: "Valid",    addressed: false, uploadedBy: "Rajesh Kumar", isActive: true, createdAt: now, updatedAt: now },
+  { id: uuid(), name: "NABH Accreditation",                   category: "Accreditation", issuingAuthority: "National Accreditation Board for Hospitals",  licenseNumber: "NABH/ACC/2023/WB/0987", issueDate: "2023-11-01", expiryDate: "2026-11-01", status: "Valid",    addressed: false, uploadedBy: "Rajesh Kumar", isActive: true, createdAt: now, updatedAt: now },
 ];
 
 for (const l of licenseRecords) db.insert(hospitalLicenses).values(l).run();

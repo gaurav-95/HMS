@@ -1,4 +1,4 @@
-﻿import { useState, useRef } from "react";
+﻿import { useState, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Users, ClipboardCheck, Calendar, Loader2, ShieldAlert, CheckCircle2, Building2, Upload, Download } from "lucide-react";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { hospitalLicensesApi } from "@/services/api";
+
 import type { HospitalLicense } from "@/types";
 
 const CHART_COLORS = ["#0d9488", "#f59e0b", "#3b82f6", "#ef4444", "#8b5cf6", "#ec4899", "#10b981", "#f97316"];
@@ -30,6 +30,33 @@ export default function DashboardPage() {
   const [addressingLicenseName, setAddressingLicenseName] = useState("");
   const [uploadingLicenseId, setUploadingLicenseId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const downloadLicenseFile = useCallback(async (licId: string, licName: string) => {
+    setDownloadingId(licId);
+    try {
+      const token = localStorage.getItem("auth-token") ?? "";
+      const isTauri = window.location.protocol === "tauri:" ||
+        (window.location.protocol === "https:" && window.location.hostname === "tauri.localhost");
+      const base = isTauri ? "http://localhost:3001" : "";
+      const resp = await fetch(`${base}/api/hospital-licenses/${licId}/download`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!resp.ok) return;
+      const blob = await resp.blob();
+      const ext = blob.type.includes("pdf") ? ".pdf" : blob.type.includes("png") ? ".png" : ".jpg";
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${licName}${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } finally {
+      setDownloadingId(null);
+    }
+  }, []);
 
   if (isLoading) {
     return (
@@ -68,11 +95,11 @@ export default function DashboardPage() {
   leaveSummary.forEach((l) => { leaveMap[l.status] = l.count; });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Period filter */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <h1 className="text-2xl lg:text-3xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">Hospital overview and key metrics</p>
         </div>
         <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
@@ -84,7 +111,7 @@ export default function DashboardPage() {
         </div>
       </div>
       {/* KPI Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
         <KpiCard icon={Users} label="Current Employees" value={totalStaff} sub="Active staff" />
         <KpiCard icon={ClipboardCheck} label="Attendance Today" value={`${attendancePct}%`} sub={`${todayPresent} of ${totalStaff} present`} />
         <KpiCard icon={Calendar} label="Pending Leaves" value={pendingLeaves} sub="Awaiting approval" accent={pendingLeaves > 0} />
@@ -97,7 +124,7 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           {attendanceByDept.length === 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+            <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-6">
               <div><p className="text-xs text-muted-foreground">Present Days</p><p className="text-lg font-bold text-green-600">{attMap["Present"] || 0}</p></div>
               <div><p className="text-xs text-muted-foreground">Absent Days</p><p className="text-lg font-bold text-red-600">{attMap["Absent"] || 0}</p></div>
               <div><p className="text-xs text-muted-foreground">On Leave</p><p className="text-lg font-bold text-amber-600">{attMap["OnLeave"] || 0}</p></div>
@@ -156,15 +183,17 @@ export default function DashboardPage() {
             {deptChartData.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">No department data</p>
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={deptChartData} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#0d9488" radius={[8, 8, 0, 0]} barSize={36} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="h-[300px] lg:h-[360px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={deptChartData} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="#0d9488" radius={[8, 8, 0, 0]} barSize={45} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -178,11 +207,12 @@ export default function DashboardPage() {
             {roleChartData.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">No role data</p>
             ) : (
-              <ResponsiveContainer width="100%" height={320}>
+              <div className="h-[320px] lg:h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={roleChartData} cx="50%" cy="45%" innerRadius={50} outerRadius={90} paddingAngle={4} dataKey="value" isAnimationActive={false} label={({ cx, cy, midAngle, outerRadius, name, percent }: any) => {
+                  <Pie data={roleChartData} cx="50%" cy="45%" innerRadius={65} outerRadius={115} paddingAngle={4} dataKey="value" isAnimationActive={false} label={({ cx, cy, midAngle, outerRadius, name, percent }: any) => {
                     const RADIAN = Math.PI / 180;
-                    const radius = outerRadius + 28;
+                    const radius = outerRadius + 32;
                     const x = cx + radius * Math.cos(-midAngle * RADIAN);
                     const y = cy + radius * Math.sin(-midAngle * RADIAN);
                     return <text x={x} y={y} textAnchor={x > cx ? "start" : "end"} dominantBaseline="central" fontSize={11} fill="#555">{`${name} ${Math.round((percent ?? 0) * 100)}%`}</text>;
@@ -190,9 +220,10 @@ export default function DashboardPage() {
                     {roleChartData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                   </Pie>
                   <Tooltip />
-                  <Legend wrapperStyle={{ fontSize: 11, paddingTop: 12 }} />
+                  <Legend wrapperStyle={{ fontSize: 12, paddingTop: 16 }} />
                 </PieChart>
-              </ResponsiveContainer>
+                </ResponsiveContainer>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -225,14 +256,15 @@ export default function DashboardPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
                       <Badge variant={lic.status === "Expired" ? "destructive" : "outline"} className="text-[10px]">{lic.status}</Badge>
                       {lic.filePath && (
                         <Button
                           variant="outline" size="sm" className="gap-1.5 h-7 text-xs"
-                          onClick={() => window.open(hospitalLicensesApi.downloadUrl(lic.id), "_blank")}
+                          onClick={() => downloadLicenseFile(lic.id, lic.name)}
+                          disabled={downloadingId === lic.id}
                         >
-                          <Download size={12} /> Download
+                          {downloadingId === lic.id ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />} Download
                         </Button>
                       )}
                       {hasPermission("staff:write") && (
@@ -297,7 +329,7 @@ export default function DashboardPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <Badge variant={c.status === "Expired" ? "destructive" : "outline"} className="text-[10px]">
                       {c.status}
                     </Badge>
