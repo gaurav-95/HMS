@@ -255,7 +255,7 @@ shiftRate   = grossSalary / workingDaysPerMonth   (shift-based staff only)
 
 ### Certification Expiry Status
 - `"Valid"` — expiryDate > today + 30 days
-- `"Expiring Soon"` — expiryDate within next 30 days
+- `"Expiring"` — expiryDate within next 30 days
 - `"Expired"` — expiryDate < today
 
 ### Hospital License Status

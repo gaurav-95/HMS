@@ -78167,6 +78167,9 @@ var staff = sqliteTable("staff", {
   category: text("category"),
   // Admin | Clinical | Receptionist | Nurse | Technical
   residentialAddress: text("residential_address"),
+  aadhaarNumber: text("aadhaar_number"),
+  panNumber: text("pan_number"),
+  address: text("address"),
   aadhaarDocPath: text("aadhaar_doc_path"),
   photoPath: text("photo_path"),
   terminationDate: text("termination_date"),
@@ -78197,7 +78200,7 @@ var hospitalLicenses = sqliteTable("hospital_licenses", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   category: text("category").notNull(),
-  // Statutory | Clinical | Income Tax | Regulatory | Other
+  // Statutory | Clinical | Income Tax | Regulatory | Accreditation | Pharmacy | Other
   issuingAuthority: text("issuing_authority"),
   licenseNumber: text("license_number"),
   issueDate: text("issue_date"),
@@ -78334,6 +78337,7 @@ function setupDatabase() {
       password TEXT NOT NULL,
       name TEXT NOT NULL,
       role TEXT NOT NULL,
+      department TEXT,
       is_active INTEGER NOT NULL DEFAULT 1,
       last_login TEXT,
       created_at TEXT NOT NULL,
@@ -78353,6 +78357,17 @@ function setupDatabase() {
       base_salary REAL NOT NULL,
       avatar TEXT,
       nursing_classification TEXT,
+      residential_address TEXT,
+      aadhaar_number TEXT,
+      pan_number TEXT,
+      address TEXT,
+      aadhaar_doc_path TEXT,
+      photo_path TEXT,
+      appointment_date TEXT,
+      category TEXT,
+      ctc_annual REAL,
+      termination_date TEXT,
+      shift_interval TEXT,
       is_active INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
@@ -78471,7 +78486,10 @@ function setupDatabase() {
     ["aadhaar_doc_path", "TEXT"],
     ["photo_path", "TEXT"],
     ["termination_date", "TEXT"],
-    ["shift_interval", "TEXT"]
+    ["shift_interval", "TEXT"],
+    ["aadhaar_number", "TEXT"],
+    ["pan_number", "TEXT"],
+    ["address", "TEXT"]
   ];
   for (const [col, def] of staffHrCols) {
     addColumnIfMissing("staff", col, def);
@@ -79871,7 +79889,7 @@ var import_fs3 = __toESM(require("fs"), 1);
 var import_url3 = require("url");
 var import_meta3 = {};
 var __filename_esm3 = typeof __filename !== "undefined" ? __filename : (0, import_url3.fileURLToPath)(import_meta3.url);
-var __dirname_esm3 = typeof __filename !== "undefined" ? __dirname : import_path3.default.dirname(__filename_esm3);
+var __dirname_esm3 = typeof __dirname !== "undefined" ? __dirname : import_path3.default.dirname(__filename_esm3);
 var UPLOAD_DIR = import_path3.default.resolve(__dirname_esm3, "..", "..", "data", "uploads", "hospital-licenses");
 if (!import_fs3.default.existsSync(UPLOAD_DIR)) {
   import_fs3.default.mkdirSync(UPLOAD_DIR, { recursive: true });

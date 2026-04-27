@@ -10,7 +10,7 @@ import { hospitalLicenses } from "../db/schema";
 import { requireAuth, requirePermission, AuthRequest } from "../middleware/auth";
 
 const __filename_esm = typeof __filename !== "undefined" ? __filename : fileURLToPath(import.meta.url);
-const __dirname_esm = typeof __filename !== "undefined" ? __dirname : path.dirname(__filename_esm);
+const __dirname_esm = typeof __dirname !== "undefined" ? __dirname : path.dirname(__filename_esm);
 
 const UPLOAD_DIR = path.resolve(__dirname_esm, "..", "..", "data", "uploads", "hospital-licenses");
 if (!fs.existsSync(UPLOAD_DIR)) {

@@ -165,7 +165,7 @@ export interface AuthenticatedUser {
 
 export interface Staff {
   id: string;
-  employeeCode: string;
+  userId?: string;
   name: string;
   role: StaffRole;
   department: Department;
@@ -189,6 +189,7 @@ export interface Staff {
   aadhaarNumber?: string;
   aadhaarDocPath?: string;
   panNumber?: string;
+  isActive?: boolean;
   kpis: KPI[];
   certifications: Certification[];
 }
@@ -207,30 +208,34 @@ export interface StaffDocument {
 
 export interface Certification {
   id: string;
+  staffId?: string;
   name: string;
   expiryDate: string;
-  status: "Valid" | "Expired" | "Expiring Soon";
-  category: DocCategory;
+  status: "Valid" | "Expiring" | "Expired";
+  addressed?: boolean;
   filePath?: string;
-  uploadedBy?: string;
+  fileSize?: string;
 }
 
 export interface KPI {
-  label: string;
+  id?: string;
+  staffId?: string;
+  name: string;
   value: number;
+  target?: number;
 }
 
 export interface LeaveRequest {
   id: string;
   staffId: string;
   staffName: string;
-  leaveType: LeaveType;
+  type: string;
   startDate: string;
   endDate: string;
   reason: string;
   status: LeaveStatus;
   approvedBy?: string;
-  createdAt: string;
+  appliedDate: string;
 }
 
 export interface AttendanceRecord {
@@ -241,7 +246,6 @@ export interface AttendanceRecord {
   checkIn?: string;
   checkOut?: string;
   status: AttendanceStatus;
-  markedBy?: string;
 }
 
 export interface PayrollRecord {

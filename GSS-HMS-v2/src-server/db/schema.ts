@@ -32,6 +32,9 @@ export const staff = sqliteTable("staff", {
   nursingClassification: text("nursing_classification"),
   category: text("category"),           // Admin | Clinical | Receptionist | Nurse | Technical
   residentialAddress: text("residential_address"),
+  aadhaarNumber: text("aadhaar_number"),
+  panNumber: text("pan_number"),
+  address: text("address"),
   aadhaarDocPath: text("aadhaar_doc_path"),
   photoPath: text("photo_path"),
   terminationDate: text("termination_date"),
@@ -66,7 +69,7 @@ export const kpis = sqliteTable("kpis", {
 export const hospitalLicenses = sqliteTable("hospital_licenses", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
-  category: text("category").notNull(), // Statutory | Clinical | Income Tax | Regulatory | Other
+  category: text("category").notNull(), // Statutory | Clinical | Income Tax | Regulatory | Accreditation | Pharmacy | Other
   issuingAuthority: text("issuing_authority"),
   licenseNumber: text("license_number"),
   issueDate: text("issue_date"),

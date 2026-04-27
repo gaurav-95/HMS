@@ -55,6 +55,7 @@ export function setupDatabase() {
       password TEXT NOT NULL,
       name TEXT NOT NULL,
       role TEXT NOT NULL,
+      department TEXT,
       is_active INTEGER NOT NULL DEFAULT 1,
       last_login TEXT,
       created_at TEXT NOT NULL,
@@ -74,6 +75,17 @@ export function setupDatabase() {
       base_salary REAL NOT NULL,
       avatar TEXT,
       nursing_classification TEXT,
+      residential_address TEXT,
+      aadhaar_number TEXT,
+      pan_number TEXT,
+      address TEXT,
+      aadhaar_doc_path TEXT,
+      photo_path TEXT,
+      appointment_date TEXT,
+      category TEXT,
+      ctc_annual REAL,
+      termination_date TEXT,
+      shift_interval TEXT,
       is_active INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
@@ -197,6 +209,9 @@ export function setupDatabase() {
     ["photo_path", "TEXT"],
     ["termination_date", "TEXT"],
     ["shift_interval", "TEXT"],
+    ["aadhaar_number", "TEXT"],
+    ["pan_number", "TEXT"],
+    ["address", "TEXT"],
   ];
   for (const [col, def] of staffHrCols) {
     addColumnIfMissing("staff", col, def);
