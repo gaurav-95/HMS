@@ -1,9 +1,14 @@
 # Standalone distributable (build output, not source)
 GSS Hospital Pro/
 
-# Media/binary uploads
+# Screenshot tool dependencies
+scripts/node_modules/
+
+# Media/binary uploads (but keep screenshots for GitHub)
+data/uploads/
 *.jpg
 *.jpeg
-*.png
 *.gif
 *.pdf
+*.png
+!screenshots/*.png

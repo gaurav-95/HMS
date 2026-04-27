@@ -6,6 +6,26 @@ A fully self-contained, offline-first Hospital Management System built for Windo
 
 ---
 
+## Screenshots
+
+| Login | Dashboard |
+|:-----:|:---------:|
+| ![Login](screenshots/01-login.png) | ![Dashboard](screenshots/02-dashboard.png) |
+
+| Staff Directory | Attendance |
+|:--------------:|:----------:|
+| ![Staff Directory](screenshots/03-staff-directory.png) | ![Attendance](screenshots/04-attendance.png) |
+
+| Leave Management | Payroll |
+|:----------------:|:-------:|
+| ![Leave Management](screenshots/05-leave-management.png) | ![Payroll](screenshots/06-payroll.png) |
+
+| Licenses & Certifications | User Management | Settings |
+|:-------------------------:|:---------------:|:--------:|
+| ![Licenses](screenshots/07-licenses.png) | ![User Management](screenshots/08-user-management.png) | ![Settings](screenshots/09-settings.png) |
+
+---
+
 ## Table of Contents
 
 1. [Quick Start](#quick-start)
