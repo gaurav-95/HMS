@@ -1,4 +1,4 @@
-﻿import { useState, useMemo } from "react";
+﻿import { useState, useMemo, useEffect } from "react";
 import { usePayroll, useGeneratePayroll, useUpdatePayrollStatus, useDeletePayroll, useStaff } from "@/hooks/queries";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Search, Filter, Trash2, ArrowRight, Zap, RotateCcw, ChevronUp, ChevronDown, ChevronsUpDown, AlertTriangle } from "lucide-react";
+import { Loader2, Search, Filter, Trash2, ArrowRight, Zap, RotateCcw, ChevronUp, ChevronDown, ChevronsUpDown, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { ExportButtons } from "@/components/ExportButtons";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 import { formatCurrency } from "@/lib/utils";
@@ -46,6 +46,8 @@ export default function PayrollPage() {
   const [filterDept, setFilterDept] = useState<string>("all");
   const [deptSort, setDeptSort] = useState<"asc" | "desc" | null>(null);
   const [actionTarget, setActionTarget] = useState<{ record: any; nextStatus: string; isUndo: boolean } | null>(null);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20;
 
   // Active staff for the generate dialog
   const activeStaff = useMemo(() => allStaff.filter((s: any) => s.isActive !== false && !s.terminationDate), [allStaff]);
@@ -104,6 +106,10 @@ export default function PayrollPage() {
     }
     return list;
   }, [allPayroll, search, filterMonth, filterYear, filterStatus, filterDept, deptSort]);
+
+  useEffect(() => { setPage(1); }, [search, filterMonth, filterYear, filterStatus, filterDept, deptSort]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = useMemo(() => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filtered, page]);
 
   const totalGross = filtered.reduce((s: number, p: any) => s + (p.grossSalary || 0), 0);
   const totalNet = filtered.reduce((s: number, p: any) => s + (p.netSalary || 0), 0);
@@ -239,7 +245,7 @@ export default function PayrollPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((p: any) => {
+              {paginated.map((p: any) => {
                 const nextStatus = STATUS_FLOW[p.status];
                 return (
                   <TableRow key={p.id}>
@@ -292,6 +298,30 @@ export default function PayrollPage() {
             </TableBody>
           </Table>
           </div>
+          {filtered.length > PAGE_SIZE && (
+            <div className="flex items-center justify-between px-4 py-3 border-t text-sm text-muted-foreground">
+              <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} records</span>
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === 1} onClick={() => setPage(page - 1)}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                  .reduce<(number | "...")[]>((acc, p, idx, arr) => {
+                    if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push("...");
+                    acc.push(p); return acc;
+                  }, [])
+                  .map((p, i) => p === "..." ? (
+                    <span key={`e-${i}`} className="px-2">…</span>
+                  ) : (
+                    <Button key={p} variant={page === p ? "default" : "outline"} size="icon" className="h-8 w-8" onClick={() => setPage(p as number)}>{p}</Button>
+                  ))}
+                <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === totalPages} onClick={() => setPage(page + 1)}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

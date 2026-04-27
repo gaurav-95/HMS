@@ -1,4 +1,4 @@
-import { useState, useMemo, Fragment } from "react";
+import { useState, useMemo, useEffect, Fragment } from "react";
 import { useAttendance, useCreateAttendance, useUpdateAttendance, useStaff } from "@/hooks/queries";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ClipboardCheck, Loader2, Plus, Search, Filter, Pencil, Layers } from "lucide-react";
+import { ClipboardCheck, Loader2, Plus, Search, Filter, Pencil, Layers, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { ExportButtons } from "@/components/ExportButtons";
 import { Tip } from "@/components/ui/tooltip";
 import { useSearchParams } from "react-router-dom";
@@ -49,13 +49,16 @@ export default function AttendancePage() {
   const staffIdFromUrl = searchParams.get("staff") || "";
 
   const [search, setSearch] = useState("");
-  const [filterDate, setFilterDate] = useState(today);
+  const [filterDate, setFilterDate] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterDept, setFilterDept] = useState<string>("all");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(blankRecord);
   const [editingRecord, setEditingRecord] = useState<any | null>(null);
   const [groupByDept, setGroupByDept] = useState(false);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20;
+  const [showMonthlySummary, setShowMonthlySummary] = useState(false);
 
   // Build staff lookup for department info
   const staffMap = useMemo(() => {
@@ -77,6 +80,12 @@ export default function AttendancePage() {
       return matchSearch && matchDate && matchStatus && matchDept && matchStaffUrl;
     });
   }, [allRecords, search, filterDate, filterStatus, filterDept, staffMap, staffIdFromUrl]);
+
+  // Reset to page 1 whenever filters change
+  useEffect(() => { setPage(1); }, [search, filterDate, filterStatus, filterDept, staffIdFromUrl]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = useMemo(() => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filtered, page]);
 
   const present = filtered.filter((a: any) => a.status === "Present").length;
   const absent = filtered.filter((a: any) => a.status === "Absent").length;
@@ -210,12 +219,29 @@ export default function AttendancePage() {
 
       {/* Monthly Attendance Report */}
       <Card>
-        <CardHeader>
+        <CardHeader
+          className="cursor-pointer select-none"
+          onClick={() => setShowMonthlySummary((v) => !v)}
+        >
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Monthly Attendance Report</CardTitle>
-            <Input type="month" value={summaryMonth} onChange={(e) => setSummaryMonth(e.target.value)} className="w-[180px]" />
+            <div className="flex items-center gap-3">
+              {showMonthlySummary && (
+                <Input
+                  type="month"
+                  value={summaryMonth}
+                  onChange={(e) => { e.stopPropagation(); setSummaryMonth(e.target.value); }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-[180px]"
+                />
+              )}
+              <ChevronDown
+                className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${showMonthlySummary ? "rotate-180" : ""}`}
+              />
+            </div>
           </div>
         </CardHeader>
+        {showMonthlySummary && (
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -249,6 +275,7 @@ export default function AttendancePage() {
             </TableBody>
           </Table>
         </CardContent>
+        )}
       </Card>
 
       {/* Table */}
@@ -273,7 +300,7 @@ export default function AttendancePage() {
             </TableHeader>
             <TableBody>
               {groupByDept && groupedByDept ? (
-                groupedByDept.map(([dept, deptRecords]) => (
+                groupedByDept.map(([dept, deptRecords]: [string, any[]]) => (
                   <Fragment key={`dept-${dept}`}>
                     <TableRow>
                       <TableCell colSpan={hasPermission("attendance:write") ? 7 : 6} className="bg-muted/50 font-semibold text-sm py-2">
@@ -306,7 +333,7 @@ export default function AttendancePage() {
                   </Fragment>
                 ))
               ) : (
-              filtered.map((a: any) => {
+              paginated.map((a: any) => {
                 const dept = staffMap[a.staffId]?.department || "—";
                 return (
                   <TableRow key={a.id}>
@@ -338,6 +365,36 @@ export default function AttendancePage() {
               )}
             </TableBody>
           </Table>
+          {/* Pagination */}
+          {!groupByDept && filtered.length > PAGE_SIZE && (
+            <div className="flex items-center justify-between px-4 py-3 border-t text-sm text-muted-foreground">
+              <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} records</span>
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === 1} onClick={() => setPage(page - 1)}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                  .reduce<(number | "...")[]>((acc, p, idx, arr) => {
+                    if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push("...");
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, i) =>
+                    p === "..." ? (
+                      <span key={`ellipsis-${i}`} className="px-2">…</span>
+                    ) : (
+                      <Button key={p} variant={page === p ? "default" : "outline"} size="icon" className="h-8 w-8" onClick={() => setPage(p as number)}>
+                        {p}
+                      </Button>
+                    )
+                  )}
+                <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === totalPages} onClick={() => setPage(page + 1)}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

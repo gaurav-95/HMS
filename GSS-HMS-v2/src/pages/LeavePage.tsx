@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useLeaveRequests, useApplyLeave, useUpdateLeaveStatus, useCancelLeave, useStaff, useLeaveTypes, useCreateLeaveType, useDeleteLeaveType } from "@/hooks/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Plus, Loader2, Search, Filter, XCircle, Trash2, Settings, CheckCircle2, X, AlertTriangle, Pencil } from "lucide-react";
+import { Calendar, Plus, Loader2, Search, Filter, XCircle, Trash2, Settings, CheckCircle2, X, AlertTriangle, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
 import { ExportButtons } from "@/components/ExportButtons";
 import { Tip } from "@/components/ui/tooltip";
 
@@ -59,6 +59,11 @@ export default function LeavePage() {
   const [editStatusTarget, setEditStatusTarget] = useState<{ id: string; staffName: string; currentStatus: string } | null>(null);
   const [editStatusValue, setEditStatusValue] = useState<string>("");
 
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null);
+  const [deleteTypeTarget, setDeleteTypeTarget] = useState<{ id: string; name: string } | null>(null);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20;
+
   const filtered = useMemo(() => {
     return allLeaves.filter((l: any) => {
       const matchSearch = !search || l.staffName?.toLowerCase().includes(search.toLowerCase());
@@ -67,6 +72,10 @@ export default function LeavePage() {
       return matchSearch && matchStatus && matchType;
     });
   }, [allLeaves, search, filterStatus, filterType]);
+
+  useEffect(() => { setPage(1); }, [search, filterStatus, filterType]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = useMemo(() => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filtered, page]);
 
   const pendingCount = allLeaves.filter((l: any) => l.status === "Pending").length;
   const approvedCount = allLeaves.filter((l: any) => l.status === "Approved").length;
@@ -184,14 +193,18 @@ export default function LeavePage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((l: any) => (
+              {paginated.map((l: any) => (
                 <TableRow key={l.id}>
                   <TableCell className="font-medium">{l.staffName}</TableCell>
                   <TableCell><Badge variant="secondary">{l.type}</Badge></TableCell>
                   <TableCell className="text-muted-foreground">{l.startDate}</TableCell>
                   <TableCell className="text-muted-foreground">{l.endDate}</TableCell>
                   <TableCell>{daysBetween(l.startDate, l.endDate)}</TableCell>
-                  <TableCell className="text-muted-foreground max-w-[200px] truncate">{l.reason}</TableCell>
+                  <TableCell className="max-w-[200px]">
+                    <Tip content={l.reason}>
+                      <span className="text-muted-foreground truncate block cursor-help">{l.reason}</span>
+                    </Tip>
+                  </TableCell>
                   <TableCell>
                     <Badge variant={l.status === "Approved" ? "success" : l.status === "Rejected" ? "destructive" : l.status === "Cancelled" ? "secondary" : "warning"}>
                       {l.status}
@@ -234,7 +247,7 @@ export default function LeavePage() {
                         </Tip>
                       )}
                       {l.status === "Pending" && hasPermission("leave:apply") && (
-                        <Button size="sm" variant="ghost" className="text-muted-foreground" onClick={() => cancelLeave.mutate(l.id)}>
+                        <Button size="sm" variant="ghost" className="text-muted-foreground" onClick={() => setCancelTarget(l.id)}>
                           <XCircle className="h-4 w-4 mr-1" /> Cancel
                         </Button>
                       )}
@@ -247,6 +260,30 @@ export default function LeavePage() {
               )}
             </TableBody>
           </Table>
+          {filtered.length > PAGE_SIZE && (
+            <div className="flex items-center justify-between px-4 py-3 border-t text-sm text-muted-foreground">
+              <span>Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} records</span>
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === 1} onClick={() => setPage(page - 1)}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                  .reduce<(number | "...")[]>((acc, p, idx, arr) => {
+                    if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push("...");
+                    acc.push(p); return acc;
+                  }, [])
+                  .map((p, i) => p === "..." ? (
+                    <span key={`e-${i}`} className="px-2">…</span>
+                  ) : (
+                    <Button key={p} variant={page === p ? "default" : "outline"} size="icon" className="h-8 w-8" onClick={() => setPage(p as number)}>{p}</Button>
+                  ))}
+                <Button variant="outline" size="icon" className="h-8 w-8" disabled={page === totalPages} onClick={() => setPage(page + 1)}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -341,7 +378,7 @@ export default function LeavePage() {
               {(leaveTypesData as any[]).map((t: any) => (
                 <div key={t.id} className="flex items-center justify-between rounded-lg border p-3">
                   <span className="font-medium">{t.name}</span>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteLeaveType.mutate(t.id)}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteTypeTarget({ id: t.id, name: t.name })}>
                     <Trash2 size={14} />
                   </Button>
                 </div>
@@ -427,6 +464,66 @@ export default function LeavePage() {
             >
               {updateLeaveStatus.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
               Update Status
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Leave Confirmation */}
+      <Dialog open={!!cancelTarget} onOpenChange={() => setCancelTarget(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Cancel Leave Request
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Are you sure you want to cancel this leave request? This action cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelTarget(null)}>Keep</Button>
+            <Button
+              variant="destructive"
+              disabled={cancelLeave.isPending}
+              onClick={() => {
+                if (cancelTarget) {
+                  cancelLeave.mutate(cancelTarget, { onSuccess: () => setCancelTarget(null) });
+                }
+              }}
+            >
+              {cancelLeave.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              Cancel Leave
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Leave Type Confirmation */}
+      <Dialog open={!!deleteTypeTarget} onOpenChange={() => setDeleteTypeTarget(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Delete Leave Type
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Are you sure you want to delete the leave type <strong>"{deleteTypeTarget?.name}"</strong>? This cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTypeTarget(null)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              disabled={deleteLeaveType.isPending}
+              onClick={() => {
+                if (deleteTypeTarget) {
+                  deleteLeaveType.mutate(deleteTypeTarget.id, { onSuccess: () => setDeleteTypeTarget(null) });
+                }
+              }}
+            >
+              {deleteLeaveType.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>
