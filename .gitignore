@@ -1,3 +1,9 @@
+# Standalone distributable (build output, not source)
+GSS Hospital Pro/
+
+# Media/binary uploads
 *.jpg
+*.jpeg
 *.png
+*.gif
 *.pdf
