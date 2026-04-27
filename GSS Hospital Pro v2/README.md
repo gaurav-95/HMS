@@ -8,13 +8,25 @@ A standalone, full-featured Hospital Management System for Windows. Runs locally
 
 ## Quick Start
 
+### ⚠️ First Time Only — Unblock Files (Downloaded from the Internet)
+
+If you received this app as a ZIP file, Windows marks all extracted files as "downloaded from the internet" and may block them from running.
+
+**Run `Unblock Files (Run This First).bat` once** — right-click it → **Run as administrator** (or just double-click and click **Run** when prompted). This removes the block from all files in the folder.
+
+> You only need to do this once. Skip this step if you received the folder directly (USB drive, shared network folder, etc.).
+
+**System Requirements:** 64-bit Windows 10 or Windows 11.
+
+---
+
 ### Step 1: Launch the App
 
 **Double-click `Launch GSS Hospital Pro.bat`**
 
 That's it. The launcher handles everything automatically:
 
-1. Detects Node.js (downloads portable Node.js 22 if not found — one-time, ~30 MB)
+1. Uses the bundled portable Node.js from the `runtime/` folder
 2. Starts the API server on port 3001
 3. Opens the app in a standalone desktop window (via Edge app mode)
 

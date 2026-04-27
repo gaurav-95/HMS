@@ -21,6 +21,20 @@ if "%PROCESSOR_ARCHITECTURE%"=="x86" (
 )
 echo  [OK] System: Windows %ARCH%
 
+REM ─── Require 64-bit Windows ────────────────────────────
+if "%ARCH%"=="x86" (
+    echo.
+    echo  ==========================================================
+    echo   [ERROR] 64-bit Windows required.
+    echo.
+    echo   This application requires a 64-bit (x64) version of
+    echo   Windows. Your system is running 32-bit Windows.
+    echo  ==========================================================
+    echo.
+    pause
+    exit /b 1
+)
+
 REM ─── Determine Node.js path ─────────────────────────────
 set "NODE_EXE="
 set "PORTABLE_NODE=%~dp0runtime\node.exe"
@@ -166,6 +180,21 @@ exit /b 1
 for /f "delims=" %%v in ('"%NODE_EXE%" -v 2^>nul') do echo  [OK] Node.js version: %%v
 
 :start_server
+REM ─── Check if port 3001 is already in use ──────────────
+powershell -NoProfile -Command "if(Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue){exit 1}else{exit 0}" >nul 2>&1
+if !ERRORLEVEL! EQU 1 (
+    echo.
+    echo  ==========================================================
+    echo   [ERROR] Port 3001 is already in use!
+    echo.
+    echo   Another application is using port 3001.
+    echo   Please close it and try again, or restart your PC.
+    echo  ==========================================================
+    echo.
+    pause
+    exit /b 1
+)
+
 echo.
 echo  Starting API server on port 3001...
 
@@ -178,7 +207,7 @@ if "%NODE_EXE%"=="node" (
 
 REM Wait for server
 echo  Waiting for server...
-timeout /t 3 /nobreak >nul
+timeout /t 5 /nobreak >nul
 
 REM Health check (compatible with PowerShell 2.0+)
 powershell -NoProfile -Command ^

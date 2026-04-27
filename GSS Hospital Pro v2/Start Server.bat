@@ -19,7 +19,15 @@ if "%PROCESSOR_ARCHITECTURE%"=="x86" (
     if not defined PROCESSOR_ARCHITEW6432 set "ARCH=x86"
 )
 echo  System: Windows %ARCH%
-
+REM ─── Require 64-bit Windows ────────────────────────────
+if "%ARCH%"=="x86" (
+    echo.
+    echo  [ERROR] 64-bit Windows required. This application does not
+    echo  support 32-bit Windows.
+    echo.
+    pause
+    exit /b 1
+)
 REM ─── Determine Node.js path ─────────────────────────────
 set "PORTABLE_NODE=%~dp0runtime\node.exe"
 
@@ -106,6 +114,18 @@ if !ERRORLEVEL! NEQ 0 (
 )
 
 :start
+REM ─── Check if port 3001 is already in use ──────────────
+powershell -NoProfile -Command "if(Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue){exit 1}else{exit 0}" >nul 2>&1
+if !ERRORLEVEL! EQU 1 (
+    echo.
+    echo  [ERROR] Port 3001 is already in use!
+    echo  Another application is using port 3001.
+    echo  Please close it and try again, or restart your PC.
+    echo.
+    pause
+    exit /b 1
+)
+
 cd /d "%~dp0server"
 echo.
 echo  Starting on http://localhost:3001 ...
