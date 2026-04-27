@@ -1,4 +1,4 @@
-# GSS Hospital Pro v2
+# GSS Hospital Pro
 
 **Gandhi Seva Sadan — Hospital Management System**
 
@@ -481,7 +481,7 @@ All data is stored locally on the machine running the server.
 
 ```
 HMS/
-├── GSS Hospital Pro v2/          ← Standalone distributable
+├── GSS Hospital Pro/             ← Standalone distributable
 │   ├── Launch GSS Hospital Pro.bat   ← Main launcher (server + app window)
 │   ├── Start Server.bat              ← Server only (for LAN access)
 │   ├── server/
@@ -492,7 +492,7 @@ HMS/
 │       ├── gss-hms.db
 │       └── uploads/
 │
-├── GSS-HMS-v2/                    ← Source code
+├── GSS-HMS/                       ← Source code
 │   ├── src/                          ← React frontend source
 │   │   ├── pages/                    ← One file per module
 │   │   ├── components/               ← Shared UI components
@@ -529,7 +529,7 @@ HMS/
 ### Install and Run
 
 ```bash
-cd GSS-HMS-v2
+cd GSS-HMS
 npm install
 
 # Start the API server (port 3001)
@@ -553,16 +553,16 @@ powershell -ExecutionPolicy Bypass -File "update-standalone.ps1"
 ```
 
 This script:
-1. Runs `npm run build:all` in `GSS-HMS-v2/` — builds both the React frontend (Vite) and the Express server (esbuild)
-2. Copies the built frontend assets to `GSS Hospital Pro v2/resources/app/`
-3. Copies the built server bundle to `GSS Hospital Pro v2/server/index.cjs`
+1. Runs `npm run build:all` in `GSS-HMS/` — builds both the React frontend (Vite) and the Express server (esbuild)
+2. Copies the built frontend assets to `GSS Hospital Pro/resources/app/`
+3. Copies the built server bundle to `GSS Hospital Pro/server/index.cjs`
 
-After running, the `GSS Hospital Pro v2/` folder is ready to use or distribute.
+After running, the `GSS Hospital Pro/` folder is ready to use or distribute.
 
 ### Manual Build Steps
 
 ```bash
-cd GSS-HMS-v2
+cd GSS-HMS
 
 # Build frontend (outputs to dist/)
 npm run build
@@ -599,7 +599,7 @@ npm run build:all
 - Check that port 3001 is not in use by another application
 
 ### "Cannot find module" or "node_modules" error on first launch
-- The launcher will attempt to auto-install dependencies. If it fails, open CMD in `GSS Hospital Pro v2/server/` and run `npm install`
+- The launcher will attempt to auto-install dependencies. If it fails, open CMD in `GSS Hospital Pro/server/` and run `npm install`
 
 ### LAN devices can't connect
 - Add a Windows Firewall exception: `netsh advfirewall firewall add rule name="GSS Hospital Pro" dir=in action=allow protocol=TCP localport=3001`

@@ -1,4 +1,4 @@
-# GSS Hospital Pro v2
+# GSS Hospital Pro
 
 Gandhi Seva Sadan — Hospital Management System
 
