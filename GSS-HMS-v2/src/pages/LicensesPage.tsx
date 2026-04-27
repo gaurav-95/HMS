@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,7 @@ export default function LicensesPage() {
   const { hasPermission } = useAuth();
   const canWrite = hasPermission("staff:write");
   const canDelete = hasPermission("staff:delete");
+  const [searchParams] = useSearchParams();
 
   // ── Queries & Mutations ─────────────────────────────────
   const { data: allLicenses = [], isLoading: loadingLic } = useHospitalLicenses();
@@ -79,7 +81,9 @@ export default function LicensesPage() {
   const uploadCertFile = useUploadCertificationFile();
 
   // ── Local State ─────────────────────────────────────────
-  const [tab, setTab] = useState<"licenses" | "certifications">("licenses");
+  const [tab, setTab] = useState<"licenses" | "certifications">(
+    searchParams.get("tab") === "certifications" ? "certifications" : "licenses"
+  );
 
   // Licenses tab filters
   const [licSearch, setLicSearch] = useState("");

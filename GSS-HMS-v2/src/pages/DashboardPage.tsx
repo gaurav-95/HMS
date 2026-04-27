@@ -1,4 +1,5 @@
 ﻿import { useState, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,7 @@ export default function DashboardPage() {
   const [period, setPeriod] = useState<string>("monthly");
   const { data: stats, isLoading } = useDashboardStats(period);
   const { hasPermission } = useAuth();
+  const navigate = useNavigate();
   const addressCert = useAddressCertification();
   const addressLicense = useAddressHospitalLicense();
   const uploadLicense = useUploadHospitalLicense();
@@ -112,9 +114,9 @@ export default function DashboardPage() {
       </div>
       {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-        <KpiCard icon={Users} label="Current Employees" value={totalStaff} sub="Active staff" />
-        <KpiCard icon={ClipboardCheck} label="Attendance Today" value={`${attendancePct}%`} sub={`${todayPresent} of ${totalStaff} present`} />
-        <KpiCard icon={Calendar} label="Pending Leaves" value={pendingLeaves} sub="Awaiting approval" accent={pendingLeaves > 0} />
+        <KpiCard icon={Users} label="Current Employees" value={totalStaff} sub="Active staff" onClick={() => navigate("/staff")} />
+        <KpiCard icon={ClipboardCheck} label="Attendance Today" value={`${attendancePct}%`} sub={`${todayPresent} of ${totalStaff} present`} onClick={() => navigate("/attendance")} />
+        <KpiCard icon={Calendar} label="Pending Leaves" value={pendingLeaves} sub="Awaiting approval" accent={pendingLeaves > 0} onClick={() => navigate("/leave")} />
       </div>
 
       {/* Period Summary by Department */}
@@ -233,7 +235,7 @@ export default function DashboardPage() {
       {hospitalLicenses.filter(l => l.status !== "Valid" && l.status !== "N/A" && !l.addressed).length > 0 && (
         <Card className="border-amber-400/40 bg-amber-50/30">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2 text-amber-700">
+            <CardTitle className="text-base flex items-center gap-2 text-amber-700 cursor-pointer hover:underline" onClick={() => navigate("/licenses")}>
               <Building2 size={18} />
               Hospital Licenses &amp; Registrations
               <Badge variant="outline" className="ml-1 border-amber-500 text-amber-700">
@@ -310,7 +312,7 @@ export default function DashboardPage() {
       {expiredCerts.length > 0 && (
         <Card className="border-destructive/40 bg-destructive/5">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2 text-destructive">
+            <CardTitle className="text-base flex items-center gap-2 text-destructive cursor-pointer hover:underline" onClick={() => navigate("/licenses?tab=certifications")}>
               <ShieldAlert size={18} />
               Expired / Expiring Staff Certifications
               <Badge variant="destructive" className="ml-1">{expiredCerts.length}</Badge>
@@ -394,9 +396,9 @@ export default function DashboardPage() {
   );
 }
 
-function KpiCard({ icon: Icon, label, value, sub, accent }: { icon: any; label: string; value: string | number; sub: string; accent?: boolean }) {
+function KpiCard({ icon: Icon, label, value, sub, accent, onClick }: { icon: any; label: string; value: string | number; sub: string; accent?: boolean; onClick?: () => void }) {
   return (
-    <Card>
+    <Card className={onClick ? "cursor-pointer hover:shadow-md transition-shadow" : ""} onClick={onClick}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
         <Icon className="h-5 w-5 text-muted-foreground" />
