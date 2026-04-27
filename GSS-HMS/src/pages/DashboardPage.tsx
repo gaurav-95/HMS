@@ -8,14 +8,15 @@ import { useAuth } from "@/context/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Users, ClipboardCheck, Calendar, Loader2, ShieldAlert, CheckCircle2, Building2, Upload, Download } from "lucide-react";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { useTranslation } from "react-i18next";
 
 import type { HospitalLicense } from "@/types";
 
 const CHART_COLORS = ["#0d9488", "#f59e0b", "#3b82f6", "#ef4444", "#8b5cf6", "#ec4899", "#10b981", "#f97316"];
-const PERIODS = [
-  { key: "monthly", label: "This Month" },
-  { key: "quarterly", label: "This Quarter" },
-  { key: "yearly", label: "This Year" },
+const PERIOD_KEYS = [
+  { key: "monthly",   labelKey: "dashboard.thisMonth" },
+  { key: "quarterly", labelKey: "dashboard.thisQuarter" },
+  { key: "yearly",    labelKey: "dashboard.thisYear" },
 ] as const;
 
 export default function DashboardPage() {
@@ -23,6 +24,7 @@ export default function DashboardPage() {
   const { data: stats, isLoading } = useDashboardStats(period);
   const { hasPermission } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const addressCert = useAddressCertification();
   const addressLicense = useAddressHospitalLicense();
   const uploadLicense = useUploadHospitalLicense();
@@ -101,49 +103,49 @@ export default function DashboardPage() {
       {/* Period filter */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Hospital overview and key metrics</p>
+          <h1 className="text-2xl lg:text-3xl font-bold">{t("dashboard.title")}</h1>
+          <p className="text-muted-foreground">{t("dashboard.subtitle")}</p>
         </div>
         <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-          {PERIODS.map(({ key, label }) => (
+          {PERIOD_KEYS.map(({ key, labelKey }) => (
             <Button key={key} variant={period === key ? "default" : "ghost"} size="sm" className="text-xs h-7" onClick={() => setPeriod(key)}>
-              {label}
+              {t(labelKey)}
             </Button>
           ))}
         </div>
       </div>
       {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-        <KpiCard icon={Users} label="Current Employees" value={totalStaff} sub="Active staff" onClick={() => navigate("/staff")} />
-        <KpiCard icon={ClipboardCheck} label="Attendance Today" value={`${attendancePct}%`} sub={`${todayPresent} of ${totalStaff} present`} onClick={() => navigate("/attendance")} />
-        <KpiCard icon={Calendar} label="Pending Leaves" value={pendingLeaves} sub="Awaiting approval" accent={pendingLeaves > 0} onClick={() => navigate("/leave")} />
+        <KpiCard icon={Users} label={t("dashboard.currentEmployees")} value={totalStaff} sub={t("dashboard.activeStaff")} onClick={() => navigate("/staff")} />
+        <KpiCard icon={ClipboardCheck} label={t("dashboard.attendanceToday")} value={`${attendancePct}%`} sub={t("dashboard.presentToday", { present: todayPresent, total: totalStaff })} onClick={() => navigate("/attendance")} />
+        <KpiCard icon={Calendar} label={t("dashboard.pendingLeaves")} value={pendingLeaves} sub={t("dashboard.awaitingApproval")} accent={pendingLeaves > 0} onClick={() => navigate("/leave")} />
       </div>
 
       {/* Period Summary by Department */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Period Summary — {PERIODS.find(p => p.key === period)?.label}</CardTitle>
+          <CardTitle className="text-base">{t("dashboard.periodSummary", { period: t(PERIOD_KEYS.find(p => p.key === period)?.labelKey ?? "dashboard.thisMonth") })}</CardTitle>
         </CardHeader>
         <CardContent>
           {attendanceByDept.length === 0 ? (
             <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-6">
-              <div><p className="text-xs text-muted-foreground">Present Days</p><p className="text-lg font-bold text-green-600">{attMap["Present"] || 0}</p></div>
-              <div><p className="text-xs text-muted-foreground">Absent Days</p><p className="text-lg font-bold text-red-600">{attMap["Absent"] || 0}</p></div>
-              <div><p className="text-xs text-muted-foreground">On Leave</p><p className="text-lg font-bold text-amber-600">{attMap["OnLeave"] || 0}</p></div>
-              <div><p className="text-xs text-muted-foreground">Leaves Approved</p><p className="text-lg font-bold text-green-600">{leaveMap["Approved"] || 0}</p></div>
-              <div><p className="text-xs text-muted-foreground">Leaves Pending</p><p className="text-lg font-bold text-amber-600">{leaveMap["Pending"] || 0}</p></div>
-              <div><p className="text-xs text-muted-foreground">Leaves Rejected</p><p className="text-lg font-bold text-red-600">{leaveMap["Rejected"] || 0}</p></div>
+              <div><p className="text-xs text-muted-foreground">{t("dashboard.presentDays")}</p><p className="text-lg font-bold text-green-600">{attMap["Present"] || 0}</p></div>
+              <div><p className="text-xs text-muted-foreground">{t("dashboard.absentDays")}</p><p className="text-lg font-bold text-red-600">{attMap["Absent"] || 0}</p></div>
+              <div><p className="text-xs text-muted-foreground">{t("dashboard.onLeave")}</p><p className="text-lg font-bold text-amber-600">{attMap["OnLeave"] || 0}</p></div>
+              <div><p className="text-xs text-muted-foreground">{t("dashboard.leavesApproved")}</p><p className="text-lg font-bold text-green-600">{leaveMap["Approved"] || 0}</p></div>
+              <div><p className="text-xs text-muted-foreground">{t("dashboard.leavesPending")}</p><p className="text-lg font-bold text-amber-600">{leaveMap["Pending"] || 0}</p></div>
+              <div><p className="text-xs text-muted-foreground">{t("dashboard.leavesRejected")}</p><p className="text-lg font-bold text-red-600">{leaveMap["Rejected"] || 0}</p></div>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Department</th>
-                    <th className="text-right py-2 px-3 font-medium text-green-700">Present</th>
-                    <th className="text-right py-2 px-3 font-medium text-red-700">Absent</th>
-                    <th className="text-right py-2 px-3 font-medium text-amber-700">On Leave</th>
-                    <th className="text-right py-2 pl-3 font-medium text-muted-foreground">Total</th>
+                    <th className="text-left py-2 pr-4 font-medium text-muted-foreground">{t("dashboard.department")}</th>
+                    <th className="text-right py-2 px-3 font-medium text-green-700">{t("dashboard.present")}</th>
+                    <th className="text-right py-2 px-3 font-medium text-red-700">{t("dashboard.absent")}</th>
+                    <th className="text-right py-2 px-3 font-medium text-amber-700">{t("dashboard.onLeave")}</th>
+                    <th className="text-right py-2 pl-3 font-medium text-muted-foreground">{t("dashboard.totals")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -159,7 +161,7 @@ export default function DashboardPage() {
                 </tbody>
                 <tfoot>
                   <tr className="border-t font-bold bg-muted/20">
-                    <td className="py-1.5 pr-4">Totals</td>
+                    <td className="py-1.5 pr-4">{t("dashboard.totals")}</td>
                     <td className="text-right py-1.5 px-3 text-green-700">{attendanceByDept.reduce((s, r) => s + r.present, 0)}</td>
                     <td className="text-right py-1.5 px-3 text-red-700">{attendanceByDept.reduce((s, r) => s + r.absent, 0)}</td>
                     <td className="text-right py-1.5 px-3 text-amber-700">{attendanceByDept.reduce((s, r) => s + r.onLeave, 0)}</td>
@@ -179,11 +181,11 @@ export default function DashboardPage() {
         {/* Staff by Department */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Staff by Department</CardTitle>
+            <CardTitle className="text-base">{t("dashboard.staffByDepartment")}</CardTitle>
           </CardHeader>
           <CardContent>
             {deptChartData.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">No department data</p>
+              <p className="text-sm text-muted-foreground text-center py-8">{t("dashboard.noDepartmentData")}</p>
             ) : (
               <div className="h-[300px] lg:h-[360px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -203,11 +205,11 @@ export default function DashboardPage() {
         {/* Staff by Role */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Staff by Role</CardTitle>
+            <CardTitle className="text-base">{t("dashboard.staffByRole")}</CardTitle>
           </CardHeader>
           <CardContent>
             {roleChartData.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">No role data</p>
+              <p className="text-sm text-muted-foreground text-center py-8">{t("dashboard.noRoleData")}</p>
             ) : (
               <div className="h-[320px] lg:h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -239,7 +241,7 @@ export default function DashboardPage() {
               <Building2 size={18} />
               Hospital Licenses &amp; Registrations
               <Badge variant="outline" className="ml-1 border-amber-500 text-amber-700">
-                {hospitalLicenses.filter(l => l.status !== "Valid" && l.status !== "N/A" && !l.addressed).length} need attention
+                {t("dashboard.needAttention", { count: hospitalLicenses.filter(l => l.status !== "Valid" && l.status !== "N/A" && !l.addressed).length })}
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -266,7 +268,7 @@ export default function DashboardPage() {
                           onClick={() => downloadLicenseFile(lic.id, lic.name)}
                           disabled={downloadingId === lic.id}
                         >
-                          {downloadingId === lic.id ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />} Download
+                          {downloadingId === lic.id ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />} {t("common.download")}
                         </Button>
                       )}
                       {hasPermission("staff:write") && (
@@ -274,7 +276,7 @@ export default function DashboardPage() {
                           variant="outline" size="sm" className="gap-1.5 h-7 text-xs"
                           onClick={() => { setUploadingLicenseId(lic.id); fileInputRef.current?.click(); }}
                         >
-                          <Upload size={12} /> Upload
+                          <Upload size={12} /> {t("common.upload")}
                         </Button>
                       )}
                       {hasPermission("staff:write") && (
@@ -340,7 +342,7 @@ export default function DashboardPage() {
                         variant="outline" size="sm" className="gap-1.5 h-7 text-xs"
                         onClick={() => { setAddressingCertId(c.id); setAddressingCertName(`${c.certName} (${c.staffName})`); }}
                       >
-                        <CheckCircle2 size={12} /> Addressed
+                        <CheckCircle2 size={12} /> {t("dashboard.address")}
                       </Button>
                     )}
                   </div>
@@ -364,9 +366,9 @@ export default function DashboardPage() {
             Mark <strong>{addressingLicenseName}</strong> as addressed? It will be cleared from this alert list.
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddressingLicenseId(null)} disabled={addressLicense.isPending}>Cancel</Button>
+            <Button variant="outline" onClick={() => setAddressingLicenseId(null)} disabled={addressLicense.isPending}>{t("common.cancel")}</Button>
             <Button onClick={() => { if (addressingLicenseId) { addressLicense.mutate(addressingLicenseId); setAddressingLicenseId(null); } }} disabled={addressLicense.isPending}>
-              {addressLicense.isPending ? "Saving..." : "Confirm"}
+              {addressLicense.isPending ? t("common.loading") : t("common.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -385,9 +387,9 @@ export default function DashboardPage() {
             Are you sure you want to mark <strong>{addressingCertName}</strong> as addressed? It will be cleared from this alert list.
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddressingCertId(null)} disabled={addressCert.isPending}>Cancel</Button>
+            <Button variant="outline" onClick={() => setAddressingCertId(null)} disabled={addressCert.isPending}>{t("common.cancel")}</Button>
             <Button onClick={() => { if (addressingCertId) { addressCert.mutate(addressingCertId); setAddressingCertId(null); } }} disabled={addressCert.isPending}>
-              {addressCert.isPending ? "Saving..." : "Confirm"}
+              {addressCert.isPending ? t("common.loading") : t("common.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -13,6 +13,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { FlaskConical, UserCog, ArrowRightLeft, AlertTriangle, Loader2, Info, KeyRound } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 const QUICK_ACCESS = [
   { label: "Super Admin", email: "superadmin@gsshospital.com" },
@@ -24,6 +25,7 @@ const QUICK_ACCESS = [
 export default function LoginPage() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -56,7 +58,7 @@ export default function LoginPage() {
     if (success) {
       navigate("/dashboard");
     } else {
-      setError("Invalid email or password");
+      setError(t("login.invalidCredentials"));
     }
   };
 
@@ -92,8 +94,8 @@ export default function LoginPage() {
       {switching && (
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
           <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-          <p className="text-lg font-semibold">Switching to {targetMode === "demo" ? "Demo" : "User"} Mode...</p>
-          <p className="text-sm text-muted-foreground mt-1">Clearing data and setting up. Please wait.</p>
+          <p className="text-lg font-semibold">{t("login.switchingTo", { mode: targetMode === "demo" ? t("login.demoMode") : t("login.userMode") })}</p>
+          <p className="text-sm text-muted-foreground mt-1">{t("login.pleaseWait")}</p>
         </div>
       )}
       <div className="w-full max-w-md space-y-5">
@@ -114,7 +116,7 @@ export default function LoginPage() {
               className="gap-1.5 px-3 py-1 text-xs"
             >
               {appMode === "demo" ? <FlaskConical size={14} /> : <UserCog size={14} />}
-              {appMode === "demo" ? "Demo Mode" : "User Mode"}
+              {appMode === "demo" ? t("login.demoMode") : t("login.userMode")}
             </Badge>
           </div>
         )}
@@ -122,7 +124,7 @@ export default function LoginPage() {
         {/* Login Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Sign In</CardTitle>
+            <CardTitle>{t("login.signIn")}</CardTitle>
             <CardDescription>
               {appMode === "demo"
                 ? "Try the system with sample data, or use quick access below"
@@ -132,7 +134,7 @@ export default function LoginPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("login.emailLabel")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -144,7 +146,7 @@ export default function LoginPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t("login.passwordLabel")}</Label>
                 <Input
                   id="password"
                   type="password"
@@ -157,7 +159,7 @@ export default function LoginPage() {
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <Button type="submit" className="w-full h-12 text-base" disabled={isSubmitting}>
-                {isSubmitting ? "Signing in..." : "Sign In"}
+                {isSubmitting ? t("login.signingIn") : t("login.signIn")}
               </Button>
             </form>
           </CardContent>
@@ -167,7 +169,7 @@ export default function LoginPage() {
         {appMode === "demo" && (
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Quick Access (Demo)</CardTitle>
+              <CardTitle className="text-sm">{t("login.quickAccess")}</CardTitle>
               <CardDescription className="text-xs">Click any role to sign in instantly</CardDescription>
             </CardHeader>
             <CardContent>

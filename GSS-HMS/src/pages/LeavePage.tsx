@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Calendar, Plus, Loader2, Search, Filter, XCircle, Trash2, Settings, CheckCircle2, X, AlertTriangle, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
 import { ExportButtons } from "@/components/ExportButtons";
 import { Tip } from "@/components/ui/tooltip";
+import { useTranslation } from "react-i18next";
 
 const blankForm = {
   staffId: "",
@@ -28,6 +29,7 @@ export default function LeavePage() {
   const { data: leaves = [], isLoading } = useLeaveRequests();
   const { data: staffList = [] } = useStaff();
   const { data: leaveTypesData = [] } = useLeaveTypes();
+  const { t } = useTranslation();
   const applyLeave = useApplyLeave();
   const updateLeaveStatus = useUpdateLeaveStatus();
   const cancelLeave = useCancelLeave();
@@ -114,8 +116,8 @@ export default function LeavePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Leave Management</h1>
-          <p className="text-muted-foreground">Apply for leave, track status, and manage approvals</p>
+          <h1 className="text-2xl font-bold">{t("leave.title")}</h1>
+          <p className="text-muted-foreground">{t("leave.subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
           <ExportButtons
@@ -125,7 +127,7 @@ export default function LeavePage() {
           />
           {hasPermission("leave:apply") && (
             <Button onClick={() => setShowApply(true)} className="gap-2">
-              <Plus size={16} /> Apply for Leave
+              <Plus size={16} /> {t("leave.applyForLeave")}
             </Button>
           )}
         </div>
@@ -135,29 +137,29 @@ export default function LeavePage() {
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search by name..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder={t("leave.searchPlaceholder")} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-[150px]"><Filter className="h-4 w-4 mr-1" /><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="Pending">Pending</SelectItem>
-            <SelectItem value="Approved">Approved</SelectItem>
-            <SelectItem value="Rejected">Rejected</SelectItem>
-            <SelectItem value="Cancelled">Cancelled</SelectItem>
+            <SelectItem value="all">{t("leave.allStatuses")}</SelectItem>
+            <SelectItem value="Pending">{t("leave.pending")}</SelectItem>
+            <SelectItem value="Approved">{t("leave.approved")}</SelectItem>
+            <SelectItem value="Rejected">{t("leave.rejected")}</SelectItem>
+            <SelectItem value="Cancelled">{t("leave.cancelled")}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={filterType} onValueChange={setFilterType}>
           <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="all">{t("leave.allTypes")}</SelectItem>
             {leaveTypeNames.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
           </SelectContent>
         </Select>
         {isSuperAdmin && (
           <Tip content="Add, edit, or remove leave type categories (e.g. Casual, Sick)">
             <Button variant="outline" size="sm" onClick={() => setShowTypeManager(true)} className="gap-1.5">
-              <Settings size={14} /> Manage Types
+              <Settings size={14} /> {t("leave.manageTypes")}
             </Button>
           </Tip>
         )}
@@ -165,31 +167,31 @@ export default function LeavePage() {
 
       {/* Summary cards */}
       <div className="grid gap-4 sm:grid-cols-4">
-        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Total Requests</p><p className="text-2xl font-bold">{allLeaves.length}</p></CardContent></Card>
-        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Pending</p><p className="text-2xl font-bold text-amber-600">{pendingCount}</p></CardContent></Card>
-        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Approved</p><p className="text-2xl font-bold text-green-600">{approvedCount}</p></CardContent></Card>
-        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Rejected</p><p className="text-2xl font-bold text-red-600">{rejectedCount}</p></CardContent></Card>
+        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">{t("leave.totalRequests")}</p><p className="text-2xl font-bold">{allLeaves.length}</p></CardContent></Card>
+        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">{t("leave.pending")}</p><p className="text-2xl font-bold text-amber-600">{pendingCount}</p></CardContent></Card>
+        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">{t("leave.approved")}</p><p className="text-2xl font-bold text-green-600">{approvedCount}</p></CardContent></Card>
+        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">{t("leave.rejected")}</p><p className="text-2xl font-bold text-red-600">{rejectedCount}</p></CardContent></Card>
       </div>
 
       {/* Table */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" /> Leave Requests
+            <Calendar className="h-5 w-5" /> {t("leave.leaveRequests")}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Employee</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>From</TableHead>
-                <TableHead>To</TableHead>
-                <TableHead>Days</TableHead>
-                <TableHead>Reason</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>{t("leave.employee")}</TableHead>
+                <TableHead>{t("leave.type")}</TableHead>
+                <TableHead>{t("leave.from")}</TableHead>
+                <TableHead>{t("leave.to")}</TableHead>
+                <TableHead>{t("leave.days")}</TableHead>
+                <TableHead>{t("leave.reason")}</TableHead>
+                <TableHead>{t("leave.status")}</TableHead>
+                <TableHead>{t("leave.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

@@ -13,6 +13,7 @@ import { ClipboardCheck, Loader2, Plus, Search, Filter, Pencil, Layers, ChevronL
 import { ExportButtons } from "@/components/ExportButtons";
 import { Tip } from "@/components/ui/tooltip";
 import { useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const today = new Date().toISOString().split("T")[0];
 
@@ -39,6 +40,7 @@ export default function AttendancePage() {
   const { data: records = [], isLoading } = useAttendance();
   const { data: staffList = [] } = useStaff();
   const { hasPermission } = useAuth();
+  const { t } = useTranslation();
   const createAttendance = useCreateAttendance();
   const updateAttendance = useUpdateAttendance();
 
@@ -164,9 +166,9 @@ export default function AttendancePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Attendance</h1>
+          <h1 className="text-2xl font-bold">{t("attendance.title")}</h1>
           <p className="text-muted-foreground">
-            {urlStaffName ? `Showing records for ${urlStaffName}` : "Daily attendance tracking and history"}
+            {urlStaffName ? t("attendance.showingFor", { name: urlStaffName }) : t("attendance.subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -176,7 +178,7 @@ export default function AttendancePage() {
             rows={filtered.map((a: any) => [a.staffName || "", a.date || "", a.checkIn || "—", a.checkOut || "—", STATUS_LABELS[a.status] || a.status])}
           />
           {hasPermission("attendance:write") && (
-            <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-1" /> Mark Attendance</Button>
+            <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-1" /> {t("attendance.markAttendance")}</Button>
           )}
         </div>
       </div>
@@ -185,35 +187,35 @@ export default function AttendancePage() {
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search by name..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder={t("attendance.searchPlaceholder")} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="w-[180px]" />
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-[150px]"><Filter className="h-4 w-4 mr-1" /><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="all">{t("attendance.allStatuses")}</SelectItem>
             {ATTENDANCE_STATUSES.map((s) => <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterDept} onValueChange={setFilterDept}>
           <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Departments</SelectItem>
+            <SelectItem value="all">{t("attendance.allDepartments")}</SelectItem>
             {uniqueDepts.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
           </SelectContent>
         </Select>
         <Tip content="Toggle grouping attendance records by department">
           <Button variant={groupByDept ? "default" : "outline"} size="sm" onClick={() => setGroupByDept(!groupByDept)} className="gap-1.5">
-            <Layers size={14} /> Group by Dept
+            <Layers size={14} /> {t("attendance.groupByDepartment")}
           </Button>
         </Tip>
       </div>
 
       {/* Summary cards */}
       <div className="grid gap-4 sm:grid-cols-4">
-        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Present</p><p className="text-2xl font-bold text-green-600">{present}</p></CardContent></Card>
-        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Absent</p><p className="text-2xl font-bold text-red-600">{absent}</p></CardContent></Card>
-        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Late</p><p className="text-2xl font-bold text-amber-600">{late}</p></CardContent></Card>
+        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">{t("attendance.present")}</p><p className="text-2xl font-bold text-green-600">{present}</p></CardContent></Card>
+        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">{t("attendance.absent")}</p><p className="text-2xl font-bold text-red-600">{absent}</p></CardContent></Card>
+        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">{t("attendance.late")}</p><p className="text-2xl font-bold text-amber-600">{late}</p></CardContent></Card>
         <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Total Records</p><p className="text-2xl font-bold">{filtered.length}</p></CardContent></Card>
       </div>
 
@@ -224,7 +226,7 @@ export default function AttendancePage() {
           onClick={() => setShowMonthlySummary((v) => !v)}
         >
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Monthly Attendance Report</CardTitle>
+            <CardTitle className="text-base">{t("attendance.monthlySummary")}</CardTitle>
             <div className="flex items-center gap-3">
               {showMonthlySummary && (
                 <Input
@@ -246,13 +248,13 @@ export default function AttendancePage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Employee</TableHead>
-                <TableHead className="text-center">Present</TableHead>
-                <TableHead className="text-center">Absent</TableHead>
-                <TableHead className="text-center">Late</TableHead>
-                <TableHead className="text-center">Half Day</TableHead>
-                <TableHead className="text-center">Leave</TableHead>
-                <TableHead className="text-center">Attendance %</TableHead>
+                <TableHead>{t("attendance.employee")}</TableHead>
+                <TableHead className="text-center">{t("attendance.present")}</TableHead>
+                <TableHead className="text-center">{t("attendance.absent")}</TableHead>
+                <TableHead className="text-center">{t("attendance.late")}</TableHead>
+                <TableHead className="text-center">{t("attendance.halfDay")}</TableHead>
+                <TableHead className="text-center">{t("attendance.onLeave")}</TableHead>
+                <TableHead className="text-center">{t("attendance.attendancePct")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -289,13 +291,13 @@ export default function AttendancePage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Employee</TableHead>
-                <TableHead>Department</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Check In</TableHead>
-                <TableHead>Check Out</TableHead>
-                <TableHead>Status</TableHead>
-                {hasPermission("attendance:write") && <TableHead className="text-right">Actions</TableHead>}
+                <TableHead>{t("attendance.employee")}</TableHead>
+                <TableHead>{t("common.department")}</TableHead>
+                <TableHead>{t("attendance.date")}</TableHead>
+                <TableHead>{t("attendance.checkIn")}</TableHead>
+                <TableHead>{t("attendance.checkOut")}</TableHead>
+                <TableHead>{t("attendance.status")}</TableHead>
+                {hasPermission("attendance:write") && <TableHead className="text-right">{t("common.actions")}</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>

@@ -15,6 +15,7 @@ import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog"
 import { formatCurrency } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tip } from "@/components/ui/tooltip";
+import { useTranslation } from "react-i18next";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const currentMonth = MONTHS[new Date().getMonth()];
@@ -26,6 +27,7 @@ export default function PayrollPage() {
   const { data: payroll = [], isLoading } = usePayroll();
   const { data: staffList = [] } = useStaff();
   const { hasPermission, user } = useAuth();
+  const { t } = useTranslation();
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
   const generatePayroll = useGeneratePayroll();
   const updatePayrollStatus = useUpdatePayrollStatus();
@@ -142,8 +144,8 @@ export default function PayrollPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Monthly Payroll</h1>
-          <p className="text-muted-foreground">Indian salary structure &mdash; auto-generated from attendance</p>
+          <h1 className="text-2xl font-bold">{t("payroll.title")}</h1>
+          <p className="text-muted-foreground">{t("payroll.subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
           <ExportButtons
@@ -156,7 +158,7 @@ export default function PayrollPage() {
           />
           {hasPermission("payroll:write") && (
             <Tip content="Auto-calculate salary for selected staff based on their attendance records">
-              <Button onClick={openGenerateDialog} className="gap-1.5"><Zap size={16} /> Generate Payroll</Button>
+              <Button onClick={openGenerateDialog} className="gap-1.5"><Zap size={16} /> {t("payroll.generate")}</Button>
             </Tip>
           )}
         </div>
@@ -166,36 +168,36 @@ export default function PayrollPage() {
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search by name..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder={t("payroll.searchPlaceholder")} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Select value={filterYear} onValueChange={setFilterYear}>
           <SelectTrigger className="w-[120px]"><Filter className="h-4 w-4 mr-1" /><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Years</SelectItem>
+            <SelectItem value="all">{t("payroll.allYears")}</SelectItem>
             {availableYears.map((y) => <SelectItem key={y} value={y}>{y}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterMonth} onValueChange={setFilterMonth}>
           <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Months</SelectItem>
+            <SelectItem value="all">{t("payroll.allMonths")}</SelectItem>
             {MONTHS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="Draft">Draft</SelectItem>
-            <SelectItem value="Processed">Processed</SelectItem>
-            <SelectItem value="Approved">Approved</SelectItem>
-            <SelectItem value="Paid">Paid</SelectItem>
+            <SelectItem value="all">{t("payroll.allStatuses")}</SelectItem>
+            <SelectItem value="Draft">{t("payroll.draft")}</SelectItem>
+            <SelectItem value="Processed">{t("payroll.processed")}</SelectItem>
+            <SelectItem value="Approved">{t("payroll.approved")}</SelectItem>
+            <SelectItem value="Paid">{t("payroll.paid")}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={filterDept} onValueChange={setFilterDept}>
-          <SelectTrigger className="w-[180px]"><SelectValue placeholder="All Departments" /></SelectTrigger>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder={t("payroll.allDepartments")} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Departments</SelectItem>
+            <SelectItem value="all">{t("payroll.allDepartments")}</SelectItem>
             {availableDepts.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
           </SelectContent>
         </Select>

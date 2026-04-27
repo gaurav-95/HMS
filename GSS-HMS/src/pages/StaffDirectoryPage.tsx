@@ -19,6 +19,7 @@ import { ExportButtons } from "@/components/ExportButtons";
 import { Tip } from "@/components/ui/tooltip";
 import { useNavigate } from "react-router-dom";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
+import { useTranslation } from "react-i18next";
 import type { Staff, StaffRole, Department, SalaryType, NursingClassification, StaffCategory } from "@/types";
 
 const NURSING_ROLES = ["Staff Nurse", "Sr. Nurse", "Jr. Nurse", "Nurse"];
@@ -26,6 +27,7 @@ const NURSING_ROLES = ["Staff Nurse", "Sr. Nurse", "Jr. Nurse", "Nurse"];
 export default function StaffDirectoryPage() {
   const { hasPermission, user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { data: staff = [], isLoading } = useStaff();
   const createStaff = useCreateStaff();
   const updateStaff = useUpdateStaff();
@@ -95,8 +97,8 @@ export default function StaffDirectoryPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Staff Registry</h1>
-          <p className="text-muted-foreground">{filteredStaff.length} of {allStaff.length} employees</p>
+          <h1 className="text-2xl font-bold">{t("staff.title")}</h1>
+          <p className="text-muted-foreground">{t("staff.employeesCount", { filtered: filteredStaff.length, total: allStaff.length })}</p>
         </div>
         <div className="flex gap-2">
           <ExportButtons
@@ -110,7 +112,7 @@ export default function StaffDirectoryPage() {
           {canWrite && (
             <Button onClick={() => setShowAddModal(true)} className="gap-2">
               <Plus size={16} />
-              Add Employee
+              {t("staff.addEmployee")}
             </Button>
           )}
         </div>
@@ -122,7 +124,7 @@ export default function StaffDirectoryPage() {
           <div className="relative flex-1 min-w-[200px] max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search name, dept, role, phone, email..."
+              placeholder={t("staff.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -131,15 +133,15 @@ export default function StaffDirectoryPage() {
           <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
             <SelectTrigger className="w-[150px] h-9"><SelectValue placeholder="Sort by" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="name">Sort: Name</SelectItem>
-              <SelectItem value="department">Sort: Department</SelectItem>
-              <SelectItem value="role">Sort: Role</SelectItem>
-              <SelectItem value="joiningDate">Sort: Joining Date</SelectItem>
+              <SelectItem value="name">{t("staff.sortName")}</SelectItem>
+              <SelectItem value="department">{t("staff.sortDepartment")}</SelectItem>
+              <SelectItem value="role">{t("staff.sortRole")}</SelectItem>
+              <SelectItem value="joiningDate">{t("staff.sortJoiningDate")}</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowFilters(!showFilters)}>
             <Filter className="h-4 w-4" />
-            Filters
+            {t("staff.filters")}
             {activeFilterCount > 0 && <Badge variant="default" className="ml-1 h-5 min-w-[20px] px-1 text-[10px]">{activeFilterCount}</Badge>}
             {showFilters ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </Button>
@@ -150,7 +152,7 @@ export default function StaffDirectoryPage() {
               onClick={() => setShowTerminated(!showTerminated)}
               className="gap-1.5"
             >
-              {showTerminated ? "Showing Terminated" : "Active Staff"}
+              {showTerminated ? t("staff.showingTerminated") : t("staff.activeStaff")}
             </Button>
           </Tip>
         </div>
@@ -159,27 +161,27 @@ export default function StaffDirectoryPage() {
             <Select value={deptFilter} onValueChange={setDeptFilter}>
               <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="All">All Departments</SelectItem>
+                <SelectItem value="All">{t("staff.allDepartments")}</SelectItem>
                 {uniqueDepts.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="All">All Roles</SelectItem>
+                <SelectItem value="All">{t("staff.allRoles")}</SelectItem>
                 {uniqueRoles.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="All">All Categories</SelectItem>
+                <SelectItem value="All">{t("staff.allCategories")}</SelectItem>
                 {STAFF_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
               </SelectContent>
             </Select>
             {activeFilterCount > 0 && (
               <Button variant="ghost" size="sm" onClick={() => { setDeptFilter("All"); setRoleFilter("All"); setCategoryFilter("All"); }} className="gap-1 text-muted-foreground">
-                <X size={14} /> Clear filters
+                <X size={14} /> {t("common.clearFilters")}
               </Button>
             )}
           </div>

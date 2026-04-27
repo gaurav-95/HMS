@@ -17,6 +17,17 @@ import { useHospitalSettings, useSaveHospitalSettings, useOPDSettings, useSaveOP
 import { Settings, Building2, Clock, Shield, Database, Save, Lightbulb, Play, ArrowRightLeft, FlaskConical, UserCog, AlertTriangle, Loader2, Upload, X, Palette } from "lucide-react";
 import { Tip } from "@/components/ui/tooltip";
 import { useBranding, PALETTES } from "@/context/BrandingContext";
+import { useTranslation } from "react-i18next";
+
+const LANGUAGES = [
+  { code: "en", label: "English" },
+  { code: "hi", label: "हिन्दी (Hindi)" },
+  { code: "bn", label: "বাংলা (Bengali)" },
+  { code: "ta", label: "தமிழ் (Tamil)" },
+  { code: "mr", label: "मराठी (Marathi)" },
+  { code: "te", label: "తెలుగు (Telugu)" },
+  { code: "gu", label: "ગુજરાતી (Gujarati)" },
+];
 
 const HOSPITAL_DEFAULTS = {
   name: "Gandhi Seva Sadan Hospital",
@@ -37,6 +48,7 @@ const OPD_DEFAULTS = {
 
 export default function SettingsPage() {
   const { user, hasPermission } = useAuth();
+  const { i18n, t } = useTranslation();
   const canWrite = hasPermission("settings:write") || user?.role === "SUPER_ADMIN";
 
   const [hospital, setHospital] = useState(HOSPITAL_DEFAULTS);
@@ -125,8 +137,8 @@ export default function SettingsPage() {
         </div>
       )}
       <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">System configuration and preferences</p>
+        <h1 className="text-2xl font-bold">{t("settings.title")}</h1>
+        <p className="text-muted-foreground">{t("settings.subtitle")}</p>
       </div>
 
       {/* Hospital Information */}
@@ -135,44 +147,44 @@ export default function SettingsPage() {
           <div className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
             <div>
-              <CardTitle>Hospital Information</CardTitle>
-              <CardDescription>Basic details about the hospital</CardDescription>
+              <CardTitle>{t("settings.hospitalInfo")}</CardTitle>
+              <CardDescription>{t("settings.hospitalInfoDesc")}</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Hospital Name</Label>
+              <Label>{t("settings.hospitalName")}</Label>
               <Input value={hospital.name} onChange={(e) => setHospital((h) => ({ ...h, name: e.target.value }))} disabled={!canWrite} />
             </div>
             <div className="space-y-2">
-              <Label>Registration No.</Label>
+              <Label>{t("settings.registrationNo")}</Label>
               <Input value={hospital.registrationNo} onChange={(e) => setHospital((h) => ({ ...h, registrationNo: e.target.value }))} disabled={!canWrite} />
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Address</Label>
+            <Label>{t("settings.address")}</Label>
             <Input value={hospital.address} onChange={(e) => setHospital((h) => ({ ...h, address: e.target.value }))} disabled={!canWrite} />
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label>Phone</Label>
+              <Label>{t("settings.phone")}</Label>
               <Input value={hospital.phone} onChange={(e) => setHospital((h) => ({ ...h, phone: e.target.value }))} disabled={!canWrite} />
             </div>
             <div className="space-y-2">
-              <Label>Email</Label>
+              <Label>{t("settings.email")}</Label>
               <Input value={hospital.email} onChange={(e) => setHospital((h) => ({ ...h, email: e.target.value }))} disabled={!canWrite} />
             </div>
             <div className="space-y-2">
-              <Label>Website</Label>
+              <Label>{t("settings.website")}</Label>
               <Input value={hospital.website} onChange={(e) => setHospital((h) => ({ ...h, website: e.target.value }))} disabled={!canWrite} />
             </div>
           </div>
           {canWrite && (
             <Button onClick={handleSaveHospital} disabled={saveHospital.isPending}>
               {saveHospital.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
-              Save Hospital Info
+              {t("settings.saveHospitalInfo")}
             </Button>
           )}
         </CardContent>
@@ -184,40 +196,40 @@ export default function SettingsPage() {
           <div className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
             <div>
-              <CardTitle>OPD Configuration</CardTitle>
-              <CardDescription>Token and scheduling settings</CardDescription>
+              <CardTitle>{t("settings.opdSettings")}</CardTitle>
+              <CardDescription>{t("settings.opdSettingsDesc")}</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>OPD Start Time</Label>
+              <Label>{t("settings.startTime")}</Label>
               <Input type="time" value={opd.startTime} onChange={(e) => setOpd((o) => ({ ...o, startTime: e.target.value }))} disabled={!canWrite} />
             </div>
             <div className="space-y-2">
-              <Label>OPD End Time</Label>
+              <Label>{t("settings.endTime")}</Label>
               <Input type="time" value={opd.endTime} onChange={(e) => setOpd((o) => ({ ...o, endTime: e.target.value }))} disabled={!canWrite} />
             </div>
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label>Max Tokens/Day</Label>
+              <Label>{t("settings.maxTokens")}</Label>
               <Input type="number" value={opd.maxTokensPerDay} onChange={(e) => setOpd((o) => ({ ...o, maxTokensPerDay: Number(e.target.value) }))} disabled={!canWrite} />
             </div>
             <div className="space-y-2">
-              <Label>Token Prefix</Label>
+              <Label>{t("settings.tokenPrefix")}</Label>
               <Input value={opd.tokenPrefix} onChange={(e) => setOpd((o) => ({ ...o, tokenPrefix: e.target.value }))} disabled={!canWrite} />
             </div>
             <div className="space-y-2">
-              <Label>Consultation Fee (₹)</Label>
+              <Label>{t("settings.consultationFee")}</Label>
               <Input type="number" value={opd.consultationFee} onChange={(e) => setOpd((o) => ({ ...o, consultationFee: Number(e.target.value) }))} disabled={!canWrite} />
             </div>
           </div>
           {canWrite && (
             <Button onClick={handleSaveOPD} disabled={saveOPD.isPending}>
               {saveOPD.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
-              Save OPD Settings
+              {t("settings.saveOPDSettings")}
             </Button>
           )}
         </CardContent>
@@ -229,20 +241,38 @@ export default function SettingsPage() {
           <div className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
             <div>
-              <CardTitle>Appearance</CardTitle>
-              <CardDescription>Visual preferences</CardDescription>
+              <CardTitle>{t("settings.appearance")}</CardTitle>
+              <CardDescription>{t("settings.appearanceDesc")}</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Theme</Label>
+            <Label>{t("settings.theme")}</Label>
             <Select value={theme} onValueChange={(v) => { setTheme(v); localStorage.setItem("theme", v); toast.success(`Theme set to ${v}`); }}>
               <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="system">System Default</SelectItem>
-                <SelectItem value="light">Light</SelectItem>
-                <SelectItem value="dark">Dark</SelectItem>
+                <SelectItem value="system">{t("settings.systemDefault")}</SelectItem>
+                <SelectItem value="light">{t("settings.light")}</SelectItem>
+                <SelectItem value="dark">{t("settings.dark")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Separator />
+
+          {/* Language Selector */}
+          <div className="space-y-2">
+            <Label>{t("settings.language")}</Label>
+            <Select
+              value={i18n.language}
+              onValueChange={(val) => { i18n.changeLanguage(val); localStorage.setItem("language", val); }}
+            >
+              <SelectTrigger className="w-[220px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {LANGUAGES.map((lang) => (
+                  <SelectItem key={lang.code} value={lang.code}>{lang.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -253,7 +283,7 @@ export default function SettingsPage() {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Palette className="h-4 w-4 text-muted-foreground" />
-              <Label>Colour Palette</Label>
+              <Label>{t("settings.colourPalette")}</Label>
             </div>
             <div className="flex flex-wrap gap-3">
               {PALETTES.map((p) => (
@@ -285,7 +315,7 @@ export default function SettingsPage() {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Upload className="h-4 w-4 text-muted-foreground" />
-              <Label>Hospital Logo</Label>
+              <Label>{t("settings.hospitalLogo")}</Label>
             </div>
             <div className="flex items-center gap-4">
               {logoDataUrl ? (
@@ -296,7 +326,7 @@ export default function SettingsPage() {
                     size="sm"
                     onClick={() => { setLogo(null); toast.success("Logo removed"); }}
                   >
-                    <X className="h-4 w-4 mr-1" /> Remove
+                    <X className="h-4 w-4 mr-1" /> {t("common.remove")}
                   </Button>
                 </>
               ) : (
@@ -310,7 +340,7 @@ export default function SettingsPage() {
                       size="sm"
                       onClick={() => document.getElementById("logo-upload")?.click()}
                     >
-                      <Upload className="h-4 w-4 mr-1" /> Upload Logo
+                      <Upload className="h-4 w-4 mr-1" /> {t("settings.uploadLogo")}
                     </Button>
                     <p className="text-xs text-muted-foreground">PNG, JPG or GIF · shown in sidebar</p>
                   </div>
@@ -345,8 +375,8 @@ export default function SettingsPage() {
           <div className="flex items-center gap-2">
             <Database className="h-5 w-5" />
             <div>
-              <CardTitle>System Information</CardTitle>
-              <CardDescription>Application details</CardDescription>
+              <CardTitle>{t("settings.systemInfo")}</CardTitle>
+              <CardDescription>{t("settings.systemInfoDesc")}</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -385,8 +415,8 @@ export default function SettingsPage() {
           <div className="flex items-center gap-2">
             <ArrowRightLeft className="h-5 w-5" />
             <div>
-              <CardTitle>Data Mode</CardTitle>
-              <CardDescription>Switch between demo sample data and your own data</CardDescription>
+              <CardTitle>{t("settings.dataMode")}</CardTitle>
+              <CardDescription>{t("settings.dataModeDesc")}</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -418,7 +448,7 @@ export default function SettingsPage() {
           <div className="flex items-center gap-2">
             <Lightbulb className="h-5 w-5" />
             <div>
-              <CardTitle>Help & Onboarding</CardTitle>
+              <CardTitle>Help &amp; Onboarding</CardTitle>
               <CardDescription>Page hints, guided tour, and first-time user assistance</CardDescription>
             </div>
           </div>

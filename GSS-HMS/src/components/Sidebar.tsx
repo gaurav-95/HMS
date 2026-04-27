@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 import { useBranding } from "@/context/BrandingContext";
 import { useHospitalSettings } from "@/hooks/queries";
@@ -20,19 +21,20 @@ interface SidebarLink {
 const ICON_SIZE = 28;
 
 const SIDEBAR_LINKS: SidebarLink[] = [
-  { label: "Dashboard",      path: "/dashboard",  icon: <LayoutDashboard size={ICON_SIZE} />,  permissions: ["dashboard:view"] },
-  { label: "Staff Directory", path: "/staff",      icon: <Users size={ICON_SIZE} />,            permissions: ["staff:read"] },
-  { label: "Attendance",     path: "/attendance",  icon: <ClipboardCheck size={ICON_SIZE} />,   permissions: ["attendance:read"] },
-  { label: "Leave",          path: "/leave",       icon: <Calendar size={ICON_SIZE} />,         permissions: ["leave:apply"] },
-  { label: "Payroll",        path: "/payroll",     icon: <Wallet size={ICON_SIZE} />,           permissions: ["payroll:read"] },
-  { label: "Licenses & Certs", path: "/licenses",   icon: <FileCheck2 size={ICON_SIZE} />,       permissions: ["staff:read"] },
-  { label: "User Admin",    path: "/users",       icon: <UserCog size={ICON_SIZE} />,          permissions: ["users:read"] },
-  { label: "Settings",       path: "/settings",    icon: <Settings size={ICON_SIZE} />,         permissions: ["settings:read"] },
+  { label: "nav.dashboard",      path: "/dashboard",  icon: <LayoutDashboard size={ICON_SIZE} />,  permissions: ["dashboard:view"] },
+  { label: "nav.staff",          path: "/staff",      icon: <Users size={ICON_SIZE} />,            permissions: ["staff:read"] },
+  { label: "nav.attendance",     path: "/attendance",  icon: <ClipboardCheck size={ICON_SIZE} />,   permissions: ["attendance:read"] },
+  { label: "nav.leave",          path: "/leave",       icon: <Calendar size={ICON_SIZE} />,         permissions: ["leave:apply"] },
+  { label: "nav.payroll",        path: "/payroll",     icon: <Wallet size={ICON_SIZE} />,           permissions: ["payroll:read"] },
+  { label: "nav.licenses",       path: "/licenses",   icon: <FileCheck2 size={ICON_SIZE} />,       permissions: ["staff:read"] },
+  { label: "nav.users",          path: "/users",       icon: <UserCog size={ICON_SIZE} />,          permissions: ["users:read"] },
+  { label: "nav.settings",       path: "/settings",    icon: <Settings size={ICON_SIZE} />,         permissions: ["settings:read"] },
 ];
 
 export function Sidebar() {
   const { user, hasAnyPermission } = useAuth();
   const { logoDataUrl } = useBranding();
+  const { t } = useTranslation();
   const { data: hospitalData } = useHospitalSettings();
   const hospitalName = hospitalData?.name || "GSS Hospital";
   // Derive 2-3 letter initials from hospital name
@@ -60,7 +62,7 @@ export function Sidebar() {
         )}
         <div className="min-w-0">
           <h1 className="text-base font-bold text-sidebar-accent-foreground leading-none truncate">{hospitalName}</h1>
-          <p className="text-xs text-muted-foreground">Management System</p>
+          <p className="text-xs text-muted-foreground">{t("nav.managementSystem")}</p>
         </div>
       </div>
 
@@ -80,7 +82,7 @@ export function Sidebar() {
             }
           >
             {link.icon}
-            {link.label}
+            {t(link.label)}
           </NavLink>
         ))}
       </nav>

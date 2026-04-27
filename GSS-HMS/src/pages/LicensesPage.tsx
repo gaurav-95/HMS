@@ -27,6 +27,7 @@ import {
   FileCheck2, Plus, Upload, Download, Eye, Pencil, Trash2, CheckCircle2,
   RotateCcw, Loader2, Search, ShieldAlert, Building2,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const LICENSE_CATEGORIES = ["Statutory", "Clinical", "Income Tax", "Regulatory", "Accreditation", "Pharmacy", "Other"] as const;
 
@@ -61,6 +62,7 @@ interface CertRow {
 
 export default function LicensesPage() {
   const { hasPermission } = useAuth();
+  const { t } = useTranslation();
   const canWrite = hasPermission("staff:write");
   const canDelete = hasPermission("staff:delete");
   const [searchParams] = useSearchParams();
@@ -289,7 +291,7 @@ export default function LicensesPage() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <FileCheck2 className="h-6 w-6 text-primary" />
-            Licenses &amp; Certifications
+            {t("licenses.title")}
           </h1>
           <p className="text-muted-foreground">Manage hospital licenses and staff certifications</p>
         </div>
@@ -301,13 +303,13 @@ export default function LicensesPage() {
           onClick={() => setTab("licenses")}
           className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${tab === "licenses" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
         >
-          <span className="flex items-center gap-1.5"><Building2 size={15} /> Hospital Licenses</span>
+          <span className="flex items-center gap-1.5"><Building2 size={15} /> {t("licenses.hospitalTab")}</span>
         </button>
         <button
           onClick={() => setTab("certifications")}
           className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${tab === "certifications" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
         >
-          <span className="flex items-center gap-1.5"><ShieldAlert size={15} /> Staff Certifications</span>
+          <span className="flex items-center gap-1.5"><ShieldAlert size={15} /> {t("licenses.staffTab")}</span>
         </button>
       </div>
 
@@ -323,16 +325,16 @@ export default function LicensesPage() {
             <Select value={licStatusFilter} onValueChange={setLicStatusFilter}>
               <SelectTrigger className="w-36 h-9 text-sm"><SelectValue placeholder="Status" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="Valid">Valid</SelectItem>
-                <SelectItem value="Expiring">Expiring</SelectItem>
-                <SelectItem value="Expired">Expired</SelectItem>
+                <SelectItem value="all">{t("licenses.allStatuses")}</SelectItem>
+                <SelectItem value="Valid">{t("licenses.valid")}</SelectItem>
+                <SelectItem value="Expiring">{t("licenses.expiring")}</SelectItem>
+                <SelectItem value="Expired">{t("licenses.expired")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={licCategoryFilter} onValueChange={setLicCategoryFilter}>
               <SelectTrigger className="w-36 h-9 text-sm"><SelectValue placeholder="Category" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="all">{t("licenses.allCategories")}</SelectItem>
                 {LICENSE_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -342,12 +344,12 @@ export default function LicensesPage() {
               className="h-9 text-xs"
               onClick={() => setShowAddressed((v) => !v)}
             >
-              {showAddressed ? "Hide Addressed" : "Show Addressed"}
+              {showAddressed ? t("licenses.hideAddressed") : t("licenses.showAddressed")}
             </Button>
             <div className="flex-1" />
             {canWrite && (
               <Button size="sm" className="h-9 gap-1.5" onClick={() => { setForm({ ...BLANK_FORM }); setAddOpen(true); }}>
-                <Plus size={15} /> Add License
+                <Plus size={15} /> {t("licenses.addLicense")}
               </Button>
             )}
           </div>

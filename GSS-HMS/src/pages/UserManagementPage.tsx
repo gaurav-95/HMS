@@ -15,12 +15,14 @@ import { Tip } from "@/components/ui/tooltip";
 import { getInitials } from "@/lib/utils";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 import { ROLE_LABELS, type UserRole } from "@/types";
+import { useTranslation } from "react-i18next";
 
 const ALL_ROLES = Object.entries(ROLE_LABELS) as [UserRole, string][];
 
 export default function UserManagementPage() {
   const { hasPermission, user } = useAuth();
   const { data: users = [], isLoading } = useUsers();
+  const { t } = useTranslation();
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
   const deleteUser = useDeleteUser();
@@ -69,12 +71,12 @@ export default function UserManagementPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold">User Administration</h1>
-          <p className="text-muted-foreground">{filtered.length} of {allUsers.length} users</p>
+          <h1 className="text-2xl font-bold">{t("users.title")}</h1>
+          <p className="text-muted-foreground">{t("users.usersCount", { filtered: filtered.length, total: allUsers.length })}</p>
         </div>
         {canWrite && (
           <Button onClick={() => setShowAddModal(true)} className="gap-2">
-            <Plus size={16} /> Add User
+            <Plus size={16} /> {t("users.addUser")}
           </Button>
         )}
       </div>
@@ -83,26 +85,26 @@ export default function UserManagementPage() {
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search by name or email..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder={t("users.searchPlaceholder")} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Select value={filterRole} onValueChange={setFilterRole}>
           <SelectTrigger className="w-[160px]"><Filter className="h-4 w-4 mr-1" /><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
+            <SelectItem value="all">{t("users.allRoles")}</SelectItem>
             {ALL_ROLES.map(([key, label]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
           <SelectTrigger className="w-[150px]"><ArrowUpDown className="h-4 w-4 mr-1" /><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="name">Sort: Name</SelectItem>
-            <SelectItem value="role">Sort: Role</SelectItem>
-            <SelectItem value="recent">Sort: Recent</SelectItem>
+            <SelectItem value="name">{t("users.sortName")}</SelectItem>
+            <SelectItem value="role">{t("users.sortRole")}</SelectItem>
+            <SelectItem value="recent">{t("users.sortRecent")}</SelectItem>
           </SelectContent>
         </Select>
         <Tip content="Switch between viewing active users and deactivated accounts">
           <Button variant={showInactive ? "default" : "outline"} size="sm" onClick={() => setShowInactive(!showInactive)}>
-            {showInactive ? "Showing Inactive" : "Show Inactive"}
+            {showInactive ? t("users.showActive") : t("users.showInactive")}
           </Button>
         </Tip>
       </div>
