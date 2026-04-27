@@ -1,13 +1,13 @@
 $ErrorActionPreference = "Stop"
 
-$src     = "$PSScriptRoot\GSS-HMS-v2"
-$dst     = "$PSScriptRoot\GSS Hospital Pro v2"
+$src     = "$PSScriptRoot\GSS-HMS"
+$dst     = "$PSScriptRoot\GSS Hospital Pro"
 $assets  = "$dst\resources\app\assets"
 $appHtml = "$dst\resources\app\index.html"
 $server  = "$dst\server\index.cjs"
 
 Write-Host ""
-Write-Host "==> Building GSS-HMS-v2..." -ForegroundColor Cyan
+Write-Host "==> Building GSS-HMS..." -ForegroundColor Cyan
 
 Push-Location $src
 try {

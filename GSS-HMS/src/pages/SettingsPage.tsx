@@ -40,7 +40,7 @@ export default function SettingsPage() {
 
   const [hospital, setHospital] = useState(HOSPITAL_DEFAULTS);
   const [opd, setOpd] = useState(OPD_DEFAULTS);
-  const [theme, setTheme] = useState<string>(() => localStorage.getItem("theme") || "system");
+  const [theme, setTheme] = useState<string>(() => localStorage.getItem("theme") || "light");
 
   // Apply theme on mount and whenever theme changes
   useEffect(() => {
