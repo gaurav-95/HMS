@@ -79021,12 +79021,23 @@ var certUpload = (0, import_multer.default)({
   }
 });
 var router2 = (0, import_express2.Router)();
-router2.get("/", requireAuth, requirePermission("staff:read"), (req, res) => {
+router2.get("/", requireAuth, (req, res) => {
+  const role = req.user.role;
+  if (role === "STAFF") {
+    const linked = db.select().from(staff).where(eq(staff.userId, req.user.id)).get();
+    if (!linked) return res.json([]);
+    const certs = db.select().from(certifications).where(eq(certifications.staffId, linked.id)).all();
+    const staffKpis = db.select().from(kpis).where(eq(kpis.staffId, linked.id)).all();
+    return res.json([{ ...linked, certifications: certs, kpis: staffKpis }]);
+  }
+  if (!hasPermission(role, "staff:read")) {
+    return res.status(403).json({ error: "Insufficient permissions" });
+  }
   let allStaff;
-  if (req.user.role === "LEADER" && req.user.department) {
+  if (role === "LEADER" && req.user.department) {
     allStaff = db.select().from(staff).where(and(eq(staff.isActive, true), eq(staff.department, req.user.department))).all();
   } else {
-    allStaff = db.select().from(staff).where(eq(staff.isActive, true)).all();
+    allStaff = db.select().from(staff).all();
   }
   const result = allStaff.map((s) => {
     const certs = db.select().from(certifications).where(eq(certifications.staffId, s.id)).all();

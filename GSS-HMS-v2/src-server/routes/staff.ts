@@ -7,7 +7,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import { db } from "../db/index";
 import { staff, certifications, kpis, attendanceRecords, leaveRequests, payrollRecords, staffDocuments } from "../db/schema";
-import { requireAuth, requirePermission, AuthRequest } from "../middleware/auth";
+import { requireAuth, requirePermission, hasPermission, AuthRequest } from "../middleware/auth";
 
 const __filename_esm = typeof __filename !== "undefined" ? __filename : fileURLToPath(import.meta.url);
 const __dirname_esm = typeof __dirname !== "undefined" ? __dirname : path.dirname(__filename_esm);
@@ -55,15 +55,32 @@ const certUpload = multer({
 const router = Router();
 
 /** GET /api/staff */
-router.get("/", requireAuth, requirePermission("staff:read"), (req: AuthRequest, res) => {
+router.get("/", requireAuth, (req: AuthRequest, res) => {
+  const role = req.user!.role;
+
+  // STAFF: only see their own linked profile (no staff:read permission needed for self)
+  if (role === "STAFF") {
+    const linked = db.select().from(staff).where(eq(staff.userId, req.user!.id)).get();
+    if (!linked) return res.json([]);
+    const certs = db.select().from(certifications).where(eq(certifications.staffId, linked.id)).all();
+    const staffKpis = db.select().from(kpis).where(eq(kpis.staffId, linked.id)).all();
+    return res.json([{ ...linked, certifications: certs, kpis: staffKpis }]);
+  }
+
+  // All other roles require staff:read permission
+  if (!hasPermission(role, "staff:read")) {
+    return res.status(403).json({ error: "Insufficient permissions" });
+  }
+
   let allStaff;
 
-  // LEADER: only see staff in their department
-  if (req.user!.role === "LEADER" && req.user!.department) {
+  // LEADER: only see active staff in their department
+  if (role === "LEADER" && req.user!.department) {
     allStaff = db.select().from(staff)
       .where(and(eq(staff.isActive, true), eq(staff.department, req.user!.department))).all();
   } else {
-    allStaff = db.select().from(staff).where(eq(staff.isActive, true)).all();
+    // SUPER_ADMIN / ADMIN: see all staff including terminated
+    allStaff = db.select().from(staff).all();
   }
 
   // Attach certifications and KPIs

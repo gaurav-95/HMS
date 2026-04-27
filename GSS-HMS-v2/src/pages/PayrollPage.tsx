@@ -206,9 +206,9 @@ export default function PayrollPage() {
         <p className="text-sm text-muted-foreground">Showing results for <strong>{filterDept}</strong></p>
       )}
       <div className="grid gap-4 sm:grid-cols-4">
-        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Gross Payroll{filterDept !== "all" ? ` · ${filterDept}` : ""}</p><p className="text-2xl font-bold">{isSuperAdmin ? formatCurrency(totalGross) : "—"}</p></CardContent></Card>
-        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Total Deductions{filterDept !== "all" ? ` · ${filterDept}` : ""}</p><p className="text-2xl font-bold text-red-600">{isSuperAdmin ? formatCurrency(totalDeductions) : "—"}</p></CardContent></Card>
-        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Net Payroll{filterDept !== "all" ? ` · ${filterDept}` : ""}</p><p className="text-2xl font-bold text-green-600">{isSuperAdmin ? formatCurrency(totalNet) : "—"}</p></CardContent></Card>
+        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Gross Payroll{filterDept !== "all" ? ` · ${filterDept}` : ""}</p><p className="text-2xl font-bold">{formatCurrency(totalGross)}</p></CardContent></Card>
+        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Total Deductions{filterDept !== "all" ? ` · ${filterDept}` : ""}</p><p className="text-2xl font-bold text-red-600">{formatCurrency(totalDeductions)}</p></CardContent></Card>
+        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Net Payroll{filterDept !== "all" ? ` · ${filterDept}` : ""}</p><p className="text-2xl font-bold text-green-600">{formatCurrency(totalNet)}</p></CardContent></Card>
         <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Records{filterDept !== "all" ? ` · ${filterDept}` : ""}</p><p className="text-2xl font-bold">{filtered.length}</p></CardContent></Card>
       </div>
 
@@ -252,14 +252,14 @@ export default function PayrollPage() {
                     <TableCell className="font-medium">{p.staffName}</TableCell>
                     <TableCell>{p.department || "—"}</TableCell>
                     <TableCell>{p.month} {p.year}</TableCell>
-                    <TableCell className="text-right">{isSuperAdmin ? formatCurrency(p.basicSalary || 0) : "—"}</TableCell>
-                    <TableCell className="text-right">{isSuperAdmin ? formatCurrency(p.hra || 0) : "—"}</TableCell>
-                    <TableCell className="text-right">{isSuperAdmin ? formatCurrency(p.otherAllowance || 0) : "—"}</TableCell>
-                    <TableCell className="text-right font-medium">{isSuperAdmin ? formatCurrency(p.grossSalary || 0) : "—"}</TableCell>
-                    <TableCell className="text-right text-red-600">{isSuperAdmin ? formatCurrency(p.epfEmployee || 0) : "—"}</TableCell>
-                    <TableCell className="text-right text-red-600">{isSuperAdmin ? formatCurrency(p.professionalTax || 0) : "—"}</TableCell>
-                    <TableCell className="text-right text-red-600">{isSuperAdmin ? formatCurrency(p.leaveDeductions || 0) : "—"}</TableCell>
-                    <TableCell className="text-right font-bold">{isSuperAdmin ? formatCurrency(p.netSalary || 0) : "—"}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(p.basicSalary || 0)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(p.hra || 0)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(p.otherAllowance || 0)}</TableCell>
+                    <TableCell className="text-right font-medium">{formatCurrency(p.grossSalary || 0)}</TableCell>
+                    <TableCell className="text-right text-red-600">{formatCurrency(p.epfEmployee || 0)}</TableCell>
+                    <TableCell className="text-right text-red-600">{formatCurrency(p.professionalTax || 0)}</TableCell>
+                    <TableCell className="text-right text-red-600">{formatCurrency(p.leaveDeductions || 0)}</TableCell>
+                    <TableCell className="text-right font-bold">{formatCurrency(p.netSalary || 0)}</TableCell>
                     <TableCell className="text-center">{p.attendedShifts ?? 0}/{p.totalShifts ?? 0}</TableCell>
                     <TableCell>
                       <Badge variant={p.status === "Paid" ? "success" : p.status === "Approved" ? "info" : p.status === "Processed" ? "secondary" : "warning"}>
@@ -360,7 +360,7 @@ export default function PayrollPage() {
                     <p className="text-sm font-medium truncate">{s.name}</p>
                     <p className="text-xs text-muted-foreground">{s.department} &middot; {s.role}</p>
                   </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">{isSuperAdmin ? formatCurrency(s.baseSalary) : "—"}</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{formatCurrency(s.baseSalary)}</span>
                 </label>
               ))}
               {activeStaff.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No active staff</p>}

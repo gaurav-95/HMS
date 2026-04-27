@@ -294,8 +294,8 @@ export default function LeavePage() {
           <div className="grid gap-4 py-2">
             <div className="space-y-2">
               <Label>Staff Member</Label>
-              {(isAdmin || isStaff) ? (
-                // Admin and Staff can only apply leave for themselves
+              {isStaff ? (
+                // Staff can only apply for their own linked profile
                 <Select value={form.staffId} onValueChange={handleStaffSelect}>
                   <SelectTrigger><SelectValue placeholder="Select staff member" /></SelectTrigger>
                   <SelectContent>
