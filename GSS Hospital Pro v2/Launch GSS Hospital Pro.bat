@@ -27,7 +27,7 @@ if "%ARCH%"=="x86" (
     echo  ==========================================================
     echo   [ERROR] 64-bit Windows required.
     echo.
-    echo   This application requires a 64-bit (x64) version of
+    echo   This application requires a 64-bit ^(x64^) version of
     echo   Windows. Your system is running 32-bit Windows.
     echo  ==========================================================
     echo.
@@ -166,11 +166,7 @@ echo.
 echo  ==========================================================
 echo   [ERROR] Database driver could not be loaded!
 echo.
-echo   This usually means the Visual C++ Redistributable is
-echo   not installed. Download and install it from:
-echo     https://aka.ms/vs/17/release/vc_redist.%ARCH%.exe
-echo.
-echo   Then try launching again.
+echo   Please contact support or re-download the application.
 echo  ==========================================================
 echo.
 pause
@@ -181,8 +177,8 @@ for /f "delims=" %%v in ('"%NODE_EXE%" -v 2^>nul') do echo  [OK] Node.js version
 
 :start_server
 REM ─── Check if port 3001 is already in use ──────────────
-powershell -NoProfile -Command "if(Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue){exit 1}else{exit 0}" >nul 2>&1
-if !ERRORLEVEL! EQU 1 (
+netstat -an 2>nul | find ":3001 " | find "LISTENING" >nul 2>&1
+if !ERRORLEVEL! EQU 0 (
     echo.
     echo  ==========================================================
     echo   [ERROR] Port 3001 is already in use!
@@ -243,7 +239,7 @@ if exist "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" set "CHRO
 if exist "C:\Program Files\Google\Chrome\Application\chrome.exe" set "CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe"
 
 if defined CHROME_PATH (
-    echo  [OK] Launching standalone window (Chrome)...
+    echo  [OK] Launching standalone window ^(Chrome^)...
     start "" "%CHROME_PATH%" --app=http://localhost:3001 --window-size=1400,900
     goto :running
 )

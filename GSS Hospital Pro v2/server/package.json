@@ -5,7 +5,6 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.8.0",
-    "gss-hms-v2": "file:../../GSS-HMS-v2",
     "multer": "^2.0.0"
   },
   "scripts": {

@@ -107,16 +107,16 @@ echo  Updating database driver for %ARCH%...
 if !ERRORLEVEL! NEQ 0 (
     echo.
     echo  [ERROR] Database driver could not be loaded!
-    echo  Install Visual C++ Redistributable from:
-    echo    https://aka.ms/vs/17/release/vc_redist.%ARCH%.exe
+    echo  Please contact support or re-download the application.
+    echo.
     pause
     exit /b 1
 )
 
 :start
 REM ─── Check if port 3001 is already in use ──────────────
-powershell -NoProfile -Command "if(Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue){exit 1}else{exit 0}" >nul 2>&1
-if !ERRORLEVEL! EQU 1 (
+netstat -an 2>nul | find ":3001 " | find "LISTENING" >nul 2>&1
+if !ERRORLEVEL! EQU 0 (
     echo.
     echo  [ERROR] Port 3001 is already in use!
     echo  Another application is using port 3001.
