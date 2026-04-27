@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/context/AuthContext";
+import { BrandingProvider } from "@/context/BrandingContext";
 import { AppLayout } from "@/components/AppLayout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -28,6 +29,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
     <TooltipProvider delayDuration={300}>
+    <BrandingProvider>
     <ErrorBoundary>
     <Toaster position="top-right" richColors closeButton duration={3000} />
     <BrowserRouter>
@@ -54,6 +56,7 @@ export default function App() {
       </AuthProvider>
     </BrowserRouter>
     </ErrorBoundary>
+    </BrandingProvider>
     </TooltipProvider>
     </QueryClientProvider>
   );

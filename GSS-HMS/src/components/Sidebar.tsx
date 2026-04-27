@@ -1,5 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { useBranding } from "@/context/BrandingContext";
+import { useHospitalSettings } from "@/hooks/queries";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -30,6 +32,16 @@ const SIDEBAR_LINKS: SidebarLink[] = [
 
 export function Sidebar() {
   const { user, hasAnyPermission } = useAuth();
+  const { logoDataUrl } = useBranding();
+  const { data: hospitalData } = useHospitalSettings();
+  const hospitalName = hospitalData?.name || "GSS Hospital";
+  // Derive 2-3 letter initials from hospital name
+  const initials = hospitalName
+    .split(" ")
+    .filter((w: string) => w.length > 2)
+    .slice(0, 3)
+    .map((w: string) => w[0].toUpperCase())
+    .join("") || hospitalName.slice(0, 3).toUpperCase();
 
   const visibleLinks = SIDEBAR_LINKS.filter((link) => hasAnyPermission(link.permissions));
 
@@ -39,11 +51,15 @@ export function Sidebar() {
     <aside className="flex h-full w-64 flex-col border-r bg-sidebar">
       {/* Logo / Brand */}
       <div className="flex h-16 items-center gap-3 px-6 border-b border-sidebar-border">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-base">
-          GSS
-        </div>
-        <div>
-          <h1 className="text-base font-bold text-sidebar-accent-foreground leading-none">GSS Hospital</h1>
+        {logoDataUrl ? (
+          <img src={logoDataUrl} alt="Logo" className="h-10 w-10 rounded-lg object-cover" />
+        ) : (
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm shrink-0">
+            {initials}
+          </div>
+        )}
+        <div className="min-w-0">
+          <h1 className="text-base font-bold text-sidebar-accent-foreground leading-none truncate">{hospitalName}</h1>
           <p className="text-xs text-muted-foreground">Management System</p>
         </div>
       </div>

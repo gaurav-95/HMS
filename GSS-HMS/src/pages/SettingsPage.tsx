@@ -14,8 +14,9 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { useHospitalSettings, useSaveHospitalSettings, useOPDSettings, useSaveOPDSettings } from "@/hooks/queries";
-import { Settings, Building2, Clock, Shield, Database, Save, Lightbulb, Play, ArrowRightLeft, FlaskConical, UserCog, AlertTriangle, Loader2 } from "lucide-react";
+import { Settings, Building2, Clock, Shield, Database, Save, Lightbulb, Play, ArrowRightLeft, FlaskConical, UserCog, AlertTriangle, Loader2, Upload, X, Palette } from "lucide-react";
 import { Tip } from "@/components/ui/tooltip";
+import { useBranding, PALETTES } from "@/context/BrandingContext";
 
 const HOSPITAL_DEFAULTS = {
   name: "Gandhi Seva Sadan Hospital",
@@ -41,6 +42,7 @@ export default function SettingsPage() {
   const [hospital, setHospital] = useState(HOSPITAL_DEFAULTS);
   const [opd, setOpd] = useState(OPD_DEFAULTS);
   const [theme, setTheme] = useState<string>(() => localStorage.getItem("theme") || "light");
+  const { logoDataUrl, paletteKey, setLogo, setPalette } = useBranding();
 
   // Apply theme on mount and whenever theme changes
   useEffect(() => {
@@ -243,6 +245,96 @@ export default function SettingsPage() {
                 <SelectItem value="dark">Dark</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <Separator />
+
+          {/* Colour Palette */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Palette className="h-4 w-4 text-muted-foreground" />
+              <Label>Colour Palette</Label>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {PALETTES.map((p) => (
+                <button
+                  key={p.key}
+                  title={p.label}
+                  onClick={() => { setPalette(p.key); toast.success(`Palette set to ${p.label}`); }}
+                  className={`relative h-9 w-9 rounded-full border-2 transition-all ${
+                    paletteKey === p.key
+                      ? "border-foreground scale-110 shadow-md"
+                      : "border-transparent hover:scale-105 hover:border-muted-foreground"
+                  }`}
+                  style={{ backgroundColor: p.light }}
+                >
+                  {paletteKey === p.key && (
+                    <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold">✓</span>
+                  )}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {PALETTES.find((p) => p.key === paletteKey)?.label} — applies immediately across the whole app
+            </p>
+          </div>
+
+          <Separator />
+
+          {/* Logo */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Upload className="h-4 w-4 text-muted-foreground" />
+              <Label>Hospital Logo</Label>
+            </div>
+            <div className="flex items-center gap-4">
+              {logoDataUrl ? (
+                <>
+                  <img src={logoDataUrl} alt="Logo preview" className="h-16 w-16 rounded-lg object-cover border" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setLogo(null); toast.success("Logo removed"); }}
+                  >
+                    <X className="h-4 w-4 mr-1" /> Remove
+                  </Button>
+                </>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <div className="h-16 w-16 rounded-lg border-2 border-dashed border-muted-foreground/40 flex items-center justify-center text-muted-foreground text-xs text-center leading-tight">
+                    No logo
+                  </div>
+                  <div className="space-y-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById("logo-upload")?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-1" /> Upload Logo
+                    </Button>
+                    <p className="text-xs text-muted-foreground">PNG, JPG or GIF · shown in sidebar</p>
+                  </div>
+                </div>
+              )}
+              <input
+                id="logo-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (file.size > 2 * 1024 * 1024) { toast.error("Image must be under 2 MB"); return; }
+                  const reader = new FileReader();
+                  reader.onload = (ev) => {
+                    setLogo(ev.target?.result as string);
+                    toast.success("Logo updated");
+                  };
+                  reader.readAsDataURL(file);
+                  e.target.value = "";
+                }}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
