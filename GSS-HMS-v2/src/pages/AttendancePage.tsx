@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { useAttendance, useCreateAttendance, useUpdateAttendance, useStaff } from "@/hooks/queries";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -273,14 +273,14 @@ export default function AttendancePage() {
             </TableHeader>
             <TableBody>
               {groupByDept && groupedByDept ? (
-                groupedByDept.map(([dept, records]) => (
-                  <>
-                    <TableRow key={`dept-${dept}`}>
+                groupedByDept.map(([dept, deptRecords]) => (
+                  <Fragment key={`dept-${dept}`}>
+                    <TableRow>
                       <TableCell colSpan={hasPermission("attendance:write") ? 7 : 6} className="bg-muted/50 font-semibold text-sm py-2">
-                        {dept} <span className="font-normal text-muted-foreground ml-1">({records.length} records)</span>
+                        {dept} <span className="font-normal text-muted-foreground ml-1">({deptRecords.length} records)</span>
                       </TableCell>
                     </TableRow>
-                    {records.map((a: any) => (
+                    {deptRecords.map((a: any) => (
                       <TableRow key={a.id}>
                         <TableCell className="font-medium pl-6">{a.staffName}</TableCell>
                         <TableCell className="text-muted-foreground">{dept}</TableCell>
@@ -303,7 +303,7 @@ export default function AttendancePage() {
                         )}
                       </TableRow>
                     ))}
-                  </>
+                  </Fragment>
                 ))
               ) : (
               filtered.map((a: any) => {

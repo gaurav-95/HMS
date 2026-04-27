@@ -126,7 +126,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   ADMIN: [
     "dashboard:view",
     "staff:read", "staff:write",
-    "payroll:read",
+    "payroll:read", "payroll:write", "payroll:approve",
     "users:read", "users:write",
     "leave:apply", "leave:approve",
     "attendance:read", "attendance:write",

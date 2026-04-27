@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Search, Filter, Trash2, ArrowRight, Zap } from "lucide-react";
+import { Loader2, Search, Filter, Trash2, ArrowRight, Zap, RotateCcw, ChevronUp, ChevronDown, ChevronsUpDown, AlertTriangle } from "lucide-react";
 import { ExportButtons } from "@/components/ExportButtons";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 import { formatCurrency } from "@/lib/utils";
@@ -20,6 +20,7 @@ const MONTHS = ["January", "February", "March", "April", "May", "June", "July", 
 const currentMonth = MONTHS[new Date().getMonth()];
 const currentYear = new Date().getFullYear().toString();
 const STATUS_FLOW: Record<string, string> = { Draft: "Processed", Processed: "Approved", Approved: "Paid" };
+const STATUS_REVERSE: Record<string, string> = { Processed: "Draft", Approved: "Processed", Paid: "Approved" };
 
 export default function PayrollPage() {
   const { data: payroll = [], isLoading } = usePayroll();
@@ -42,6 +43,9 @@ export default function PayrollPage() {
   const [genYear, setGenYear] = useState(currentYear);
   const [showGenerate, setShowGenerate] = useState(false);
   const [selectedStaffIds, setSelectedStaffIds] = useState<Set<string>>(new Set());
+  const [filterDept, setFilterDept] = useState<string>("all");
+  const [deptSort, setDeptSort] = useState<"asc" | "desc" | null>(null);
+  const [actionTarget, setActionTarget] = useState<{ record: any; nextStatus: string; isUndo: boolean } | null>(null);
 
   // Active staff for the generate dialog
   const activeStaff = useMemo(() => allStaff.filter((s: any) => s.isActive !== false && !s.terminationDate), [allStaff]);
@@ -75,23 +79,43 @@ export default function PayrollPage() {
     return [...yrs].sort((a, b) => Number(b) - Number(a));
   }, [allPayroll]);
 
+  const availableDepts = useMemo(() => {
+    const fromStaff = allStaff.map((s: any) => s.department).filter(Boolean);
+    const fromPayroll = allPayroll.map((p: any) => p.department).filter(Boolean);
+    const depts = new Set([...fromStaff, ...fromPayroll]);
+    return [...depts].sort() as string[];
+  }, [allStaff, allPayroll]);
+
   const filtered = useMemo(() => {
-    return allPayroll.filter((p: any) => {
+    let list = allPayroll.filter((p: any) => {
       const matchSearch = !search || p.staffName?.toLowerCase().includes(search.toLowerCase());
       const matchMonth = filterMonth === "all" || p.month === filterMonth;
       const matchYear = filterYear === "all" || p.year === filterYear;
       const matchStatus = filterStatus === "all" || p.status === filterStatus;
-      return matchSearch && matchMonth && matchYear && matchStatus;
+      const matchDept = filterDept === "all" || p.department === filterDept;
+      return matchSearch && matchMonth && matchYear && matchStatus && matchDept;
     });
-  }, [allPayroll, search, filterMonth, filterYear, filterStatus]);
+    if (deptSort) {
+      list = [...list].sort((a, b) => {
+        const da = (a.department || "").toLowerCase();
+        const db = (b.department || "").toLowerCase();
+        return deptSort === "asc" ? da.localeCompare(db) : db.localeCompare(da);
+      });
+    }
+    return list;
+  }, [allPayroll, search, filterMonth, filterYear, filterStatus, filterDept, deptSort]);
 
   const totalGross = filtered.reduce((s: number, p: any) => s + (p.grossSalary || 0), 0);
   const totalNet = filtered.reduce((s: number, p: any) => s + (p.netSalary || 0), 0);
   const totalDeductions = filtered.reduce((s: number, p: any) => s + (p.deductions || 0), 0);
 
-  const handleStatusChange = (id: string, currentStatus: string) => {
-    const next = STATUS_FLOW[currentStatus];
-    if (next) updatePayrollStatus.mutate({ id, status: next });
+  const handleConfirmAction = () => {
+    if (actionTarget) {
+      updatePayrollStatus.mutate(
+        { id: actionTarget.record.id, status: actionTarget.nextStatus },
+        { onSuccess: () => setActionTarget(null) },
+      );
+    }
   };
 
   const handleGenerate = () => {
@@ -162,14 +186,24 @@ export default function PayrollPage() {
             <SelectItem value="Paid">Paid</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={filterDept} onValueChange={setFilterDept}>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="All Departments" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Departments</SelectItem>
+            {availableDepts.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Summary cards */}
+      {filterDept !== "all" && (
+        <p className="text-sm text-muted-foreground">Showing results for <strong>{filterDept}</strong></p>
+      )}
       <div className="grid gap-4 sm:grid-cols-4">
-        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Gross Payroll</p><p className="text-2xl font-bold">{isSuperAdmin ? formatCurrency(totalGross) : "—"}</p></CardContent></Card>
-        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Total Deductions</p><p className="text-2xl font-bold text-red-600">{isSuperAdmin ? formatCurrency(totalDeductions) : "—"}</p></CardContent></Card>
-        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Net Payroll</p><p className="text-2xl font-bold text-green-600">{isSuperAdmin ? formatCurrency(totalNet) : "—"}</p></CardContent></Card>
-        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Records</p><p className="text-2xl font-bold">{filtered.length}</p></CardContent></Card>
+        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Gross Payroll{filterDept !== "all" ? ` · ${filterDept}` : ""}</p><p className="text-2xl font-bold">{isSuperAdmin ? formatCurrency(totalGross) : "—"}</p></CardContent></Card>
+        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Total Deductions{filterDept !== "all" ? ` · ${filterDept}` : ""}</p><p className="text-2xl font-bold text-red-600">{isSuperAdmin ? formatCurrency(totalDeductions) : "—"}</p></CardContent></Card>
+        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Net Payroll{filterDept !== "all" ? ` · ${filterDept}` : ""}</p><p className="text-2xl font-bold text-green-600">{isSuperAdmin ? formatCurrency(totalNet) : "—"}</p></CardContent></Card>
+        <Card><CardContent className="pt-4 pb-4"><p className="text-sm text-muted-foreground">Records{filterDept !== "all" ? ` · ${filterDept}` : ""}</p><p className="text-2xl font-bold">{filtered.length}</p></CardContent></Card>
       </div>
 
       {/* Table */}
@@ -181,7 +215,15 @@ export default function PayrollPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Employee</TableHead>
-                <TableHead>Dept</TableHead>
+                <TableHead
+                  className="cursor-pointer select-none whitespace-nowrap hover:bg-muted/50 transition-colors"
+                  onClick={() => setDeptSort((s) => s === "asc" ? "desc" : s === "desc" ? null : "asc")}
+                >
+                  <span className="flex items-center gap-1 font-semibold">
+                    Dept
+                    {deptSort === "asc" ? <ChevronUp className="h-4 w-4 text-primary" /> : deptSort === "desc" ? <ChevronDown className="h-4 w-4 text-primary" /> : <ChevronsUpDown className="h-4 w-4" />}
+                  </span>
+                </TableHead>
                 <TableHead>Month</TableHead>
                 <TableHead className="text-right">Basic</TableHead>
                 <TableHead className="text-right">HRA</TableHead>
@@ -222,8 +264,15 @@ export default function PayrollPage() {
                       <div className="flex items-center justify-end gap-1">
                         {nextStatus && hasPermission("payroll:approve") && (
                           <Tip content={`Advance status: ${p.status} → ${nextStatus}`}>
-                            <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => handleStatusChange(p.id, p.status)}>
+                            <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setActionTarget({ record: p, nextStatus, isUndo: false })}>
                               <ArrowRight className="h-3 w-3 mr-1" /> {nextStatus}
+                            </Button>
+                          </Tip>
+                        )}
+                        {isSuperAdmin && STATUS_REVERSE[p.status] && (
+                          <Tip content={`Undo: revert ${p.status} → ${STATUS_REVERSE[p.status]}`}>
+                            <Button variant="ghost" size="sm" className="h-8 text-xs text-amber-600 hover:text-amber-700" onClick={() => setActionTarget({ record: p, nextStatus: STATUS_REVERSE[p.status], isUndo: true })}>
+                              <RotateCcw className="h-3 w-3 mr-1" /> Undo
                             </Button>
                           </Tip>
                         )}
@@ -298,6 +347,49 @@ export default function PayrollPage() {
             <Button onClick={handleGenerate} disabled={generatePayroll.isPending || selectedStaffIds.size === 0}>
               {generatePayroll.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Zap size={16} className="mr-1" />}
               Generate ({selectedStaffIds.size})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Action Confirmation Dialog */}
+      <Dialog open={!!actionTarget} onOpenChange={() => !updatePayrollStatus.isPending && setActionTarget(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className={`flex items-center gap-2 ${actionTarget?.isUndo ? "text-amber-600" : ""}`}>
+              {actionTarget?.isUndo
+                ? <><RotateCcw className="h-5 w-5" /> Undo Payroll Status</>
+                : <><ArrowRight className="h-5 w-5" /> Advance Payroll Status</>}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-3 space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {actionTarget?.isUndo ? "Revert" : "Advance"} payroll record for{" "}
+              <strong>{actionTarget?.record?.staffName}</strong>{" "}
+              ({actionTarget?.record?.month} {actionTarget?.record?.year})?
+            </p>
+            <div className="flex items-center gap-2 text-sm">
+              <Badge variant={actionTarget?.record?.status === "Paid" ? "success" : actionTarget?.record?.status === "Approved" ? "info" : actionTarget?.record?.status === "Processed" ? "secondary" : "warning"}>
+                {actionTarget?.record?.status}
+              </Badge>
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              <Badge variant={actionTarget?.nextStatus === "Paid" ? "success" : actionTarget?.nextStatus === "Approved" ? "info" : actionTarget?.nextStatus === "Processed" ? "secondary" : "warning"}>
+                {actionTarget?.nextStatus}
+              </Badge>
+            </div>
+            {actionTarget?.isUndo && (
+              <p className="text-xs text-amber-600 flex items-center gap-1"><AlertTriangle className="h-3.5 w-3.5" /> This reverses an approved action. Use with caution.</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setActionTarget(null)} disabled={updatePayrollStatus.isPending}>Cancel</Button>
+            <Button
+              variant={actionTarget?.isUndo ? "destructive" : "default"}
+              onClick={handleConfirmAction}
+              disabled={updatePayrollStatus.isPending}
+            >
+              {updatePayrollStatus.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              {actionTarget?.isUndo ? "Undo" : "Confirm"}
             </Button>
           </DialogFooter>
         </DialogContent>
